@@ -1,9 +1,12 @@
+import { Coord } from './coord';
+
 export class Vertex {
-    x: number;
-    y: number;
+    pos: Coord;
+    color: string;
 
     constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
+        this.pos = new Coord(x, y);
+        this.color = "black";
     }
 }
+
