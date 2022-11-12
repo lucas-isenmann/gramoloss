@@ -5,7 +5,7 @@ import { Vertex } from './vertex';
 import { Coord, middle } from './coord';
 import { Stroke } from './stroke';
 import { Area } from './area';
-import { AddArea, AddLink, AddStroke, AddVertex, AreaMoveCorner, AreaMoveSide, DeleteElements, Modification, TranslateAreas, TranslateControlPoints, TranslateStrokes, TranslateVertices, UpdateColors, UpdateLinkWeight, UpdateSeveralVertexPos, VerticesMerge } from './modifications';
+import { AddArea, AddLink, AddStroke, AddVertex, AreaMoveCorner, AreaMoveSide, DeleteElements, ELEMENT_TYPE, GraphPaste, Modification, TranslateAreas, TranslateControlPoints, TranslateStrokes, TranslateVertices, UpdateColors, UpdateSeveralVertexPos, UpdateWeight, VerticesMerge } from './modifications';
 
 
 export enum SENSIBILITY {
@@ -38,7 +38,7 @@ export class Graph {
     }
 
     add_modification(modif: Modification) {
-        console.log("add_mofication");
+        //console.log("add_mofication");
         const length = this.modifications_heap.length;
         if (length > 0) {
             const last_modif = this.modifications_heap[length - 1];
@@ -57,11 +57,8 @@ export class Graph {
 
             // if the last_modif was a translation of the removed vertex for the incoming modification
             // then pop last_modif and patch the position of the removed vertex
-            console.log("hey")
             if (modif.constructor == VerticesMerge && last_modif.constructor == TranslateVertices) {
-                console.log("yo")
                 if (eqSet(new Set([(<VerticesMerge>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
-                    console.log("cool")
                     this.modifications_heap.pop();
                     this.translate_vertices(new Set([(<VerticesMerge>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
                     console.log((<TranslateVertices>last_modif).shift)
@@ -73,7 +70,7 @@ export class Graph {
 
 
         this.modifications_heap.push(modif);
-        console.log(this.modifications_heap);
+        //console.log(this.modifications_heap);
     }
 
     try_implement_modification(modif: Modification): Set<SENSIBILITY> {
@@ -88,8 +85,8 @@ export class Graph {
                 this.add_modification(modif);
                 return new Set([SENSIBILITY.ELEMENT]);
             }
-            case UpdateLinkWeight: {
-                this.update_link_weight((<UpdateLinkWeight>modif).index, (<UpdateLinkWeight>modif).new_weight);
+            case UpdateWeight: {
+                this.update_element_weight((<UpdateWeight>modif).element_type,(<UpdateWeight>modif).index , (<UpdateWeight>modif).new_weight);
                 this.add_modification(modif);
                 return new Set([SENSIBILITY.WEIGHT]);
             }
@@ -191,6 +188,16 @@ export class Graph {
                 this.vertices_merge((<VerticesMerge>modif).index_vertex_fixed, (<VerticesMerge>modif).index_vertex_to_remove);
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
+            case GraphPaste: {
+                for ( const [vertex_index, vertex] of (<GraphPaste>modif).added_vertices.entries()){
+                    this.vertices.set(vertex_index, vertex);
+                }
+                for ( const [link_index, link] of (<GraphPaste>modif).added_links.entries()){
+                    this.links.set(link_index, link);
+                }
+                this.add_modification(modif);
+                return new Set([SENSIBILITY.ELEMENT]);
+            }
         }
         console.log("try_implement_modififcation: no method found for ", modif.constructor);
         return new Set([]);
@@ -214,8 +221,8 @@ export class Graph {
                     this.delete_link((<AddLink>last_modif).index);
                     this.modifications_undoed.push(last_modif);
                     return new Set([SENSIBILITY.ELEMENT]);
-                case UpdateLinkWeight:
-                    this.update_link_weight((<UpdateLinkWeight>last_modif).index, (<UpdateLinkWeight>last_modif).previous_weight);
+                case UpdateWeight:
+                    this.update_element_weight((<UpdateWeight>last_modif).element_type,(<UpdateWeight>last_modif).index , (<UpdateWeight>last_modif).previous_weight);
                     this.modifications_undoed.push(last_modif);
                     return new Set([SENSIBILITY.WEIGHT]);
                 case UpdateSeveralVertexPos:
@@ -316,12 +323,22 @@ export class Graph {
                         this.links.set(link_index, link);
                     }
                     // 2. les cps remis après undo sont chelous
-                    for (const link_index of (<VerticesMerge>last_modif).added_link_indices) {
+                    for (const link_index of (<VerticesMerge>last_modif).added_link_indices.values()) {
                         this.links.delete(link_index);
                     }
 
                     this.modifications_undoed.push(last_modif);
                     return new Set([]);
+                }
+                case GraphPaste: {
+                    for ( const vertex_index of (<GraphPaste>last_modif).added_vertices.keys()){
+                        this.vertices.delete(vertex_index);
+                    }
+                    for ( const link_index of (<GraphPaste>last_modif).added_links.keys()){
+                        this.links.delete(link_index);
+                    }
+                    this.modifications_undoed.push(last_modif);
+                    return new Set([SENSIBILITY.ELEMENT]);
                 }
 
             }
@@ -333,7 +350,6 @@ export class Graph {
     }
 
     redo(): Set<SENSIBILITY> {
-        console.log(this.modifications_undoed);
         if (this.modifications_undoed.length > 0) {
             const modif = this.modifications_undoed.pop();
             return this.try_implement_modification(modif);
@@ -341,11 +357,14 @@ export class Graph {
         return new Set();
     }
 
-    update_link_weight(link_index: number, new_weight: string) {
-        if (this.links.has(link_index)) {
-            this.links.get(link_index).weight = new_weight;
+    update_element_weight(element_type: ELEMENT_TYPE, index: number, new_weight: string){
+        if ( element_type == ELEMENT_TYPE.LINK && this.links.has(index)){
+            this.links.get(index).weight = new_weight;
+        }else if ( element_type == ELEMENT_TYPE.VERTEX && this.vertices.has(index)){
+            this.vertices.get(index).weight = new_weight;
         }
     }
+
 
     update_vertex_pos(vertex_index: number, new_pos: Coord) {
         this.vertices.get(vertex_index).pos = new_pos;
@@ -364,6 +383,18 @@ export class Graph {
         return index;
     }
 
+    get_next_n_available_vertex_indices(n: number): Array<number> {
+        let index = 0;
+        const indices = new Array<number>();
+        while (indices.length < n) {
+            if (this.vertices.has(index) == false) {
+                indices.push(index);
+            }
+            index += 1;
+        }
+        return indices;
+    }
+
     get_next_available_index_links() {
         let index = 0;
         while (this.links.has(index)) {
@@ -372,12 +403,12 @@ export class Graph {
         return index;
     }
 
-    get_next_n_available_link_indices(n: number): Set<number> {
+    get_next_n_available_link_indices(n: number): Array<number> {
         let index = 0;
-        const indices = new Set<number>();
-        while (indices.size < n) {
+        const indices = new Array<number>();
+        while (indices.length < n) {
             if (this.links.has(index) == false) {
-                indices.add(index);
+                indices.push(index);
             }
             index += 1;
         }
@@ -414,12 +445,12 @@ export class Graph {
 
     add_vertex(x: number, y: number) {
         let index = this.get_next_available_index();
-        this.vertices.set(index, new Vertex(x, y));
+        this.vertices.set(index, new Vertex(x, y, ""));
         return index;
     }
 
     set_vertex(index: number, x: number, y: number) {
-        this.vertices.set(index, new Vertex(x, y));
+        this.vertices.set(index, new Vertex(x, y, ""));
     }
 
     check_link(i: number, j: number, orientation: ORIENTATION): boolean {
@@ -453,7 +484,7 @@ export class Graph {
         const index = this.get_next_available_index_links();
         const v1 = this.vertices.get(i);
         const v2 = this.vertices.get(j);
-        this.links.set(index, new Link(i, j, middle(v1.pos, v2.pos), orientation, "black"));
+        this.links.set(index, new Link(i, j, middle(v1.pos, v2.pos), orientation, "black", ""));
         return index;
     }
 
@@ -463,7 +494,7 @@ export class Graph {
         }
         const v1 = this.vertices.get(start_index);
         const v2 = this.vertices.get(end_index);
-        this.links.set(link_index, new Link(start_index, end_index, middle(v1.pos, v2.pos), orientation, "black"));
+        this.links.set(link_index, new Link(start_index, end_index, middle(v1.pos, v2.pos), orientation, "black", ""));
     }
 
 

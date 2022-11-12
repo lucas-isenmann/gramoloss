@@ -5,7 +5,12 @@ import { Stroke } from "./stroke";
 import { Vertex } from "./vertex";
 
 
-
+export enum ELEMENT_TYPE {
+    VERTEX = "VERTEX",
+    LINK = "LINK",
+    STROKE = "STROKE",
+    AREA = "AREA"
+}
 
 
 export interface Modification { };
@@ -37,12 +42,14 @@ export class AddLink implements Modification {
     }
 }
 
-export class UpdateLinkWeight implements Modification {
+export class UpdateWeight implements Modification {
+    element_type: ELEMENT_TYPE;
     index: number;
     new_weight: string;
     previous_weight: string;
 
-    constructor(index: number, new_weight: string, previous_weight: string) {
+    constructor(element_type: ELEMENT_TYPE, index: number, new_weight: string, previous_weight: string) {
+        this.element_type = element_type;
         this.index = index;
         this.new_weight = new_weight;
         this.previous_weight = previous_weight;
@@ -252,13 +259,23 @@ export class VerticesMerge implements Modification {
     index_vertex_to_remove: number;
     vertex_to_remove: Vertex;
     deleted_links: Map<number, Link>;
-    added_link_indices: Set<number>;
+    added_link_indices: Array<number>;
 
-    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: Vertex, deleted_links: Map<number, Link>, added_link_indices: Set<number>) {
+    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: Vertex, deleted_links: Map<number, Link>, added_link_indices: Array<number>) {
         this.index_vertex_fixed = index_vertex_fixed;
         this.index_vertex_to_remove = index_vertex_to_remove;
         this.vertex_to_remove = vertex_to_remove;
         this.deleted_links = deleted_links;
         this.added_link_indices = added_link_indices;
+    }
+}
+
+export class GraphPaste implements Modification {
+    added_vertices: Map<number, Vertex>;
+    added_links: Map<number, Link>;
+
+    constructor(added_vertices, added_links){
+        this.added_vertices = added_vertices;
+        this.added_links = added_links;
     }
 }
