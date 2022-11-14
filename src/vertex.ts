@@ -10,5 +10,6 @@ export class Vertex {
         this.color = "black";
         this.weight = weight;
     }
+    
 }
 
