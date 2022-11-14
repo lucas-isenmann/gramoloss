@@ -253,14 +253,14 @@ export class VerticesMerge<V extends Vertex, L extends Link> implements Modifica
     index_vertex_to_remove: number;
     vertex_to_remove: V;
     deleted_links: Map<number, L>;
-    added_link_indices: Array<number>;
+    modified_links_indices: Array<number>;
 
-    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: V, deleted_links: Map<number, L>, added_link_indices: Array<number>) {
+    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: V, deleted_links: Map<number, L>, modified_links_indices: Array<number>) {
         this.index_vertex_fixed = index_vertex_fixed;
         this.index_vertex_to_remove = index_vertex_to_remove;
         this.vertex_to_remove = vertex_to_remove;
         this.deleted_links = deleted_links;
-        this.added_link_indices = added_link_indices;
+        this.modified_links_indices = modified_links_indices;
     }
 }
 

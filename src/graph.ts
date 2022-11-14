@@ -316,13 +316,22 @@ export class Graph<V extends Vertex,L extends Link> {
                     return new Set([]);
                 }
                 case VerticesMerge: {
-                    this.vertices.set((<VerticesMerge<V,L>>last_modif).index_vertex_to_remove, (<VerticesMerge<V,L>>last_modif).vertex_to_remove);
-                    for (const [link_index, link] of (<VerticesMerge<V,L>>last_modif).deleted_links.entries()) {
+                    const vertices_merge_modif = last_modif as VerticesMerge<V,L>;
+
+                    this.vertices.set(vertices_merge_modif.index_vertex_to_remove, vertices_merge_modif.vertex_to_remove);
+                    for (const [link_index, link] of vertices_merge_modif.deleted_links.entries()) {
                         this.links.set(link_index, link);
                     }
-                    // 2. les cps remis après undo sont chelous
-                    for (const link_index of (<VerticesMerge<V,L>>last_modif).added_link_indices.values()) {
-                        this.links.delete(link_index);
+                    // TODO  les cps remis après undo sont chelous
+                    for (const link_index of vertices_merge_modif.modified_links_indices.values()) {
+                        if ( this.links.has(link_index)){
+                            const link = this.links.get(link_index);
+                            if (link.start_vertex == vertices_merge_modif.index_vertex_fixed){
+                                link.start_vertex = vertices_merge_modif.index_vertex_to_remove;
+                            } else if (link.end_vertex == vertices_merge_modif.index_vertex_fixed ){
+                                link.end_vertex = vertices_merge_modif.index_vertex_to_remove;
+                            }
+                        }
                     }
 
                     this.modifications_undoed.push(last_modif);
@@ -559,7 +568,7 @@ export class Graph<V extends Vertex,L extends Link> {
 
     vertices_merge(vertex_index_fixed: number, vertex_index_to_remove: number) {
 
-        this.links.forEach((link, link_index) => {
+        for ( const [link_index, link] of this.links.entries()) {
             const endpoints = new Set([link.start_vertex, link.end_vertex]);
             if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
                 this.links.delete(link_index);
@@ -567,7 +576,7 @@ export class Graph<V extends Vertex,L extends Link> {
                 link.end_vertex = vertex_index_fixed;
                 for (const [index2, link2] of this.links.entries()) {
                     if ( index2 != link_index && link.has_same_signature(link2)){
-                        this.links.delete(index2);
+                        this.links.delete(link_index);
                         break;
                     }
                 }
@@ -575,12 +584,12 @@ export class Graph<V extends Vertex,L extends Link> {
                 link.start_vertex = vertex_index_fixed;
                 for (const [index2, link2] of this.links.entries()) {
                     if ( index2 != link_index && link.has_same_signature(link2)){
-                        this.links.delete(index2);
+                        this.links.delete(link_index);
                         break;
                     }
                 }
             }
-        })
+        }
 
         this.delete_vertex(vertex_index_to_remove);
     }
