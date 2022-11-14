@@ -1,9 +1,9 @@
 import { Coord } from "./coord";
+import { eqSet } from "./utils";
 
 export enum ORIENTATION {
     UNDIRECTED = "UNDIRECTED",
-    DIRECTED = "DIRECTED",
-    DIGON = "DIGON"
+    DIRECTED = "DIRECTED"
 }
 
 
@@ -36,6 +36,27 @@ export class Link {
         this.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
         this.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
     }
+
+    has_same_signature(link: Link){
+        if ( this.orientation == link.orientation ){
+            switch (this.orientation){
+                case ORIENTATION.UNDIRECTED: {
+                    if ( eqSet(new Set([this.start_vertex, this.end_vertex]), new Set([link.start_vertex, link.end_vertex]) ) ){
+                        return true;
+                    }
+                    break;
+                }
+                case ORIENTATION.DIRECTED: {
+                    if ( this.start_vertex == link.start_vertex && this.end_vertex == link.end_vertex){
+                        return true;
+                    }
+                    break;
+                }
+            }
+        }
+        return false;
+    }
+
 
 }
 

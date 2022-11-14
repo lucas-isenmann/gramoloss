@@ -16,29 +16,23 @@ export enum ELEMENT_TYPE {
 export interface Modification { };
 
 
-export class AddVertex implements Modification {
+export class AddVertex<V extends Vertex> implements Modification {
     index: number;
-    x: number;
-    y: number;
+    vertex: V;
 
-    constructor(index: number, x: number, y: number) {
+    constructor(index: number, vertex: V) {
         this.index = index;
-        this.x = x;
-        this.y = y;
+        this.vertex = vertex;
     }
 }
 
-export class AddLink implements Modification {
+export class AddLink<L extends Link> implements Modification {
     index: number;
-    start_index: number;
-    end_index: number;
-    orientation: ORIENTATION
+    link: L;
 
-    constructor(index: number, start_index: number, end_index: number, orientation: ORIENTATION) {
+    constructor(index: number, link: L) {
         this.index = index;
-        this.start_index = start_index;
-        this.end_index = end_index;
-        this.orientation = orientation;
+        this.link = link;
     }
 }
 
@@ -240,9 +234,9 @@ export class AreaMoveCorner implements Modification {
 }
 
 
-export class DeleteElements implements Modification {
-    vertices: Map<number, Vertex>;
-    links: Map<number, Link>;
+export class DeleteElements<V extends Vertex, L extends Link> implements Modification {
+    vertices: Map<number, V>;
+    links: Map<number, L>;
     strokes: Map<number, Stroke>;
     areas: Map<number, Area>;
 
@@ -254,14 +248,14 @@ export class DeleteElements implements Modification {
     }
 }
 
-export class VerticesMerge implements Modification {
+export class VerticesMerge<V extends Vertex, L extends Link> implements Modification {
     index_vertex_fixed: number;
     index_vertex_to_remove: number;
-    vertex_to_remove: Vertex;
-    deleted_links: Map<number, Link>;
+    vertex_to_remove: V;
+    deleted_links: Map<number, L>;
     added_link_indices: Array<number>;
 
-    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: Vertex, deleted_links: Map<number, Link>, added_link_indices: Array<number>) {
+    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: V, deleted_links: Map<number, L>, added_link_indices: Array<number>) {
         this.index_vertex_fixed = index_vertex_fixed;
         this.index_vertex_to_remove = index_vertex_to_remove;
         this.vertex_to_remove = vertex_to_remove;
@@ -270,9 +264,9 @@ export class VerticesMerge implements Modification {
     }
 }
 
-export class GraphPaste implements Modification {
-    added_vertices: Map<number, Vertex>;
-    added_links: Map<number, Link>;
+export class GraphPaste<V extends Vertex, L extends Link> implements Modification {
+    added_vertices: Map<number, V>;
+    added_links: Map<number, L>;
 
     constructor(added_vertices, added_links){
         this.added_vertices = added_vertices;

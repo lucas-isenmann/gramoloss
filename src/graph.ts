@@ -6,6 +6,7 @@ import { Coord, middle } from './coord';
 import { Stroke } from './stroke';
 import { Area } from './area';
 import { AddArea, AddLink, AddStroke, AddVertex, AreaMoveCorner, AreaMoveSide, DeleteElements, ELEMENT_TYPE, GraphPaste, Modification, TranslateAreas, TranslateControlPoints, TranslateStrokes, TranslateVertices, UpdateColors, UpdateSeveralVertexPos, UpdateWeight, VerticesMerge } from './modifications';
+import { eqSet } from './utils';
 
 
 export enum SENSIBILITY {
@@ -15,15 +16,12 @@ export enum SENSIBILITY {
     WEIGHT = "WEIGHT"
 }
 
-// decide if there is equality between two sets xs and ys
-const eqSet = (xs: Set<number>, ys: Set<number>) =>
-    xs.size === ys.size &&
-    [...xs].every((x) => ys.has(x));
 
 
-export class Graph {
-    vertices: Map<number, Vertex>;
-    links: Map<number, Link>;
+
+export class Graph<V extends Vertex,L extends Link> {
+    vertices: Map<number, V>;
+    links: Map<number, L>;
     strokes: Map<number, Stroke>;
     areas: Map<number, Area>;
     modifications_heap: Array<Modification> = new Array();
@@ -58,9 +56,9 @@ export class Graph {
             // if the last_modif was a translation of the removed vertex for the incoming modification
             // then pop last_modif and patch the position of the removed vertex
             if (modif.constructor == VerticesMerge && last_modif.constructor == TranslateVertices) {
-                if (eqSet(new Set([(<VerticesMerge>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
+                if (eqSet(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
                     this.modifications_heap.pop();
-                    this.translate_vertices(new Set([(<VerticesMerge>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
+                    this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
                     console.log((<TranslateVertices>last_modif).shift)
                     //(<VerticesMerge>modif).vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
                 }
@@ -76,12 +74,12 @@ export class Graph {
     try_implement_modification(modif: Modification): Set<SENSIBILITY> {
         switch (modif.constructor) {
             case AddVertex: {
-                this.set_vertex((<AddVertex>modif).index, (<AddVertex>modif).x, (<AddVertex>modif).y);
+                this.set_vertex((<AddVertex<V>>modif).index, (<AddVertex<V>>modif).vertex);
                 this.add_modification(modif);
                 return new Set([SENSIBILITY.ELEMENT]);
             }
             case AddLink: {
-                this.set_link((<AddLink>modif).index, (<AddLink>modif).start_index, (<AddLink>modif).end_index, (<AddLink>modif).orientation)
+                this.set_link((<AddLink<L>>modif).index, (<AddLink<L>>modif).link)
                 this.add_modification(modif);
                 return new Set([SENSIBILITY.ELEMENT]);
             }
@@ -168,16 +166,16 @@ export class Graph {
                 return new Set([]);
             }
             case DeleteElements: {
-                for (const index of (<DeleteElements>modif).vertices.keys()) {
+                for (const index of (<DeleteElements<V,L>>modif).vertices.keys()) {
                     this.delete_vertex(index);
                 }
-                for (const index of (<DeleteElements>modif).links.keys()) {
+                for (const index of (<DeleteElements<V,L>>modif).links.keys()) {
                     this.delete_link(index);
                 }
-                for (const index of (<DeleteElements>modif).strokes.keys()) {
+                for (const index of (<DeleteElements<V,L>>modif).strokes.keys()) {
                     this.delete_stroke(index);
                 }
-                for (const index of (<DeleteElements>modif).areas.keys()) {
+                for (const index of (<DeleteElements<V,L>>modif).areas.keys()) {
                     this.delete_area(index);
                 }
                 this.add_modification(modif);
@@ -185,14 +183,14 @@ export class Graph {
             }
             case VerticesMerge: {
                 this.add_modification(modif);
-                this.vertices_merge((<VerticesMerge>modif).index_vertex_fixed, (<VerticesMerge>modif).index_vertex_to_remove);
+                this.vertices_merge((<VerticesMerge<V,L>>modif).index_vertex_fixed, (<VerticesMerge<V,L>>modif).index_vertex_to_remove);
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
             case GraphPaste: {
-                for ( const [vertex_index, vertex] of (<GraphPaste>modif).added_vertices.entries()){
+                for ( const [vertex_index, vertex] of (<GraphPaste<V,L>>modif).added_vertices.entries()){
                     this.vertices.set(vertex_index, vertex);
                 }
-                for ( const [link_index, link] of (<GraphPaste>modif).added_links.entries()){
+                for ( const [link_index, link] of (<GraphPaste<V,L>>modif).added_links.entries()){
                     this.links.set(link_index, link);
                 }
                 this.add_modification(modif);
@@ -214,11 +212,11 @@ export class Graph {
             const last_modif = this.modifications_heap.pop();
             switch (last_modif.constructor) {
                 case AddVertex:
-                    this.delete_vertex((<AddVertex>last_modif).index);
+                    this.delete_vertex((<AddVertex<V>>last_modif).index);
                     this.modifications_undoed.push(last_modif);
                     return new Set([SENSIBILITY.ELEMENT]);
                 case AddLink:
-                    this.delete_link((<AddLink>last_modif).index);
+                    this.delete_link((<AddLink<L>>last_modif).index);
                     this.modifications_undoed.push(last_modif);
                     return new Set([SENSIBILITY.ELEMENT]);
                 case UpdateWeight:
@@ -302,28 +300,28 @@ export class Graph {
                     return new Set([]);
                 }
                 case DeleteElements: {
-                    for (const [index, vertex] of (<DeleteElements>last_modif).vertices.entries()) {
+                    for (const [index, vertex] of (<DeleteElements<V,L>>last_modif).vertices.entries()) {
                         this.vertices.set(index, vertex);
                     }
-                    for (const [index, link] of (<DeleteElements>last_modif).links.entries()) {
+                    for (const [index, link] of (<DeleteElements<V,L>>last_modif).links.entries()) {
                         this.links.set(index, link);
                     }
-                    for (const [index, stroke] of (<DeleteElements>last_modif).strokes.entries()) {
+                    for (const [index, stroke] of (<DeleteElements<V,L>>last_modif).strokes.entries()) {
                         this.strokes.set(index, stroke);
                     }
-                    for (const [index, area] of (<DeleteElements>last_modif).areas.entries()) {
+                    for (const [index, area] of (<DeleteElements<V,L>>last_modif).areas.entries()) {
                         this.areas.set(index, area);
                     }
                     this.modifications_undoed.push(last_modif);
                     return new Set([]);
                 }
                 case VerticesMerge: {
-                    this.vertices.set((<VerticesMerge>last_modif).index_vertex_to_remove, (<VerticesMerge>last_modif).vertex_to_remove);
-                    for (const [link_index, link] of (<VerticesMerge>last_modif).deleted_links.entries()) {
+                    this.vertices.set((<VerticesMerge<V,L>>last_modif).index_vertex_to_remove, (<VerticesMerge<V,L>>last_modif).vertex_to_remove);
+                    for (const [link_index, link] of (<VerticesMerge<V,L>>last_modif).deleted_links.entries()) {
                         this.links.set(link_index, link);
                     }
                     // 2. les cps remis après undo sont chelous
-                    for (const link_index of (<VerticesMerge>last_modif).added_link_indices.values()) {
+                    for (const link_index of (<VerticesMerge<V,L>>last_modif).added_link_indices.values()) {
                         this.links.delete(link_index);
                     }
 
@@ -331,10 +329,10 @@ export class Graph {
                     return new Set([]);
                 }
                 case GraphPaste: {
-                    for ( const vertex_index of (<GraphPaste>last_modif).added_vertices.keys()){
+                    for ( const vertex_index of (<GraphPaste<V,L>>last_modif).added_vertices.keys()){
                         this.vertices.delete(vertex_index);
                     }
-                    for ( const link_index of (<GraphPaste>last_modif).added_links.keys()){
+                    for ( const link_index of (<GraphPaste<V,L>>last_modif).added_links.keys()){
                         this.links.delete(link_index);
                     }
                     this.modifications_undoed.push(last_modif);
@@ -443,17 +441,20 @@ export class Graph {
 
 
 
-    add_vertex(x: number, y: number) {
+    add_vertex(vertex: V) {
         let index = this.get_next_available_index();
-        this.vertices.set(index, new Vertex(x, y, ""));
+        this.vertices.set(index, vertex);
         return index;
     }
 
-    set_vertex(index: number, x: number, y: number) {
-        this.vertices.set(index, new Vertex(x, y, ""));
+    set_vertex(index: number, vertex: V) {
+        this.vertices.set(index, vertex );
     }
 
-    check_link(i: number, j: number, orientation: ORIENTATION): boolean {
+    check_link(link: L): boolean {
+        const i = link.start_vertex;
+        const j = link.end_vertex;
+        const orientation = link.orientation;
         // do not add link if it is a loop (NO LOOP)
         if (i == j) {
             return false;
@@ -477,32 +478,22 @@ export class Graph {
         return true;
     }
 
-    add_link(i: number, j: number, orientation: ORIENTATION) {
-        if (this.check_link(i, j, orientation) == false) {
+    add_link(link: L) {
+        if (this.check_link(link) == false) {
             return;
         }
         const index = this.get_next_available_index_links();
-        const v1 = this.vertices.get(i);
-        const v2 = this.vertices.get(j);
-        this.links.set(index, new Link(i, j, middle(v1.pos, v2.pos), orientation, "black", ""));
+        this.links.set(index, link);
         return index;
     }
 
-    set_link(link_index: number, start_index: number, end_index: number, orientation: ORIENTATION) {
-        if (this.check_link(start_index, end_index, orientation) == false) {
+    set_link(link_index: number, link: L) {
+        if (this.check_link(link) == false) {
             return;
         }
-        const v1 = this.vertices.get(start_index);
-        const v2 = this.vertices.get(end_index);
-        this.links.set(link_index, new Link(start_index, end_index, middle(v1.pos, v2.pos), orientation, "black", ""));
+        this.links.set(link_index, link);
     }
 
-
-    add_link_with_cp(i: number, j: number, orientation: ORIENTATION, cp: Coord) {
-        const index = this.add_link(i, j, orientation);
-        const link = this.links.get(index);
-        link.cp.copy_from(cp);
-    }
 
 
 
@@ -569,11 +560,25 @@ export class Graph {
     vertices_merge(vertex_index_fixed: number, vertex_index_to_remove: number) {
 
         this.links.forEach((link, link_index) => {
-            if (link.end_vertex == vertex_index_to_remove) {
-                this.add_link(link.start_vertex, vertex_index_fixed, link.orientation);
-            }
-            if (link.start_vertex == vertex_index_to_remove) {
-                this.add_link(vertex_index_fixed, link.end_vertex, link.orientation);
+            const endpoints = new Set([link.start_vertex, link.end_vertex]);
+            if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
+                this.links.delete(link_index);
+            } else if (link.end_vertex == vertex_index_to_remove) {
+                link.end_vertex = vertex_index_fixed;
+                for (const [index2, link2] of this.links.entries()) {
+                    if ( index2 != link_index && link.has_same_signature(link2)){
+                        this.links.delete(index2);
+                        break;
+                    }
+                }
+            } else if (link.start_vertex == vertex_index_to_remove) {
+                link.start_vertex = vertex_index_fixed;
+                for (const [index2, link2] of this.links.entries()) {
+                    if ( index2 != link_index && link.has_same_signature(link2)){
+                        this.links.delete(index2);
+                        break;
+                    }
+                }
             }
         })
 
