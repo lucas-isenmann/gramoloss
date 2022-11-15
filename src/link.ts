@@ -37,17 +37,17 @@ export class Link {
         this.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
     }
 
-    has_same_signature(link: Link){
-        if ( this.orientation == link.orientation ){
+    signature_equals(start_index: number, end_index: number, orientation: ORIENTATION): boolean{
+        if ( this.orientation == orientation ){
             switch (this.orientation){
                 case ORIENTATION.UNDIRECTED: {
-                    if ( eqSet(new Set([this.start_vertex, this.end_vertex]), new Set([link.start_vertex, link.end_vertex]) ) ){
+                    if ( eqSet(new Set([this.start_vertex, this.end_vertex]), new Set([start_index, end_index]) ) ){
                         return true;
                     }
                     break;
                 }
                 case ORIENTATION.DIRECTED: {
-                    if ( this.start_vertex == link.start_vertex && this.end_vertex == link.end_vertex){
+                    if ( this.start_vertex == start_index && this.end_vertex == end_index){
                         return true;
                     }
                     break;

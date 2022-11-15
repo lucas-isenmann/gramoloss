@@ -182,8 +182,23 @@ export class Graph<V extends Vertex,L extends Link> {
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
             case VerticesMerge: {
+                const modifc =  <VerticesMerge<V,L>>modif;
+                for (const link_index of modifc.deleted_links.keys()){
+                    this.links.delete(link_index);
+                }
+                for (const link_index of modifc.modified_links_indices.values()){
+                    if (this.links.has(link_index)){
+                        const link = this.links.get(link_index);
+                        if ( link.start_vertex == modifc.index_vertex_to_remove){
+                            link.start_vertex = modifc.index_vertex_fixed;
+                        } else if ( link.end_vertex == modifc.index_vertex_to_remove){
+                            link.end_vertex = modifc.index_vertex_fixed;
+                        }
+                    }
+                }
+
+                this.delete_vertex(modifc.index_vertex_to_remove);
                 this.add_modification(modif);
-                this.vertices_merge((<VerticesMerge<V,L>>modif).index_vertex_fixed, (<VerticesMerge<V,L>>modif).index_vertex_to_remove);
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
             case GraphPaste: {
@@ -317,7 +332,6 @@ export class Graph<V extends Vertex,L extends Link> {
                 }
                 case VerticesMerge: {
                     const vertices_merge_modif = last_modif as VerticesMerge<V,L>;
-
                     this.vertices.set(vertices_merge_modif.index_vertex_to_remove, vertices_merge_modif.vertex_to_remove);
                     for (const [link_index, link] of vertices_merge_modif.deleted_links.entries()) {
                         this.links.set(link_index, link);
@@ -566,32 +580,48 @@ export class Graph<V extends Vertex,L extends Link> {
     }
 
 
-    vertices_merge(vertex_index_fixed: number, vertex_index_to_remove: number) {
+    
+
+    // does not modify the graph
+    // any link between fixed and remove are deleted
+    // any link such that one of its endpoints is "remove", is either deleted either modified
+    create_vertices_merge_modif(vertex_index_fixed: number, vertex_index_to_remove: number ): VerticesMerge<V,L>{
+        const v_to_remove = this.vertices.get(vertex_index_to_remove);
+        const deleted_links = new Map();
+        const modified_links_indices = new Array();
 
         for ( const [link_index, link] of this.links.entries()) {
             const endpoints = new Set([link.start_vertex, link.end_vertex]);
             if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
-                this.links.delete(link_index);
+                deleted_links.set(link_index, link);
             } else if (link.end_vertex == vertex_index_to_remove) {
-                link.end_vertex = vertex_index_fixed;
+                let is_deleted = false;
                 for (const [index2, link2] of this.links.entries()) {
-                    if ( index2 != link_index && link.has_same_signature(link2)){
-                        this.links.delete(link_index);
+                    if ( index2 != link_index && link2.signature_equals(link.start_vertex, vertex_index_fixed, link.orientation )){
+                        deleted_links.set(link_index, link);
+                        is_deleted = true;
                         break;
                     }
                 }
+                if ( is_deleted == false ){
+                    modified_links_indices.push(link_index);
+                }
             } else if (link.start_vertex == vertex_index_to_remove) {
-                link.start_vertex = vertex_index_fixed;
+                let is_deleted = false;
                 for (const [index2, link2] of this.links.entries()) {
-                    if ( index2 != link_index && link.has_same_signature(link2)){
-                        this.links.delete(link_index);
+                    if ( index2 != link_index && link2.signature_equals(vertex_index_fixed, link.end_vertex, link.orientation)){
+                        deleted_links.set(link_index, link);
+                        is_deleted = true;
                         break;
                     }
+                }
+                if ( is_deleted == false ){
+                    modified_links_indices.push(link_index);
                 }
             }
         }
 
-        this.delete_vertex(vertex_index_to_remove);
+        return new VerticesMerge(vertex_index_fixed, vertex_index_to_remove, v_to_remove, deleted_links, modified_links_indices);
     }
 
     translate_areas(indices: Set<number>, shift: Coord) {
