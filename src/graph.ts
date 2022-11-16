@@ -55,6 +55,7 @@ export class Graph<V extends Vertex,L extends Link> {
 
             // if the last_modif was a translation of the removed vertex for the incoming modification
             // then pop last_modif and patch the position of the removed vertex
+            /*
             if (modif.constructor == VerticesMerge && last_modif.constructor == TranslateVertices) {
                 if (eqSet(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
                     this.modifications_heap.pop();
@@ -63,6 +64,7 @@ export class Graph<V extends Vertex,L extends Link> {
                     (<VerticesMerge<V,L>>modif).vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
                 }
             }
+            */
         }
 
 
@@ -182,7 +184,25 @@ export class Graph<V extends Vertex,L extends Link> {
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
             case VerticesMerge: {
+                console.log("implement verticesMerge");
                 const modifc =  <VerticesMerge<V,L>>modif;
+                console.log(modifc.vertex_to_remove);
+                const length = this.modifications_heap.length;
+                if (length > 0) {
+                    const last_modif = this.modifications_heap[length - 1];
+                    // if the last_modif was a translation of the removed vertex for the incoming modification
+                    // then pop last_modif and patch the position of the removed vertex
+                    if (last_modif.constructor == TranslateVertices) {
+                        if (eqSet(new Set([modifc.index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
+                            this.modifications_heap.pop();
+                            //this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
+                            console.log((<TranslateVertices>last_modif).shift);
+                            modifc.vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
+                        }
+                    }
+                }
+                console.log(modifc.vertex_to_remove);
+
                 for (const link_index of modifc.deleted_links.keys()){
                     this.links.delete(link_index);
                 }
