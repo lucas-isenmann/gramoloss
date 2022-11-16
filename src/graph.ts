@@ -58,9 +58,9 @@ export class Graph<V extends Vertex,L extends Link> {
             if (modif.constructor == VerticesMerge && last_modif.constructor == TranslateVertices) {
                 if (eqSet(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
                     this.modifications_heap.pop();
-                    this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
-                    console.log((<TranslateVertices>last_modif).shift)
-                    //(<VerticesMerge>modif).vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
+                    //this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
+                    console.log((<TranslateVertices>last_modif).shift);
+                    (<VerticesMerge<V,L>>modif).vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
                 }
             }
         }
