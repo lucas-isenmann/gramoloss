@@ -52,19 +52,6 @@ export class Graph<V extends Vertex,L extends Link> {
                     (<TranslateControlPoints>modif).shift.translate((<TranslateControlPoints>last_modif).shift);
                 }
             }
-
-            // if the last_modif was a translation of the removed vertex for the incoming modification
-            // then pop last_modif and patch the position of the removed vertex
-            /*
-            if (modif.constructor == VerticesMerge && last_modif.constructor == TranslateVertices) {
-                if (eqSet(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
-                    this.modifications_heap.pop();
-                    //this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
-                    console.log((<TranslateVertices>last_modif).shift);
-                    (<VerticesMerge<V,L>>modif).vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
-                }
-            }
-            */
         }
 
 
@@ -184,24 +171,8 @@ export class Graph<V extends Vertex,L extends Link> {
                 return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
             }
             case VerticesMerge: {
-                console.log("implement verticesMerge");
                 const modifc =  <VerticesMerge<V,L>>modif;
-                console.log(modifc.vertex_to_remove);
-                const length = this.modifications_heap.length;
-                if (length > 0) {
-                    const last_modif = this.modifications_heap[length - 1];
-                    // if the last_modif was a translation of the removed vertex for the incoming modification
-                    // then pop last_modif and patch the position of the removed vertex
-                    if (last_modif.constructor == TranslateVertices) {
-                        if (eqSet(new Set([modifc.index_vertex_to_remove]), (<TranslateVertices>last_modif).indices)) {
-                            this.modifications_heap.pop();
-                            //this.translate_vertices(new Set([(<VerticesMerge<V,L>>modif).index_vertex_to_remove]), (<TranslateVertices>last_modif).shift.opposite());
-                            console.log((<TranslateVertices>last_modif).shift);
-                            modifc.vertex_to_remove.pos.translate( (<TranslateVertices>last_modif).shift.opposite())
-                        }
-                    }
-                }
-                console.log(modifc.vertex_to_remove);
+                const v_fixed = this.vertices.get(modifc.index_vertex_fixed);
 
                 for (const link_index of modifc.deleted_links.keys()){
                     this.links.delete(link_index);
@@ -211,8 +182,12 @@ export class Graph<V extends Vertex,L extends Link> {
                         const link = this.links.get(link_index);
                         if ( link.start_vertex == modifc.index_vertex_to_remove){
                             link.start_vertex = modifc.index_vertex_fixed;
+                            const fixed_end = this.vertices.get(link.end_vertex);
+                            link.transform_cp(v_fixed.pos, modifc.vertex_to_remove.pos, fixed_end.pos);
                         } else if ( link.end_vertex == modifc.index_vertex_to_remove){
                             link.end_vertex = modifc.index_vertex_fixed;
+                            const fixed_end = this.vertices.get(link.start_vertex);
+                            link.transform_cp(v_fixed.pos, modifc.vertex_to_remove.pos, fixed_end.pos);
                         }
                     }
                 }
@@ -352,18 +327,23 @@ export class Graph<V extends Vertex,L extends Link> {
                 }
                 case VerticesMerge: {
                     const vertices_merge_modif = last_modif as VerticesMerge<V,L>;
+                    const v_fixed = this.vertices.get(vertices_merge_modif.index_vertex_fixed);
+
                     this.vertices.set(vertices_merge_modif.index_vertex_to_remove, vertices_merge_modif.vertex_to_remove);
                     for (const [link_index, link] of vertices_merge_modif.deleted_links.entries()) {
                         this.links.set(link_index, link);
                     }
-                    // TODO  les cps remis après undo sont chelous
                     for (const link_index of vertices_merge_modif.modified_links_indices.values()) {
                         if ( this.links.has(link_index)){
                             const link = this.links.get(link_index);
                             if (link.start_vertex == vertices_merge_modif.index_vertex_fixed){
                                 link.start_vertex = vertices_merge_modif.index_vertex_to_remove;
+                                const fixed_end = this.vertices.get(link.end_vertex);
+                                link.transform_cp(vertices_merge_modif.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
                             } else if (link.end_vertex == vertices_merge_modif.index_vertex_fixed ){
                                 link.end_vertex = vertices_merge_modif.index_vertex_to_remove;
+                                const fixed_end = this.vertices.get(link.start_vertex);
+                                link.transform_cp(vertices_merge_modif.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
                             }
                         }
                     }
