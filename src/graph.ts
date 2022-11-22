@@ -2,7 +2,7 @@
 import { Link, ORIENTATION } from './link';
 import { Vertex } from './vertex';
 
-import { Coord, middle } from './coord';
+import { Coord, middle, Vect } from './coord';
 import { Stroke } from './stroke';
 import { Area } from './area';
 import { AddArea, AddLink, AddStroke, AddVertex, AreaMoveCorner, AreaMoveSide, DeleteElements, ELEMENT_TYPE, GraphPaste, Modification, TranslateAreas, TranslateControlPoints, TranslateStrokes, TranslateVertices, UpdateColors, UpdateSeveralVertexPos, UpdateWeight, VerticesMerge } from './modifications';
@@ -624,7 +624,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return new VerticesMerge(vertex_index_fixed, vertex_index_to_remove, v_to_remove, deleted_links, modified_links_indices);
     }
 
-    translate_areas(indices: Set<number>, shift: Coord) {
+    translate_areas(indices: Set<number>, shift: Vect) {
         const contained_vertices = new Set<number>();
         for (const area_index of indices.values()) {
             const area = this.areas.get(area_index);
@@ -638,7 +638,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         this.translate_vertices(contained_vertices, shift);
     }
 
-    translate_vertices(indices: Set<number>, shift: Coord) {
+    translate_vertices(indices: Set<number>, shift: Vect) {
         for (const index of indices) {
             if (this.vertices.has(index)) {
                 const vertex = this.vertices.get(index);

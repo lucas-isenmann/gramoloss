@@ -1,4 +1,4 @@
-import { Coord } from "./coord";
+import { Coord, Vect } from "./coord";
 import { Vertex } from "./vertex";
 
 // c1 and c2 are any points in the plane (not necessarily the bottom left corner or other corners)
@@ -16,12 +16,12 @@ export class Area {
         this.color = "#E60007";
     }
 
-    translate(shift: Coord) {
+    translate(shift: Vect) {
         this.c1.translate(shift);
         this.c2.translate(shift);
     }
 
-    rtranslate(shift: Coord) {
+    rtranslate(shift: Vect) {
         this.c1.rtranslate(shift);
         this.c2.rtranslate(shift);
     }

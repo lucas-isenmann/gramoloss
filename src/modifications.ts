@@ -1,5 +1,5 @@
 import { Area } from "./area";
-import { Coord } from "./coord";
+import { Coord, Vect } from "./coord";
 import { Link, ORIENTATION } from "./link";
 import { Stroke } from "./stroke";
 import { Vertex } from "./vertex";
@@ -62,9 +62,9 @@ export class UpdateSeveralVertexPos implements Modification {
 
 export class TranslateVertices implements Modification {
     indices: Set<number>;
-    shift: Coord;
+    shift: Vect;
 
-    constructor(indices: Set<number>, shift: Coord) {
+    constructor(indices: Set<number>, shift: Vect) {
         this.indices = indices;
         this.shift = shift;
     }
@@ -72,9 +72,9 @@ export class TranslateVertices implements Modification {
 
 export class TranslateControlPoints implements Modification {
     indices: Set<number>;
-    shift: Coord;
+    shift: Vect;
 
-    constructor(indices: Set<number>, shift: Coord) {
+    constructor(indices: Set<number>, shift: Vect) {
         this.indices = indices;
         this.shift = shift;
     }
@@ -82,9 +82,9 @@ export class TranslateControlPoints implements Modification {
 
 export class TranslateStrokes implements Modification {
     indices: Set<number>;
-    shift: Coord;
+    shift: Vect;
 
-    constructor(indices: Set<number>, shift: Coord) {
+    constructor(indices: Set<number>, shift: Vect) {
         this.indices = indices;
         this.shift = shift;
     }
@@ -92,9 +92,9 @@ export class TranslateStrokes implements Modification {
 
 export class TranslateAreas implements Modification {
     indices: Set<number>;
-    shift: Coord;
+    shift: Vect;
 
-    constructor(indices: Set<number>, shift: Coord) {
+    constructor(indices: Set<number>, shift: Vect) {
         this.indices = indices;
         this.shift = shift;
     }

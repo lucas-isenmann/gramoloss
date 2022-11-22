@@ -1,4 +1,4 @@
-import { Coord } from "./coord";
+import { Coord, Vect } from "./coord";
 
 export class Stroke {
     positions: Array<Coord>;
@@ -27,13 +27,17 @@ export class Stroke {
         }
     }
 
-    translate(shift: Coord) {
+    translate(shift: Vect) {
+        this.top_left.translate(shift);
+        this.bot_right.translate(shift);
         for (const pos of this.positions.values()) {
             pos.translate(shift);
         }
     }
 
-    rtranslate(shift: Coord) {
+    rtranslate(shift: Vect) {
+        this.top_left.rtranslate(shift);
+        this.bot_right.rtranslate(shift);
         for (const pos of this.positions.values()) {
             pos.rtranslate(shift);
         }

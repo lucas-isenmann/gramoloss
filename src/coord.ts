@@ -92,4 +92,22 @@ export class Vect {
         this.x = x;
         this.y = y;
     }
+
+    set_from(v: Vect){
+        this.x = v.x;
+        this.y = v.y;
+    }
+
+    sub(v: Vect): Vect{
+        return new Vect(this.x - v.x, this.y - v.y);
+    }
+
+    translate(v: Vect){
+        this.x += v.x;
+        this.y += v.y;
+    }
+
+    opposite(): Vect{
+        return new Vect(-this.x, -this.y);
+    }
 }
