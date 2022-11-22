@@ -123,19 +123,19 @@ export class UpdateColors implements Modification {
     }
 }
 
-export class AddStroke implements Modification {
+export class AddStroke<S extends Stroke> implements Modification {
     index: number;
-    stroke: Stroke;
-    constructor(index: number, stroke: Stroke) {
+    stroke: S;
+    constructor(index: number, stroke: S) {
         this.index = index;
         this.stroke = stroke;
     }
 }
 
-export class AddArea implements Modification {
+export class AddArea<A> implements Modification {
     index: number;
-    area: Area;
-    constructor(index: number, area: Area) {
+    area: A;
+    constructor(index: number, area: A) {
         this.index = index;
         this.area = area;
     }
@@ -234,11 +234,11 @@ export class AreaMoveCorner implements Modification {
 }
 
 
-export class DeleteElements<V extends Vertex, L extends Link> implements Modification {
+export class DeleteElements<V extends Vertex, L extends Link, S extends Stroke, A extends Area> implements Modification {
     vertices: Map<number, V>;
     links: Map<number, L>;
-    strokes: Map<number, Stroke>;
-    areas: Map<number, Area>;
+    strokes: Map<number, S>;
+    areas: Map<number, A>;
 
     constructor(vertices, links, strokes, areas) {
         this.vertices = vertices;

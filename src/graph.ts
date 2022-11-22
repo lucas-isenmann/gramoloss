@@ -19,11 +19,11 @@ export enum SENSIBILITY {
 
 
 
-export class Graph<V extends Vertex,L extends Link> {
+export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends Area> {
     vertices: Map<number, V>;
     links: Map<number, L>;
-    strokes: Map<number, Stroke>;
-    areas: Map<number, Area>;
+    strokes: Map<number, S>;
+    areas: Map<number, A>;
     modifications_heap: Array<Modification> = new Array();
     modifications_undoed: Array<Modification> = new Array();
 
@@ -131,12 +131,12 @@ export class Graph<V extends Vertex,L extends Link> {
                 return new Set([SENSIBILITY.COLOR]);
             }
             case AddStroke: {
-                this.strokes.set((<AddStroke>modif).index, (<AddStroke>modif).stroke);
+                this.strokes.set((<AddStroke<S>>modif).index, (<AddStroke<S>>modif).stroke);
                 this.add_modification(modif);
                 return new Set([]);
             }
             case AddArea: {
-                this.areas.set((<AddArea>modif).index, (<AddArea>modif).area);
+                this.areas.set((<AddArea<A>>modif).index, (<AddArea<A>>modif).area);
                 this.add_modification(modif);
                 return new Set([]);
             }
@@ -155,16 +155,16 @@ export class Graph<V extends Vertex,L extends Link> {
                 return new Set([]);
             }
             case DeleteElements: {
-                for (const index of (<DeleteElements<V,L>>modif).vertices.keys()) {
+                for (const index of (<DeleteElements<V,L,S,A>>modif).vertices.keys()) {
                     this.delete_vertex(index);
                 }
-                for (const index of (<DeleteElements<V,L>>modif).links.keys()) {
+                for (const index of (<DeleteElements<V,L,S,A>>modif).links.keys()) {
                     this.delete_link(index);
                 }
-                for (const index of (<DeleteElements<V,L>>modif).strokes.keys()) {
+                for (const index of (<DeleteElements<V,L,S,A>>modif).strokes.keys()) {
                     this.delete_stroke(index);
                 }
-                for (const index of (<DeleteElements<V,L>>modif).areas.keys()) {
+                for (const index of (<DeleteElements<V,L,S,A>>modif).areas.keys()) {
                     this.delete_area(index);
                 }
                 this.add_modification(modif);
@@ -289,11 +289,11 @@ export class Graph<V extends Vertex,L extends Link> {
                         return new Set([SENSIBILITY.COLOR]);
                     }
                 case AddStroke:
-                    this.delete_stroke((<AddStroke>last_modif).index);
+                    this.delete_stroke((<AddStroke<S>>last_modif).index);
                     this.modifications_undoed.push(last_modif);
                     return new Set([]);
                 case AddArea:
-                    this.delete_area((<AddArea>last_modif).index);
+                    this.delete_area((<AddArea<A>>last_modif).index);
                     this.modifications_undoed.push(last_modif);
                     return new Set([]);
                 case AreaMoveSide:
@@ -310,16 +310,16 @@ export class Graph<V extends Vertex,L extends Link> {
                     return new Set([]);
                 }
                 case DeleteElements: {
-                    for (const [index, vertex] of (<DeleteElements<V,L>>last_modif).vertices.entries()) {
+                    for (const [index, vertex] of (<DeleteElements<V,L,S,A>>last_modif).vertices.entries()) {
                         this.vertices.set(index, vertex);
                     }
-                    for (const [index, link] of (<DeleteElements<V,L>>last_modif).links.entries()) {
+                    for (const [index, link] of (<DeleteElements<V,L,S,A>>last_modif).links.entries()) {
                         this.links.set(index, link);
                     }
-                    for (const [index, stroke] of (<DeleteElements<V,L>>last_modif).strokes.entries()) {
+                    for (const [index, stroke] of (<DeleteElements<V,L,S,A>>last_modif).strokes.entries()) {
                         this.strokes.set(index, stroke);
                     }
-                    for (const [index, area] of (<DeleteElements<V,L>>last_modif).areas.entries()) {
+                    for (const [index, area] of (<DeleteElements<V,L,S,A>>last_modif).areas.entries()) {
                         this.areas.set(index, area);
                     }
                     this.modifications_undoed.push(last_modif);
@@ -520,7 +520,7 @@ export class Graph<V extends Vertex,L extends Link> {
 
 
 
-
+/*
     add_stroke(positions_data: any, color: string, width: number, top_left_data: any, bot_right_data: any) {
         // console.log(positions_data, old_pos_data, color, width, top_left_data, bot_right_data);
         const index = this.get_next_available_index_strokes();
@@ -534,7 +534,7 @@ export class Graph<V extends Vertex,L extends Link> {
 
         this.strokes.set(index, new Stroke(positions, color, width, top_left, bot_right));
     }
-
+*/
 
 
     get_neighbors_list(i: number) {
@@ -658,6 +658,167 @@ export class Graph<V extends Vertex,L extends Link> {
             }
         }
     }
+
+    get_subgraph_from_area(area_index: number): Graph<V,L,S,A>{
+        const area = this.areas.get(area_index);
+        const subgraph = new Graph<V,L,S,A>();
+
+         for (const [index, v] of this.vertices.entries()) {
+            if(area.is_containing(v)){
+                subgraph.vertices.set(index, v);
+            }
+        }
+
+        for (const [index, link] of this.links.entries()){
+            const u = this.vertices.get(link.start_vertex);
+            const v = this.vertices.get(link.end_vertex);
+
+            if( area.is_containing(u) && area.is_containing(v)){
+                subgraph.links.set(index, link);
+            }
+        }
+        return subgraph;
+    }
+
+    vertices_contained_by_area(area: A): Set<number>{
+        const set = new Set<number>();
+        this.vertices.forEach((vertex,vertex_index)=> {
+            if (area.is_containing(vertex)){
+                set.add(vertex_index);
+            }
+        })
+        return set;
+    }
+
+
+    Floyd_Warhall( weighted: boolean) {
+        const dist = new Map<number, Map<number, number>>();
+        const next = new Map<number, Map<number, number>>();
+
+        for (const v_index of this.vertices.keys()) {
+            dist.set(v_index, new Map<number, number>());
+            next.set(v_index, new Map<number, number>());
+
+            for (const u_index of this.vertices.keys()) {
+                if (v_index === u_index) {
+                    dist.get(v_index).set(v_index, 0);
+                    next.get(v_index).set(v_index, v_index);
+                }
+                else {
+                    dist.get(v_index).set(u_index, Infinity);
+                    next.get(v_index).set(u_index, Infinity);
+                }
+            }
+        }
+
+        for (const e_index of this.links.keys()) {
+            const e = this.links.get(e_index);
+            // TODO: Oriented Case
+            let weight = 1;
+            if (weighted) {
+                weight = parseFloat(e.weight);
+            }
+            dist.get(e.start_vertex).set(e.end_vertex, weight);
+            dist.get(e.end_vertex).set(e.start_vertex, weight);
+
+            next.get(e.start_vertex).set(e.end_vertex, e.start_vertex);
+            next.get(e.end_vertex).set(e.start_vertex, e.end_vertex);
+        }
+
+        for (const k_index of this.vertices.keys()) {
+            for (const i_index of this.vertices.keys()) {
+                for (const j_index of this.vertices.keys()) {
+                    const direct = dist.get(i_index).get(j_index);
+                    const shortcut_part_1 = dist.get(i_index).get(k_index);
+                    const shortcut_part_2 = dist.get(k_index).get(j_index);
+
+                    if (direct > shortcut_part_1 + shortcut_part_2) {
+                        dist.get(i_index).set(j_index, shortcut_part_1 + shortcut_part_2);
+                        next.get(i_index).set(j_index, next.get(i_index).get(k_index));
+                    }
+                }
+            }
+        }
+
+        return { distances: dist, next: next };
+
+    }
+
+    get_degrees_data() {
+        if (this.vertices.size == 0) {
+            return { min_value: 0, min_vertices: null, max_value: 0, max_vertices: null, avg: 0 };
+        }
+
+        const index_first = this.vertices.keys().next().value;
+        let min_indices = new Set([index_first]);
+        let min_degree = this.get_neighbors_list(index_first).length;
+        let max_indices = new Set([index_first]);
+        let max_degree = this.get_neighbors_list(index_first).length;
+        let average = 0.0;
+
+        for (const v_index of this.vertices.keys()) {
+            const neighbors = this.get_neighbors_list(v_index);
+            if (min_degree > neighbors.length) {
+                min_degree = neighbors.length;
+                min_indices = new Set([v_index]);
+            }
+            if (min_degree === neighbors.length) {
+                min_indices.add(v_index);
+            }
+
+            if (max_degree < neighbors.length) {
+                max_degree = neighbors.length;
+                max_indices = new Set([v_index]);
+            }
+            if (max_degree === neighbors.length) {
+                max_indices.add(v_index);
+            }
+
+            average += neighbors.length;
+        }
+
+        average = average / this.vertices.size;
+
+        return { min_value: min_degree, min_vertices: min_indices, max_value: max_degree, max_vertices: max_indices, avg: average };
+    }
+
+
+     DFS_recursive( v_index: number, visited: Map<number, boolean>) {
+        visited.set(v_index, true);
+        const neighbors = this.get_neighbors_list(v_index);
+
+        for (const u_index of neighbors) {
+            if (visited.has(u_index) && !visited.get(u_index)) {
+                this.DFS_recursive( u_index, visited);
+            }
+        }
+    }
+
+    DFS_iterative( v_index: number) {
+        const visited = new Map();
+        for (const index of this.vertices.keys()) {
+            visited.set(index, false);
+        }
+        console.log(visited);
+
+        const S = Array();
+        S.push(v_index);
+
+        while (S.length !== 0) {
+            const u_index = S.pop();
+            if (!visited.get(u_index)) {
+                visited.set(u_index, true);
+                const neighbors = this.get_neighbors_list(u_index);
+                for (const n_index of neighbors) {
+                    S.push(n_index);
+                }
+            }
+        }
+
+        return visited;
+    }
+
+
 
 }
 

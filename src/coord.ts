@@ -16,6 +16,10 @@ export class Coord {
         return new Coord(this.x - c.x, this.y - c.y);
     }
 
+    add(c: Coord) {
+        return new Coord(this.x + c.x, this.y + c.y);
+    }
+
     copy() {
         return new Coord(this.x, this.y);
     }
@@ -36,12 +40,25 @@ export class Coord {
         return Math.sqrt(d2 / d1);
     }
 
-    translate(shift: Coord) {
+    normalize(): Coord {
+        const norm = Math.sqrt(this.norm2());
+        return new Coord(this.x/norm, this.y/norm);
+    }
+
+    rotate_quarter(){
+        return new Coord(this.y, - this.x);
+    }
+
+    scale(r: number){
+        return new Coord(this.x*r, this.y*r);
+    }
+
+    translate(shift: Vect) {
         this.x += shift.x;
         this.y += shift.y;
     }
 
-    rtranslate(shift: Coord) {
+    rtranslate(shift: Vect) {
         this.x -= shift.x;
         this.y -= shift.y;
     }
@@ -49,10 +66,30 @@ export class Coord {
     opposite(): Coord {
         return new Coord(-this.x, -this.y);
     }
+
+    dist2(pos: Coord) {
+        return (this.x - pos.x) ** 2 + (this.y - pos.y) ** 2;
+    }
+
+    is_in_rect(c1: Coord, c2: Coord) : boolean {
+        return Math.min(c1.x, c2.x) <= this.x && this.x <= Math.max(c1.x, c2.x) &&  Math.min(c1.y, c2.y) <= this.y && this.y <= Math.max(c1.y, c2.y);
+    }
+
+    middle(c: Coord) {
+        return new Coord((this.x + c.x) / 2, (this.y + c.y) / 2);
+    }
 }
 
 export function middle(c1: Coord, c2: Coord) {
-    return new Coord((c1.x + c2.x) / 2, (c1.y + c2.y) / 2)
+    return new Coord((c1.x + c2.x) / 2, (c1.y + c2.y) / 2);
 }
 
+export class Vect {
+    x: number;
+    y: number;
 
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+}

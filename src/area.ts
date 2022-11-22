@@ -1,6 +1,7 @@
 import { Coord } from "./coord";
 import { Vertex } from "./vertex";
 
+// c1 and c2 are any points in the plane (not necessarily the bottom left corner or other corners)
 export class Area {
     c1: Coord;
     c2: Coord;
@@ -27,5 +28,22 @@ export class Area {
 
     is_containing(v: Vertex): Boolean {
         return Math.min(this.c1.x, this.c2.x) <= v.pos.x && v.pos.x <= Math.max(this.c1.x, this.c2.x) && Math.min(this.c1.y, this.c2.y) <= v.pos.y && v.pos.y <= Math.max(this.c1.y, this.c2.y);
+    }
+
+    top_right_corner(): Coord{
+        return new Coord(Math.max(this.c1.x, this.c2.x), Math.min(this.c1.y, this.c2.y))
+    }
+    
+    bot_left_corner(): Coord{
+        return new Coord(Math.min(this.c1.x, this.c2.x), Math.max(this.c1.y, this.c2.y))
+    }
+
+
+    top_left_corner(): Coord{
+        return new Coord(Math.min(this.c1.x, this.c2.x), Math.min(this.c1.y, this.c2.y))
+    }
+
+    bot_right_corner(): Coord{
+        return new Coord(Math.max(this.c1.x, this.c2.x), Math.max(this.c1.y, this.c2.y))
     }
 }
