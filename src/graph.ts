@@ -551,6 +551,30 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return neighbors;
     }
 
+    get_out_neighbors_list(i: number) {
+        let neighbors = new Array<number>();
+        for (let e of this.links.values()) {
+            if (e.orientation == ORIENTATION.DIRECTED) {
+                if (e.start_vertex == i) {
+                    neighbors.push(e.end_vertex);
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    get_in_neighbors_list(i: number) {
+        let neighbors = new Array<number>();
+        for (let e of this.links.values()) {
+            if (e.orientation == ORIENTATION.DIRECTED) {
+                if (e.end_vertex == i) {
+                    neighbors.push(e.end_vertex);
+                }
+            }
+        }
+        return neighbors;
+    }
+
     delete_vertex(vertex_index: number) {
         this.vertices.delete(vertex_index);
 
@@ -830,7 +854,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
                     return true;
                 }
                 s.push(v);
-                let b = _has_cycle(b, s)
+                let b = _has_cycle(v, s)
                 if (b) {return true}
                 ok_list.add(v);
                 s.pop()
@@ -842,6 +866,33 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
                 continue;
             }
             if (_has_cycle(v, [v])) {
+                return true
+            }
+        }
+        return false
+    }
+
+    has_unordered_cycle():boolean {
+        let ok_list = new Set();
+        
+        function _has_unordered_cycle(d: number, s: Array<number>): boolean {
+            for (const v of this.get_out_neighbors_list(d)) {
+                if (v in s) {
+                    return true;
+                }
+                s.push(v);
+                let b = _has_unordered_cycle(v, s)
+                if (b) {return true}
+                ok_list.add(v);
+                s.pop()
+            }
+            return false
+        }
+        for (const v of this.vertices.keys()) {
+            if (ok_list.has(v)) {
+                continue;
+            }
+            if (_has_unordered_cycle(v, [v])) {
                 return true
             }
         }
