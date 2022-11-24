@@ -818,8 +818,35 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return visited;
     }
 
+    has_cycle(): boolean {
+        let ok_list = new Set();
 
-
+        function _has_cycle(d: number, s: Array<number>): boolean {
+            for (const v of this.get_neighbors_list(d)) {
+                if (v == d || ok_list.has(v)) {
+                    continue
+                }
+                if (v in s) {
+                    return true;
+                }
+                s.push(v);
+                let b = _has_cycle(b, s)
+                if (b) {return true}
+                ok_list.add(v);
+                s.pop()
+            }
+            return false
+        }
+        for (const v of this.vertices.keys()) {
+            if (ok_list.has(v)) {
+                continue;
+            }
+            if (_has_cycle(v, [v])) {
+                return true
+            }
+        }
+        return false
+    }
 }
 
 
