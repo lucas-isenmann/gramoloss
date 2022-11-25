@@ -35,6 +35,31 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         this.areas = new Map();
     }
 
+    static from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number]>, vertex_default: ()=> V, edge_default: (x: number, y: number) => L ): Graph<V,L,S,A>{
+        const g = new Graph<V,L,S,A>();
+        const indices = new Set<number>();
+        for ( const [x,y] of l.values()){
+            if (indices.has(x) == false){
+                indices.add(x);
+                g.set_vertex(x,vertex_default());
+            }
+            if (indices.has(y) == false){
+                indices.add(y);
+                g.set_vertex(y,vertex_default());
+            }
+            const link = edge_default(x,y);
+            g.add_link(link);
+        }
+
+        
+        return g;
+    }
+
+    static from_list(l: Array<[number,number]>): Graph<Vertex,Link,Stroke,Area>{
+        const g = Graph.from_list_default(l, Vertex.default, Link.default_edge );
+        return g;
+    }
+
     add_modification(modif: Modification) {
         //console.log("add_mofication");
         const length = this.modifications_heap.length;

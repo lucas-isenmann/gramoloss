@@ -57,6 +57,10 @@ export class Link {
         return false;
     }
 
+    static default_edge(x,y): Link{
+        return new Link(x,y,new Coord(0,0), ORIENTATION.UNDIRECTED, "black", "");
+    } 
+
 
 }
 

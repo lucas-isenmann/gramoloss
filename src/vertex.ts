@@ -10,6 +10,10 @@ export class Vertex {
         this.color = "black";
         this.weight = weight;
     }
+
+    static default(): Vertex{
+        return new Vertex(0,0,"");
+    }
     
 }
 

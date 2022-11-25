@@ -10,7 +10,7 @@
 
 <https://en.wikipedia.org/wiki/List_of_graphs_by_edges_and_vertices>
 
-- [ ] has_loop
+- [X] has_loop
 - [X] distance (diametre)
 - [X] degree (min, max, moyen)
 - [X] is_connected
@@ -26,6 +26,7 @@
 - [ ] degree_sequence
 - [ ] tree_width
 - [ ] clique_number
+- [ ] vertex_cover
 
 ## Generators
 
