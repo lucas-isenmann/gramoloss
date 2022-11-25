@@ -844,59 +844,61 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
 
     has_cycle(): boolean {
         let ok_list = new Set();
+        let g = this;
 
-        function _has_cycle(d: number, s: Array<number>): boolean {
-            for (const v of this.get_neighbors_list(d)) {
-                if (v == d || ok_list.has(v)) {
-                    continue
+        function _has_cycle(d: number, origin: number, s: Array<number>): boolean {
+            for (const v of g.get_neighbors_list(d)) {
+                if (v == origin || ok_list.has(v)) {
+                    continue;
                 }
-                if (v in s) {
+                if (s.indexOf(v) > -1) {
                     return true;
                 }
                 s.push(v);
-                let b = _has_cycle(v, s)
+                let b = _has_cycle(v,d, s)
                 if (b) {return true}
                 ok_list.add(v);
-                s.pop()
+                s.pop();
             }
-            return false
+            return false;
         }
         for (const v of this.vertices.keys()) {
             if (ok_list.has(v)) {
                 continue;
             }
-            if (_has_cycle(v, [v])) {
-                return true
+            if (_has_cycle(v,-1, [v])) {
+                return true;
             }
         }
-        return false
+        return false;
     }
 
-    has_unordered_cycle():boolean {
+    has_directed_cycle():boolean {
         let ok_list = new Set();
+        let g = this;
         
-        function _has_unordered_cycle(d: number, s: Array<number>): boolean {
-            for (const v of this.get_out_neighbors_list(d)) {
+        function _has_directed_cycle(d: number, s: Array<number>): boolean {
+            for (const v of g.get_out_neighbors_list(d)) {
                 if (v in s) {
                     return true;
                 }
                 s.push(v);
-                let b = _has_unordered_cycle(v, s)
+                let b = _has_directed_cycle(v, s)
                 if (b) {return true}
                 ok_list.add(v);
-                s.pop()
+                s.pop();
             }
-            return false
+            return false;
         }
         for (const v of this.vertices.keys()) {
             if (ok_list.has(v)) {
                 continue;
             }
-            if (_has_unordered_cycle(v, [v])) {
-                return true
+            if (_has_directed_cycle(v, [v])) {
+                return true;
             }
         }
-        return false
+        return false;
     }
 }
 
