@@ -576,6 +576,20 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return neighbors;
     }
 
+    get_neighbors_list_excluding_links(i: number, excluded: Set<number>): Array<number> {
+        const neighbors = new Array<number>();
+        for (const [link_index, link] of this.links.entries()) {
+            if (excluded.has(link_index) == false && link.orientation == ORIENTATION.UNDIRECTED) {
+                if (link.start_vertex == i) {
+                    neighbors.push(link.end_vertex);
+                } else if (link.end_vertex == i) {
+                    neighbors.push(link.start_vertex);
+                }
+            }
+        }
+        return neighbors;
+    }
+
     get_out_neighbors_list(i: number) {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
@@ -831,6 +845,19 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return { min_value: min_degree, min_vertices: min_indices, max_value: max_degree, max_vertices: max_indices, avg: average };
     }
 
+    // return maximum (undirected) degree of the graph
+    // return -1 if there is no vertex
+    max_degree(): number{
+        let record = -1;
+        for ( const v_index of this.vertices.keys()){
+            let degree = this.get_neighbors_list(v_index).length;
+            if ( degree > record ){
+                record = degree;
+            }
+        }
+        return record;
+    }
+
 
      DFS_recursive( v_index: number, visited: Map<number, boolean>) {
         visited.set(v_index, true);
@@ -898,6 +925,35 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return false;
     }
 
+    // iterative version of has_cycle
+    // seems better on trees
+    has_cycle2(): boolean {
+        let visited = new Set();
+        for (const v of this.vertices.keys()) {
+            if ( visited.has(v) == false){
+                let stack = new Array();
+                stack.push(v);
+                let last = -1;
+                while (stack.length > 0){
+                    const u_index = stack.pop();
+                    if (visited.has(u_index)){
+                        return true;
+                    }
+                    visited.add(u_index);
+                    
+                    const neighbors = this.get_neighbors_list(u_index);
+                    for (const n_index of neighbors) {
+                        if ( n_index != last ){
+                            stack.push(n_index);
+                            last = u_index;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     has_directed_cycle():boolean {
         let ok_list = new Set();
         let g = this;
@@ -925,6 +981,137 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         }
         return false;
     }
+
+
+    // compute the size of the connected component of vertex of index "vindex"
+    // return 0 if vindex is not a vertex index
+    size_connected_component_of(vindex: number): number {
+        if (this.vertices.has(vindex) == false){
+            return 0;
+        }
+        let counter = 0;
+        const visited = new Set();
+        const stack = Array();
+        stack.push(vindex);
+
+        while (stack.length > 0) {
+            const u_index = stack.pop();
+            if (!visited.has(u_index)) {
+                counter += 1;
+                visited.add(u_index);
+                const neighbors = this.get_neighbors_list(u_index);
+                for (const n_index of neighbors) {
+                    
+                    stack.push(n_index);
+                }
+            }
+        }
+    
+        return counter;
+    }
+
+
+    size_connected_component_excluding_links(vindex: number, excluded: Set<number>): number {
+        if (this.vertices.has(vindex) == false){
+            return 0;
+        }
+        let counter = 0;
+        const visited = new Set();
+        const stack = Array();
+        stack.push(vindex);
+
+        while (stack.length > 0) {
+            const u_index = stack.pop();
+            if (!visited.has(u_index)) {
+                counter += 1;
+                visited.add(u_index);
+                const neighbors = this.get_neighbors_list_excluding_links(u_index, excluded);
+                for (const n_index of neighbors) {
+                    stack.push(n_index);
+                }
+            }
+        }
+    
+        return counter;
+    }
+
+    // compute the size of the connected component of vertex of index "vindex"
+    // return 0 if vindex is not a vertex index
+    get_connected_component_of(vindex: number): Graph<V,L,S,A> {
+        const g = new Graph<V,L,S,A>();
+        if (this.vertices.has(vindex) == false){
+            return g;
+        }
+        const visited = new Set();
+        const stack = Array();
+        stack.push(vindex);
+
+        while (stack.length > 0) {
+            const u_index = stack.pop();
+            const u = this.vertices.get(u_index);
+            g.set_vertex(u_index, u);
+            if (!visited.has(u_index)) {
+                visited.add(u_index);
+                for (const [link_index, link] of this.links.entries()){
+                    if ( link.orientation == ORIENTATION.UNDIRECTED){
+                        if ( link.start_vertex == u_index){
+                            stack.push(link.end_vertex);
+                            g.links.set(link_index, link);
+                        } else if ( link.end_vertex == u_index){
+                            stack.push(link.start_vertex);
+                            g.links.set(link_index, link);
+                        }
+                    }
+                }
+            }
+        }
+    
+        return g;
+    }
+
+    // return a cut edge which maximizes the minimum of the size of the connected components of its endvertices
+    // return -1 if there is no cut edge 
+    max_cut_edge(){
+        const n = this.vertices.size;
+        let record = 0;
+        let record_link_index = -1;
+        for ( const [link_index, link] of this.links.entries()){
+
+            const n1 = this.size_connected_component_excluding_links(link.start_vertex, new Set([link_index]));
+            if (n1 < n ){
+                const n2 = this.size_connected_component_excluding_links(link.end_vertex, new Set([link_index]));
+                const m = Math.min(n1,n2);
+                if ( m > record){
+                    record = m;
+                    record_link_index = link_index;
+                }
+            }
+        }
+        return record_link_index;
+    }
+    
+
+    is_connected(): boolean {
+        if (this.vertices.size < 2) {
+            return true;
+        }
+    
+        const indices = Array.from(this.vertices.keys());
+        const visited = new Map();
+        for (const index of this.vertices.keys()) {
+            visited.set(index, false);
+        }
+    
+        this.DFS_recursive( indices[0], visited);
+    
+        for (const is_visited of visited.values()) {
+            if (!is_visited) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
 
 
