@@ -61,6 +61,10 @@ export class Link {
         return new Link(x,y,new Coord(0,0), ORIENTATION.UNDIRECTED, "black", "");
     } 
 
+    static default_arc(x,y): Link{
+        return new Link(x,y,new Coord(0,0), ORIENTATION.DIRECTED, "black", "");
+    } 
+
 
 }
 
