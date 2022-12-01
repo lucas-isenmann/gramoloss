@@ -57,11 +57,11 @@ export class Link {
         return false;
     }
 
-    static default_edge(x,y): Link{
+    static default_edge(x: number,y: number): Link{
         return new Link(x,y,new Coord(0,0), ORIENTATION.UNDIRECTED, "black", "");
     } 
 
-    static default_arc(x,y): Link{
+    static default_arc(x: number,y: number): Link{
         return new Link(x,y,new Coord(0,0), ORIENTATION.DIRECTED, "black", "");
     } 
 
