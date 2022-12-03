@@ -985,7 +985,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         
         function _has_directed_cycle(d: number, s: Array<number>): boolean {
             for (const v of g.get_out_neighbors_list(d)) {
-                if (v in s) {
+                if (s.indexOf(v) > -1) {
                     return true;
                 }
                 s.push(v);
