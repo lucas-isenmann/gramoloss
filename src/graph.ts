@@ -71,6 +71,31 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         const g = Graph.from_list_default(l, Vertex.default, Link.default_edge );
         return g;
     }
+	
+     static directed_from_list(l: Array<[number,number]>): Graph<Vertex,Link,Stroke,Area>{
+        const g = Graph.directed_from_list_default(l, Vertex.default, Link.default_arc );
+        return g;
+    }
+
+    static directed_from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L,S,A>{
+        const g = new Graph<V,L,S,A>();
+        const indices = new Set<number>();
+        for ( const [x,y] of l.values()){
+            if (indices.has(x) == false){
+                indices.add(x);
+                g.set_vertex(x,vertex_default());
+            }
+            if (indices.has(y) == false){
+                indices.add(y);
+                g.set_vertex(y,vertex_default());
+            }
+            const link = arc_default(x,y,"");
+            g.add_link(link);
+        }
+
+        
+        return g;
+    }
 
     add_modification(modif: Modification) {
         //console.log("add_mofication");
@@ -619,7 +644,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
                 if (e.end_vertex == i) {
-                    neighbors.push(e.end_vertex);
+                    neighbors.push(e.start_vertex);
                 }
             }
         }
@@ -972,7 +997,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         
         function _has_directed_cycle(d: number, s: Array<number>): boolean {
             for (const v of g.get_out_neighbors_list(d)) {
-                if (v in s) {
+                if (s.indexOf(v) > -1) {
                     return true;
                 }
                 s.push(v);
@@ -1163,6 +1188,52 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return tree_weight;
     }
 
+    
+    // Kosaraju's algorithm: https://en.wikipedia.org/wiki/Kosaraju's_algorithm
+    strongly_connected_components(): Array<Array<number>> {
+	    const graph = this;
+	    let scc: Array<Array<number>> = Array(); // Strongly Connected Components
+	    var stack = Array();
+	    var visited = new Set();
+
+	    const visit_fn = function (cur: number) {
+		if (visited.has(cur)) return;
+		visited.add(cur);
+		for (const neigh of graph.get_out_neighbors_list(cur)) {
+			visit_fn(neigh);
+		}
+		stack.push(cur);
+	    }
+
+	    for (const key of this.vertices.keys()) {
+		    visit_fn(key);
+	    } // O(n) due to caching
+
+            let assigned = new Set();
+	    
+	    const assign_fn = function (cur: number) {
+		if (!assigned.has(cur)) {
+		    assigned.add(cur);
+		    let root_stack = scc.pop();
+		    root_stack.push(cur);
+		    scc.push(root_stack);
+		    for (const neigh of graph.get_in_neighbors_list(cur)) {
+		        assign_fn(neigh);
+		    }
+		}
+
+	    }
+
+	    while (stack.length != 0) {
+		    let stack_head = stack.pop();
+	            if (!assigned.has(stack_head)) {
+			scc.push([]); // The array to stock the new component
+			assign_fn(stack_head);
+		    }
+	    }
+
+	    return scc; 
+    }
 }
 
 
