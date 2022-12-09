@@ -11,11 +11,14 @@ Graph theory tools
 ## Example
 
 ```typescript
-import {Graph,Vertex,Link, ORIENTATION} from "gramoloss";
-const g = new Graph();
-g.add_vertex(new Vertex(100,300,""));
-g.add_vertex(new Vertex(200,300,""));
-g.add_link(new Link(0,1,new Coord(200,200), ORIENTATION.UNDIRECTED, "black", ""));
+import {Graph} from "gramoloss";
+const g = Graph.from_list([[0,1],[0,2],[1,2]]); // create an undirected graph from list of edges
+const d = g.max_degree(); // d = 2
+const b = g.has_cycle(); // b = true
+for (const v of g.get_neighbors_list(0)){
+    console.log(v) // print 1 and 2
+}
+
 ```
 
 ## Contribute

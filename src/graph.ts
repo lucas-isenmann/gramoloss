@@ -35,10 +35,12 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         this.areas = new Map();
     }
 
-    static from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number]>, vertex_default: ()=> V, edge_default: (x: number, y: number) => L ): Graph<V,L,S,A>{
+    // create an Graph<V,L,S,A> which is undirected from a list of edges
+    // vertex_default and edge_default are constructors of V and L
+    static from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L,S,A>{
         const g = new Graph<V,L,S,A>();
         const indices = new Set<number>();
-        for ( const [x,y] of l.values()){
+        for ( const [x,y,w] of l.values()){
             if (indices.has(x) == false){
                 indices.add(x);
                 g.set_vertex(x,vertex_default());
@@ -47,15 +49,25 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
                 indices.add(y);
                 g.set_vertex(y,vertex_default());
             }
-            const link = edge_default(x,y);
+            const link = edge_default(x,y,w);
             g.add_link(link);
         }
-
-        
         return g;
     }
 
+    // create an Undirected Graph from a list of edges represented by couples of number
+    // weight is set to ""
     static from_list(l: Array<[number,number]>): Graph<Vertex,Link,Stroke,Area>{
+        const l2 = new Array();
+        for (const [x,y] of l){
+            l2.push([x,y,""]);
+        }
+        const g = Graph.from_list_default(l2, Vertex.default, Link.default_edge );
+        return g;
+    }
+
+    // create a Weighted Undirected Graph from a list of weighted edges represented by couples of number with the weight in third
+    static from_weighted_list(l: Array<[number,number,string]>): Graph<Vertex,Link,Stroke,Area>{
         const g = Graph.from_list_default(l, Vertex.default, Link.default_edge );
         return g;
     }
@@ -1110,6 +1122,45 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
             }
         }
         return true;
+    }
+
+    // Compute a minimum spanning tree using Kruskal algorithm
+    // https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+    // edges in the tree are colored red
+    // other edges are colored black
+    // return the weight of the spanning tree
+    minimum_spanning_tree(): number {
+        const edges = new Array<[L,number]>();
+        for (const link of this.links.values()){
+            if (link.orientation == ORIENTATION.UNDIRECTED){
+                edges.push([link, parseFloat(link.weight)]);
+                
+            }
+        }
+        edges.sort(([e,w],[e2,w2]) => w-w2);
+
+        const component = new Map<number,number>();
+        for (const index of this.vertices.keys()){
+            component.set(index, index);
+        }
+
+        let tree_weight = 0;
+        for (const edge of edges){
+            const c1 = component.get(edge[0].start_vertex);
+            const c2 = component.get(edge[0].end_vertex);
+            if ( c1 != c2 ){
+                edge[0].color = "red";
+                tree_weight += edge[1];
+                for (const [vindex, c] of component.entries()){
+                    if (c == c1){
+                        component.set(vindex, c2);
+                    }
+                }
+            }else {
+                edge[0].color = "black";
+            }
+        }
+        return tree_weight;
     }
 
 }
