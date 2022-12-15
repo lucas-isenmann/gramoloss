@@ -1,10 +1,11 @@
 # TODO
 
-- [ ] tests
-- [ ] create Board
+- [X] test structure
+- [ ] complete tests
+- [X] create Board
 - [ ] move areas and strokes from Graph to Board
-- [ ] move modifications out of Graph
-- [ ] interface GraphHistorical (adds a modification_stack and undoed to Graph)
+- [ ] move modifications out of Graph -> to Board
+- [ ] ?maybe not? interface GraphHistorical (adds a modification_stack and undoed to Graph)
 
 ## Parameters
 
