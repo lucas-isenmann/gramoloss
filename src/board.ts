@@ -21,4 +21,36 @@ export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends 
         }
         return index;
     }
+
+    get_next_available_index_strokes() {
+        let index = 0;
+        while (this.graph.strokes.has(index)) {
+            index += 1;
+        }
+        return index;
+    }
+
+    get_next_available_index_area() {
+        let index = 0;
+        while (this.graph.areas.has(index)) {
+            index += 1;
+        }
+        return index;
+    }
+
+
+
+    get_value(kind: string, index: number, param: string){
+        if (kind == "TextZone"){
+            return this.text_zones.get(index)[param];
+        } else if (kind == "Vertex"){
+            return this.graph.vertices.get(index)[param];
+        } else if (kind == "Link"){
+            return this.graph.links.get(index)[param];
+        } else if (kind == "Stroke"){
+            return this.graph.strokes.get(index)[param];
+        } else if (kind == "Area"){
+            return this.graph.areas.get(index)[param];
+        }
+    }
 }
