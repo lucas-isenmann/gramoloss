@@ -5,7 +5,7 @@ import { Vertex } from './vertex';
 import { Coord, middle, Vect } from './coord';
 import { Stroke } from './stroke';
 import { Area } from './area';
-import { AreaMoveCorner, AreaMoveSide, ELEMENT_TYPE, Modification, VerticesMerge } from './modifications';
+import { AreaMoveSide, ELEMENT_TYPE, Modification, VerticesMerge } from './modifications';
 import { eqSet } from './utils';
 
 
@@ -117,14 +117,6 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
                 this.add_modification(modif);
                 return new Set([]);
             }
-            case AreaMoveCorner: {
-                const area = this.areas.get((<AreaMoveCorner>modif).index);
-                area.c1 = (<AreaMoveCorner>modif).new_c1;
-                area.c2 = (<AreaMoveCorner>modif).new_c2;
-                this.add_modification(modif);
-                return new Set([]);
-            }
-            
             case VerticesMerge: {
                 const modifc =  <VerticesMerge<V,L>>modif;
                 const v_fixed = this.vertices.get(modifc.index_vertex_fixed);
@@ -173,13 +165,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
                     area.c2 = (<AreaMoveSide>last_modif).previous_c2;
                     this.modifications_undoed.push(last_modif);
                     return new Set([]);
-                case AreaMoveCorner: {
-                    const area = this.areas.get((<AreaMoveCorner>last_modif).index);
-                    area.c1 = (<AreaMoveCorner>last_modif).previous_c1;
-                    area.c2 = (<AreaMoveCorner>last_modif).previous_c2;
-                    this.modifications_undoed.push(last_modif);
-                    return new Set([]);
-                }
+          
                 
                 case VerticesMerge: {
                     const vertices_merge_modif = last_modif as VerticesMerge<V,L>;

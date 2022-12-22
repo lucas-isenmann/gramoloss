@@ -1,6 +1,6 @@
 import { Area } from "./area";
 import { Board } from "./board";
-import { Vect } from "./coord";
+import { Coord, Vect } from "./coord";
 import { SENSIBILITY } from "./graph";
 import { Link } from "./link";
 import { Stroke } from "./stroke";
@@ -332,5 +332,77 @@ export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A
             board.text_zones.set(index, text_zone);
         }
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
+    }
+}
+
+
+
+
+export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+    index: number;
+    previous_c1: Coord;
+    previous_c2: Coord;
+    new_c1: Coord;
+    new_c2: Coord;
+
+    constructor(index: number, previous_c1: Coord, previous_c2: Coord, new_c1: Coord, new_c2: Coord) {
+        this.index = index;
+        this.previous_c1 = previous_c1;
+        this.previous_c2 = previous_c2;
+        this.new_c1 = new_c1;
+        this.new_c2 = new_c2;
+    }
+
+    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(index: number, area: A, x: number, y: number, corner_number: number): AreaMoveCorner<V,L,S,A,T> {
+        const new_c1 = area.c1.copy();
+        const new_c2 = area.c2.copy();
+
+        switch (corner_number) {
+            case 1:
+                if (area.c1.x < area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                if (area.c1.y > area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+            case 2:
+                if (area.c1.x > area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                if (area.c1.y > area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+            case 3:
+                if (area.c1.x > area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                if (area.c1.y < area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+            case 4:
+                if (area.c1.x < area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                if (area.c1.y < area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+        }
+
+        return new AreaMoveCorner(index, area.c1, area.c2, new_c1, new_c2);
+    }
+
+
+    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+        if (board.graph.areas.has(this.index)){
+            const area = board.graph.areas.get(this.index);
+            area.c1 = this.new_c1;
+            area.c2 = this.new_c2;
+            return new Set([]);
+        } else {
+            return "Error: index not in areas" + String(this.index);
+        }
+    }
+
+    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+        const area = board.graph.areas.get(this.index);
+        area.c1 = this.previous_c1;
+        area.c2 = this.previous_c2;
+        return new Set([]);
     }
 }
