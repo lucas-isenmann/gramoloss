@@ -5,9 +5,13 @@ import { Vertex } from './vertex';
 import { Coord, middle, Vect } from './coord';
 import { Stroke } from './stroke';
 import { Area } from './area';
-import { AreaMoveSide, ELEMENT_TYPE, Modification, VerticesMerge } from './modifications';
-import { eqSet } from './utils';
 
+export enum ELEMENT_TYPE {
+    VERTEX = "VERTEX",
+    LINK = "LINK",
+    STROKE = "STROKE",
+    AREA = "AREA"
+}
 
 export enum SENSIBILITY {
     GEOMETRIC = "GEOMETRIC", // Move of vertex/link
@@ -24,8 +28,6 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
     links: Map<number, L>;
     strokes: Map<number, S>;
     areas: Map<number, A>;
-    modifications_heap: Array<Modification> = new Array();
-    modifications_undoed: Array<Modification> = new Array();
 
 
     constructor() {
@@ -97,118 +99,6 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return g;
     }
 
-    add_modification(modif: Modification) {
-        //console.log("add_mofication");
-        const length = this.modifications_heap.length;
-       
-
-
-
-        this.modifications_heap.push(modif);
-        //console.log(this.modifications_heap);
-    }
-
-    try_implement_modification(modif: Modification): Set<SENSIBILITY> {
-        switch (modif.constructor) {
-            case AreaMoveSide: {
-                const area = this.areas.get((<AreaMoveSide>modif).index);
-                area.c1 = (<AreaMoveSide>modif).new_c1;
-                area.c2 = (<AreaMoveSide>modif).new_c2;
-                this.add_modification(modif);
-                return new Set([]);
-            }
-            case VerticesMerge: {
-                const modifc =  <VerticesMerge<V,L>>modif;
-                const v_fixed = this.vertices.get(modifc.index_vertex_fixed);
-
-                for (const link_index of modifc.deleted_links.keys()){
-                    this.links.delete(link_index);
-                }
-                for (const link_index of modifc.modified_links_indices.values()){
-                    if (this.links.has(link_index)){
-                        const link = this.links.get(link_index);
-                        if ( link.start_vertex == modifc.index_vertex_to_remove){
-                            link.start_vertex = modifc.index_vertex_fixed;
-                            const fixed_end = this.vertices.get(link.end_vertex);
-                            link.transform_cp(v_fixed.pos, modifc.vertex_to_remove.pos, fixed_end.pos);
-                        } else if ( link.end_vertex == modifc.index_vertex_to_remove){
-                            link.end_vertex = modifc.index_vertex_fixed;
-                            const fixed_end = this.vertices.get(link.start_vertex);
-                            link.transform_cp(v_fixed.pos, modifc.vertex_to_remove.pos, fixed_end.pos);
-                        }
-                    }
-                }
-
-                this.delete_vertex(modifc.index_vertex_to_remove);
-                this.add_modification(modif);
-                return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
-            }
-            
-        }
-        console.log("try_implement_modififcation: no method found for ", modif.constructor);
-        return new Set([]);
-    }
-
-    try_implement_new_modification(modif: Modification): Set<SENSIBILITY> {
-        const sensibilities = this.try_implement_modification(modif);
-        this.modifications_undoed.length = 0;
-        return sensibilities;
-    }
-
-    reverse_last_modification(): Set<SENSIBILITY> {
-        if (this.modifications_heap.length > 0) {
-            const last_modif = this.modifications_heap.pop();
-            switch (last_modif.constructor) {
-                case AreaMoveSide:
-                    const area = this.areas.get((<AreaMoveSide>last_modif).index);
-                    area.c1 = (<AreaMoveSide>last_modif).previous_c1;
-                    area.c2 = (<AreaMoveSide>last_modif).previous_c2;
-                    this.modifications_undoed.push(last_modif);
-                    return new Set([]);
-          
-                
-                case VerticesMerge: {
-                    const vertices_merge_modif = last_modif as VerticesMerge<V,L>;
-                    const v_fixed = this.vertices.get(vertices_merge_modif.index_vertex_fixed);
-
-                    this.vertices.set(vertices_merge_modif.index_vertex_to_remove, vertices_merge_modif.vertex_to_remove);
-                    for (const [link_index, link] of vertices_merge_modif.deleted_links.entries()) {
-                        this.links.set(link_index, link);
-                    }
-                    for (const link_index of vertices_merge_modif.modified_links_indices.values()) {
-                        if ( this.links.has(link_index)){
-                            const link = this.links.get(link_index);
-                            if (link.start_vertex == vertices_merge_modif.index_vertex_fixed){
-                                link.start_vertex = vertices_merge_modif.index_vertex_to_remove;
-                                const fixed_end = this.vertices.get(link.end_vertex);
-                                link.transform_cp(vertices_merge_modif.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
-                            } else if (link.end_vertex == vertices_merge_modif.index_vertex_fixed ){
-                                link.end_vertex = vertices_merge_modif.index_vertex_to_remove;
-                                const fixed_end = this.vertices.get(link.start_vertex);
-                                link.transform_cp(vertices_merge_modif.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
-                            }
-                        }
-                    }
-
-                    this.modifications_undoed.push(last_modif);
-                    return new Set([]);
-                }
-                
-            }
-            console.log("reverse_modification: no method found for ", last_modif.constructor);
-            return new Set([]);
-        } else {
-            return new Set([]);
-        }
-    }
-
-    redo(): Set<SENSIBILITY> {
-        if (this.modifications_undoed.length > 0) {
-            const modif = this.modifications_undoed.pop();
-            return this.try_implement_modification(modif);
-        }
-        return new Set();
-    }
 
     update_element_weight(element_type: ELEMENT_TYPE, index: number, new_weight: string){
         if ( element_type == ELEMENT_TYPE.LINK && this.links.has(index)){
@@ -440,47 +330,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
 
     
 
-    // does not modify the graph
-    // any link between fixed and remove are deleted
-    // any link such that one of its endpoints is "remove", is either deleted either modified
-    create_vertices_merge_modif(vertex_index_fixed: number, vertex_index_to_remove: number ): VerticesMerge<V,L>{
-        const v_to_remove = this.vertices.get(vertex_index_to_remove);
-        const deleted_links = new Map();
-        const modified_links_indices = new Array();
-
-        for ( const [link_index, link] of this.links.entries()) {
-            const endpoints = new Set([link.start_vertex, link.end_vertex]);
-            if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
-                deleted_links.set(link_index, link);
-            } else if (link.end_vertex == vertex_index_to_remove) {
-                let is_deleted = false;
-                for (const [index2, link2] of this.links.entries()) {
-                    if ( index2 != link_index && link2.signature_equals(link.start_vertex, vertex_index_fixed, link.orientation )){
-                        deleted_links.set(link_index, link);
-                        is_deleted = true;
-                        break;
-                    }
-                }
-                if ( is_deleted == false ){
-                    modified_links_indices.push(link_index);
-                }
-            } else if (link.start_vertex == vertex_index_to_remove) {
-                let is_deleted = false;
-                for (const [index2, link2] of this.links.entries()) {
-                    if ( index2 != link_index && link2.signature_equals(vertex_index_fixed, link.end_vertex, link.orientation)){
-                        deleted_links.set(link_index, link);
-                        is_deleted = true;
-                        break;
-                    }
-                }
-                if ( is_deleted == false ){
-                    modified_links_indices.push(link_index);
-                }
-            }
-        }
-
-        return new VerticesMerge(vertex_index_fixed, vertex_index_to_remove, v_to_remove, deleted_links, modified_links_indices);
-    }
+    
 
     translate_areas(indices: Set<number>, shift: Vect) {
         const contained_vertices = new Set<number>();

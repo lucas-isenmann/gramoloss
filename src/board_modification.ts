@@ -1,10 +1,11 @@
 import { Area } from "./area";
 import { Board } from "./board";
 import { Coord, Vect } from "./coord";
-import { SENSIBILITY } from "./graph";
+import { Graph, SENSIBILITY } from "./graph";
 import { Link } from "./link";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
+import { eqSet } from "./utils";
 import { Vertex } from "./vertex";
 
 export interface BoardModification<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> { 
@@ -404,5 +405,174 @@ export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A
         area.c1 = this.previous_c1;
         area.c2 = this.previous_c2;
         return new Set([]);
+    }
+}
+
+
+export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+    index_vertex_fixed: number;
+    index_vertex_to_remove: number;
+    vertex_to_remove: V;
+    deleted_links: Map<number, L>;
+    modified_links_indices: Array<number>;
+
+    constructor(index_vertex_fixed: number, index_vertex_to_remove: number, vertex_to_remove: V, deleted_links: Map<number, L>, modified_links_indices: Array<number>) {
+        this.index_vertex_fixed = index_vertex_fixed;
+        this.index_vertex_to_remove = index_vertex_to_remove;
+        this.vertex_to_remove = vertex_to_remove;
+        this.deleted_links = deleted_links;
+        this.modified_links_indices = modified_links_indices;
+    }
+
+    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+        const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
+
+        for (const link_index of this.deleted_links.keys()){
+            board.graph.links.delete(link_index);
+        }
+        for (const link_index of this.modified_links_indices.values()){
+            if (board.graph.links.has(link_index)){
+                const link = board.graph.links.get(link_index);
+                if ( link.start_vertex == this.index_vertex_to_remove){
+                    link.start_vertex = this.index_vertex_fixed;
+                    const fixed_end = board.graph.vertices.get(link.end_vertex);
+                    link.transform_cp(v_fixed.pos, this.vertex_to_remove.pos, fixed_end.pos);
+                } else if ( link.end_vertex == this.index_vertex_to_remove){
+                    link.end_vertex = this.index_vertex_fixed;
+                    const fixed_end = board.graph.vertices.get(link.start_vertex);
+                    link.transform_cp(v_fixed.pos, this.vertex_to_remove.pos, fixed_end.pos);
+                }
+            }
+        }
+        board.graph.delete_vertex(this.index_vertex_to_remove);
+        return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
+    }
+
+    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+        const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
+
+        board.graph.vertices.set(this.index_vertex_to_remove, this.vertex_to_remove);
+        for (const [link_index, link] of this.deleted_links.entries()) {
+            board.graph.links.set(link_index, link);
+        }
+        for (const link_index of this.modified_links_indices.values()) {
+            if ( board.graph.links.has(link_index)){
+                const link = board.graph.links.get(link_index);
+                if (link.start_vertex == this.index_vertex_fixed){
+                    link.start_vertex = this.index_vertex_to_remove;
+                    const fixed_end = board.graph.vertices.get(link.end_vertex);
+                    link.transform_cp(this.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
+                } else if (link.end_vertex == this.index_vertex_fixed ){
+                    link.end_vertex = this.index_vertex_to_remove;
+                    const fixed_end = board.graph.vertices.get(link.start_vertex);
+                    link.transform_cp(this.vertex_to_remove.pos, v_fixed.pos, fixed_end.pos);
+                }
+            }
+        }
+        return new Set([]);
+    }
+
+    // does not modify the graph
+    // any link between fixed and remove are deleted
+    // any link such that one of its endpoints is "remove", is either deleted either modified
+    static from_graph<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(graph: Graph<V,L,S,A>, vertex_index_fixed: number, vertex_index_to_remove: number ): VerticesMerge<V,L,S,A,T>{
+        const v_to_remove = graph.vertices.get(vertex_index_to_remove);
+        const deleted_links = new Map();
+        const modified_links_indices = new Array();
+
+        for ( const [link_index, link] of graph.links.entries()) {
+            const endpoints = new Set([link.start_vertex, link.end_vertex]);
+            if ( eqSet(endpoints, new Set([vertex_index_fixed, vertex_index_to_remove])) ){
+                deleted_links.set(link_index, link);
+            } else if (link.end_vertex == vertex_index_to_remove) {
+                let is_deleted = false;
+                for (const [index2, link2] of graph.links.entries()) {
+                    if ( index2 != link_index && link2.signature_equals(link.start_vertex, vertex_index_fixed, link.orientation )){
+                        deleted_links.set(link_index, link);
+                        is_deleted = true;
+                        break;
+                    }
+                }
+                if ( is_deleted == false ){
+                    modified_links_indices.push(link_index);
+                }
+            } else if (link.start_vertex == vertex_index_to_remove) {
+                let is_deleted = false;
+                for (const [index2, link2] of graph.links.entries()) {
+                    if ( index2 != link_index && link2.signature_equals(vertex_index_fixed, link.end_vertex, link.orientation)){
+                        deleted_links.set(link_index, link);
+                        is_deleted = true;
+                        break;
+                    }
+                }
+                if ( is_deleted == false ){
+                    modified_links_indices.push(link_index);
+                }
+            }
+        }
+
+        return new VerticesMerge(vertex_index_fixed, vertex_index_to_remove, v_to_remove, deleted_links, modified_links_indices);
+    }
+}
+
+
+
+export class AreaMoveSide<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+    index: number;
+    previous_c1: Coord;
+    previous_c2: Coord;
+    new_c1: Coord;
+    new_c2: Coord;
+
+    constructor(index: number, previous_c1: Coord, previous_c2: Coord, new_c1: Coord, new_c2: Coord) {
+        this.index = index;
+        this.previous_c1 = previous_c1;
+        this.previous_c2 = previous_c2;
+        this.new_c1 = new_c1;
+        this.new_c2 = new_c2;
+    }
+
+    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+        if (board.graph.areas.has(this.index)){
+            const area = board.graph.areas.get(this.index);
+            area.c1 = this.new_c1;
+            area.c2 = this.new_c2;
+            return new Set([]);
+        } else {
+            return "Error: index not in areas" + String(this.index);
+        }
+    }
+
+    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+        const area = board.graph.areas.get(this.index);
+        area.c1 = this.previous_c1;
+        area.c2 = this.previous_c2;
+        return new Set([]);
+    }
+
+    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(index: number, area: Area, x: number, y: number, side_number: number): AreaMoveSide<V,L,S,A,T>{
+        const new_c1 = area.c1.copy();
+        const new_c2 = area.c2.copy();
+
+        switch (side_number) {
+            case 1:
+                if (area.c1.y > area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+            case 2:
+                if (area.c1.x > area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                break;
+            case 3:
+                if (area.c1.y < area.c2.y) { new_c2.y = y; }
+                else { new_c1.y = y; }
+                break;
+            case 4:
+                if (area.c1.x < area.c2.x) { new_c1.x = x; }
+                else { new_c2.x = x; }
+                break;
+        }
+
+        return new AreaMoveSide(index, area.c1, area.c2, new_c1, new_c2);
     }
 }
