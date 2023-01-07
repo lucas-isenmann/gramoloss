@@ -184,6 +184,15 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         this.vertices.set(index, vertex );
     }
 
+    has_link(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
+        for (const link of this.links.values()){
+            if (link.signature_equals(index_start, index_end, orientation)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     check_link(link: L): boolean {
         const i = link.start_vertex;
         const j = link.end_vertex;

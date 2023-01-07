@@ -1,17 +1,28 @@
 import { Area } from "./area";
 import { Graph } from "./graph";
 import { Link } from "./link";
+import { Representation } from "./representations/representation";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
 import { Vertex } from "./vertex";
 
-export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> {
+export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> {
     graph: Graph<V,L,S,A>;
     text_zones: Map<number, T>;
+    representations: Map<number, R>;
 
     constructor() {
         this.graph = new Graph();
         this.text_zones = new Map();
+        this.representations = new Map();
+    }
+
+    get_next_available_index_representation() {
+        let index = 0;
+        while (this.representations.has(index)) {
+            index += 1;
+        }
+        return index;
     }
 
     get_next_available_index_text_zone() {

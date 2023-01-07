@@ -3,17 +3,18 @@ import { Board } from "./board";
 import { Coord, Vect } from "./coord";
 import { Graph, SENSIBILITY } from "./graph";
 import { Link } from "./link";
+import { Representation } from "./representations/representation";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
 import { eqSet } from "./utils";
 import { Vertex } from "./vertex";
 
-export interface BoardModification<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> { 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string;
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>;
+export interface BoardModification<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> { 
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string;
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>;
 };
 
-export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     kind: string;
     index: number;
     element: V|L|S|A|T;
@@ -24,7 +25,7 @@ export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A ext
         this.element = element;
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         if (this.kind == "TextZone"){
             if ( board.text_zones.has(this.index) ){
                 return "index " + String(this.index) + " already exists in text_zones";
@@ -68,7 +69,7 @@ export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A ext
         return new Set();
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         if ( this.kind == "TextZone"){
             board.text_zones.delete(this.index);
         } else if (this.kind == "Stroke"){
@@ -84,7 +85,7 @@ export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A ext
     }
 }
 
-export class UpdateElement<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class UpdateElement<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     index: number;
     kind: string;
     param: string;
@@ -99,7 +100,7 @@ export class UpdateElement<V extends Vertex,L extends Link, S extends Stroke, A 
         this.old_value = old_value;
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         if (this.kind == "TextZone" && board.text_zones.has(this.index)){
             board.text_zones.get(this.index)[this.param] = this.new_value;
             return new Set();
@@ -120,7 +121,7 @@ export class UpdateElement<V extends Vertex,L extends Link, S extends Stroke, A 
         }
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         if (this.kind == "TextZone" && board.text_zones.has(this.index)){
             board.text_zones.get(this.index)[this.param]  = this.old_value;
             return new Set();
@@ -142,7 +143,7 @@ export class UpdateElement<V extends Vertex,L extends Link, S extends Stroke, A 
 }
 
 
-export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     indices: Array<[string,number]>;
     shift: Vect;
     
@@ -151,7 +152,7 @@ export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke
         this.shift = shift;
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         for (const [kind, index] of this.indices) {
             if (kind == "TextZone"){
                 if (board.text_zones.has(index)){
@@ -188,7 +189,7 @@ export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke
         return new Set();
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         for (const [kind, index] of this.indices) {
             if (kind == "TextZone"){
                 if (board.text_zones.has(index)){
@@ -218,7 +219,7 @@ export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke
 
 
 
-export class GraphPaste<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class GraphPaste<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     added_vertices: Map<number, V>;
     added_links: Map<number, L>;
 
@@ -228,7 +229,7 @@ export class GraphPaste<V extends Vertex,L extends Link, S extends Stroke, A ext
     }
 
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         for ( const [vertex_index, vertex] of this.added_vertices.entries()){
             board.graph.vertices.set(vertex_index, vertex);
         }
@@ -239,7 +240,7 @@ export class GraphPaste<V extends Vertex,L extends Link, S extends Stroke, A ext
     }
 
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         for ( const vertex_index of this.added_vertices.keys()){
             board.graph.vertices.delete(vertex_index);
         }
@@ -251,7 +252,7 @@ export class GraphPaste<V extends Vertex,L extends Link, S extends Stroke, A ext
 }
 
 
-export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     vertices: Map<number, V>;
     links: Map<number, L>;
     strokes: Map<number, S>;
@@ -266,7 +267,7 @@ export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A
         this.text_zones = text_zones;
     }
 
-    static from_indices<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(board: Board<V,L,S,A,T>, indices: Array<[string, number]>){
+    static from_indices<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation>(board: Board<V,L,S,A,T,R>, indices: Array<[string, number]>){
         const vertices = new Map();
         const links = new Map();
         const strokes = new Map();
@@ -295,7 +296,7 @@ export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A
         return new DeleteElements(vertices, links, strokes, areas, text_zones);
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         for (const index of this.vertices.keys()) {
             board.graph.delete_vertex(index);
         }
@@ -316,7 +317,7 @@ export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A
     }
 
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         for (const [index, vertex] of this.vertices.entries()) {
             board.graph.vertices.set(index, vertex);
         }
@@ -339,7 +340,7 @@ export class DeleteElements<V extends Vertex,L extends Link, S extends Stroke, A
 
 
 
-export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     index: number;
     previous_c1: Coord;
     previous_c2: Coord;
@@ -354,7 +355,7 @@ export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A
         this.new_c2 = new_c2;
     }
 
-    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(index: number, area: A, x: number, y: number, corner_number: number): AreaMoveCorner<V,L,S,A,T> {
+    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation>(index: number, area: A, x: number, y: number, corner_number: number): AreaMoveCorner<V,L,S,A,T,R> {
         const new_c1 = area.c1.copy();
         const new_c2 = area.c2.copy();
 
@@ -389,7 +390,7 @@ export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A
     }
 
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         if (board.graph.areas.has(this.index)){
             const area = board.graph.areas.get(this.index);
             area.c1 = this.new_c1;
@@ -400,7 +401,7 @@ export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A
         }
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         const area = board.graph.areas.get(this.index);
         area.c1 = this.previous_c1;
         area.c2 = this.previous_c2;
@@ -409,7 +410,7 @@ export class AreaMoveCorner<V extends Vertex,L extends Link, S extends Stroke, A
 }
 
 
-export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     index_vertex_fixed: number;
     index_vertex_to_remove: number;
     vertex_to_remove: V;
@@ -424,7 +425,7 @@ export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A 
         this.modified_links_indices = modified_links_indices;
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
 
         for (const link_index of this.deleted_links.keys()){
@@ -448,7 +449,7 @@ export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A 
         return new Set([SENSIBILITY.ELEMENT, SENSIBILITY.COLOR, SENSIBILITY.GEOMETRIC, SENSIBILITY.WEIGHT])
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         const v_fixed = board.graph.vertices.get(this.index_vertex_fixed);
 
         board.graph.vertices.set(this.index_vertex_to_remove, this.vertex_to_remove);
@@ -475,7 +476,7 @@ export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A 
     // does not modify the graph
     // any link between fixed and remove are deleted
     // any link such that one of its endpoints is "remove", is either deleted either modified
-    static from_graph<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(graph: Graph<V,L,S,A>, vertex_index_fixed: number, vertex_index_to_remove: number ): VerticesMerge<V,L,S,A,T>{
+    static from_graph<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation>(graph: Graph<V,L,S,A>, vertex_index_fixed: number, vertex_index_to_remove: number ): VerticesMerge<V,L,S,A,T,R>{
         const v_to_remove = graph.vertices.get(vertex_index_to_remove);
         const deleted_links = new Map();
         const modified_links_indices = new Array();
@@ -517,7 +518,7 @@ export class VerticesMerge<V extends Vertex,L extends Link, S extends Stroke, A 
 
 
 
-export class AreaMoveSide<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone> implements BoardModification<V,L,S,A,T> {
+export class AreaMoveSide<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     index: number;
     previous_c1: Coord;
     previous_c2: Coord;
@@ -532,7 +533,7 @@ export class AreaMoveSide<V extends Vertex,L extends Link, S extends Stroke, A e
         this.new_c2 = new_c2;
     }
 
-    try_implement(board: Board<V,L,S,A,T>): Set<SENSIBILITY> | string{
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         if (board.graph.areas.has(this.index)){
             const area = board.graph.areas.get(this.index);
             area.c1 = this.new_c1;
@@ -543,14 +544,14 @@ export class AreaMoveSide<V extends Vertex,L extends Link, S extends Stroke, A e
         }
     }
 
-    deimplement(board: Board<V,L,S,A,T>): Set<SENSIBILITY>{
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
         const area = board.graph.areas.get(this.index);
         area.c1 = this.previous_c1;
         area.c2 = this.previous_c2;
         return new Set([]);
     }
 
-    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone>(index: number, area: Area, x: number, y: number, side_number: number): AreaMoveSide<V,L,S,A,T>{
+    static from_area<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation>(index: number, area: Area, x: number, y: number, side_number: number): AreaMoveSide<V,L,S,A,T,R>{
         const new_c1 = area.c1.copy();
         const new_c2 = area.c2.copy();
 
