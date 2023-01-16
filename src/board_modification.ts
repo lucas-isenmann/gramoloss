@@ -174,7 +174,10 @@ export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke
                 }
             } else if (kind == "ControlPoint"){
                 if (board.graph.links.has(index)){
-                    board.graph.links.get(index).cp.translate(this.shift);
+                    const link = board.graph.links.get(index);
+                    if ( typeof link.cp != "string"){
+                        link.cp.translate(this.shift);
+                    }
                 }else {
                     return "Error: index not in links";
                 }
@@ -205,7 +208,10 @@ export class TranslateElements<V extends Vertex,L extends Link, S extends Stroke
                 }
             } else if (kind == "ControlPoint"){
                 if (board.graph.links.has(index)){
-                    board.graph.links.get(index).cp.rtranslate(this.shift);
+                    const link = board.graph.links.get(index);
+                    if ( typeof link.cp != "string"){
+                        link.cp.rtranslate(this.shift);
+                    }
                 }
             } else if (kind == "Vertex"){
                 if( board.graph.vertices.has(index)){

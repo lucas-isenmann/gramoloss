@@ -193,6 +193,10 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return false;
     }
 
+    has_arc(index_start: number, index_end: number): boolean {
+        return this.has_link(index_start, index_end, ORIENTATION.DIRECTED);
+    }
+
     check_link(link: L): boolean {
         const i = link.start_vertex;
         const j = link.end_vertex;
@@ -507,6 +511,36 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
             let degree = this.get_neighbors_list(v_index).length;
             if ( degree > record ){
                 record = degree;
+            }
+        }
+        return record;
+    }
+
+    // return minimum indegree of the graph
+    // return "" if there is no vertex
+    min_indegree(): number | string{
+        let record: number | string = "";
+        for ( const v_index of this.vertices.keys()){
+            let indegree = this.get_in_neighbors_list(v_index).length;
+            if (typeof record == "string"){
+                record = indegree;
+            } else if ( indegree < record ){
+                record = indegree;
+            }
+        }
+        return record;
+    }
+
+    // return minimum outdegree of the graph
+    // return "" if there is no vertex
+    min_outdegree(): number | string{
+        let record: number | string = "";
+        for ( const v_index of this.vertices.keys()){
+            let indegree = this.get_out_neighbors_list(v_index).length;
+            if (typeof record == "string"){
+                record = indegree;
+            } else if ( indegree < record ){
+                record = indegree;
             }
         }
         return record;
@@ -850,6 +884,31 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
 	    }
 
 	    return scc; 
+    }
+
+    /// for every vertex of vertices_indices
+    /// add arcs between these vertices according to their x-coordinate
+    complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
+        for (const index1 of vertices_indices){
+            const v1 = this.vertices.get(index1);
+            for (const index2 of vertices_indices){
+                const v2 = this.vertices.get(index2);
+                if (index1 < index2 ){
+                    if ( v1.pos.x < v2.pos.x ){
+                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
+                            const new_link = arc_default(index1, index2);
+                            this.add_link(new_link);
+                        }
+                    } else {
+                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
+                            const new_link = arc_default(index2, index1);
+                            this.add_link(new_link);
+                        }
+                    }
+                }
+                
+            }
+        }
     }
 }
 
