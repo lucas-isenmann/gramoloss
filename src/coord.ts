@@ -78,6 +78,14 @@ export class Coord {
     middle(c: Coord) {
         return new Coord((this.x + c.x) / 2, (this.y + c.y) / 2);
     }
+
+    orthogonal_projection(point: Coord, direction: Vect): Coord{
+        const norm = direction.norm();
+        const u = new Vect(direction.x/norm, direction.y/norm);
+        const v = Vect.from_coords(point, this);
+        const ps = u.x*v.x + u.y*v.y;
+        return new Coord( point.x + u.x*ps , point.y + u.y*ps);
+    }
 }
 
 export function middle(c1: Coord, c2: Coord) {
@@ -91,6 +99,10 @@ export class Vect {
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+    }
+
+    norm() {
+        return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
 
     set_from(v: Vect){
@@ -109,5 +121,9 @@ export class Vect {
 
     opposite(): Vect{
         return new Vect(-this.x, -this.y);
+    }
+
+    static from_coords(src: Coord, dest: Coord): Vect{
+        return new Vect(dest.x - src.x, dest.y - src.y);
     }
 }
