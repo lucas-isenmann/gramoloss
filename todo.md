@@ -4,8 +4,8 @@
 - [ ] complete tests
 - [X] create Board
 - [ ] move areas and strokes from Graph to Board
-- [ ] move modifications out of Graph -> to Board
-- [ ] ?maybe not? interface GraphHistorical (adds a modification_stack and undoed to Graph)
+- [X] move modifications out of Graph -> to Board
+- [ ] move modifications to Gracofeu
 
 ## Parameters
 
@@ -22,7 +22,7 @@
 - [X] is_coloring_proper
 - [ ] radius
 - [ ] girth
-- [ ] chromatic number
+- [X] chromatic number
 - [ ] chromatic index
 - [ ] degree_sequence
 - [ ] tree_width

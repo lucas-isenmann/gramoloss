@@ -910,6 +910,59 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
             }
         }
     }
+
+
+    // Compute the chromatic number of the graph.
+    // It is the minimum integer k such that there exists a proper coloring with k colors.
+    // TODO: optional parameter which starts the k
+    // TODO: return a certificate that it is k-colorable
+    // TODO: better algorithm than the backtract way
+    chromatic_number() : number {
+        let k = 1;
+        const n = this.vertices.size;
+
+        while (true){
+            if (k >= 5){
+                return -1;
+            }
+            console.log(k);
+            const color = new Array();
+            const indices = new Map();
+            let j = 0;
+            for ( const index of this.vertices.keys()){
+                color.push(0);
+                indices.set(index,j);
+                j ++;
+            }
+            while (true){
+                let i = n-1;
+                while (i >= 0 && color[i] == k-1){
+                    color[i] = 0;
+                    i --;
+                }
+                if ( i == -1 ){ // every color was set to k-1
+                    break;      // all assignements have been tried
+                }
+                color[i] ++;
+                // else next color assignement
+                // check it
+                let is_proper_coloring = true;
+                for (const link of this.links.values()){
+                    if ( link.orientation == ORIENTATION.UNDIRECTED){
+                        if( color[indices.get(link.start_vertex)] == color[indices.get(link.end_vertex)]){
+                            is_proper_coloring = false;
+                            break;
+                        }
+                    }
+                }
+                if (is_proper_coloring){
+                    return k;
+                }
+            }
+            k += 1;
+        }
+        
+    }
 }
 
 
