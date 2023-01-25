@@ -1,7 +1,7 @@
 {
   "name": "gramoloss",
   "version": "1.0.26",
-  "description": "Graph theory tools",
+  "description": "Graph theory package for edition and computation",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
@@ -12,5 +12,14 @@
   "license": "MIT",
   "devDependencies": {
     "typescript": "^4.8.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucas-test/gramoloss"
+  },
+  "keywords": [
+    "graph",
+    "graph-theory",
+    "network"
+  ]
 }
