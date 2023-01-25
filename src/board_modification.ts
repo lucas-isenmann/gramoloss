@@ -14,6 +14,44 @@ export interface BoardModification<V extends Vertex,L extends Link, S extends St
     deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>;
 };
 
+export class ApplyModifyer<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
+    old_vertices: Map<number, V>;
+    old_links: Map<number, L>;
+    new_vertices: Map<number, V>;
+    new_links: Map<number, L>;
+
+    constructor(old_vertices: Map<number, V>, old_links: Map<number, L>, new_vertices: Map<number, V>,        new_links: Map<number, L>){
+        this.old_vertices = old_vertices;
+        this.old_links = old_links;
+        this.new_vertices = new_vertices;
+        this.new_links = new_links;
+    }
+
+    try_implement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
+        board.graph.vertices = new Map();
+        for ( const [vertex_index, vertex] of this.new_vertices.entries()){
+            board.graph.vertices.set(vertex_index, vertex);
+        }
+        board.graph.links = new Map();
+        for ( const [link_index, link] of this.new_links.entries()){
+            board.graph.links.set(link_index, link);
+        }
+        return new Set([SENSIBILITY.ELEMENT]);
+    }
+
+    deimplement(board: Board<V,L,S,A,T,R>): Set<SENSIBILITY>{
+        board.graph.vertices = new Map();
+        for ( const [vertex_index, vertex] of this.old_vertices.entries()){
+            board.graph.vertices.set(vertex_index, vertex);
+        }
+        board.graph.links = new Map();
+        for ( const [link_index, link] of this.old_links.entries()){
+            board.graph.links.set(link_index, link);
+        }
+        return new Set([SENSIBILITY.ELEMENT])
+    }
+}
+
 export class AddElement<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> implements BoardModification<V,L,S,A,T,R> {
     kind: string;
     index: number;
