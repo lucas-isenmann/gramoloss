@@ -27,7 +27,7 @@
 - [ ] degree_sequence
 - [ ] tree_width
 - [ ] clique_number
-- [ ] vertex_cover
+- [X] vertex_cover
 
 ## Generators
 

@@ -925,7 +925,6 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
             if (k >= 5){
                 return -1;
             }
-            console.log(k);
             const color = new Array();
             const indices = new Map();
             let j = 0;
@@ -961,8 +960,65 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
             }
             k += 1;
         }
-        
     }
+
+
+    // Compute the vertex cover number of the graph.
+    // It is the minimum integer k such that there exists a subset X of the vertices which is of size k and such that every edge is incident to at least one vertex of X.
+    // TODO: optional parameter m: asserts that the result it at least m
+    // TODO: return a certificate that it has a k-vertex-cover
+    // TODO: better algorithm than the backtract way
+    vertex_cover_number(): number {
+        const n = this.vertices.size;
+        let record = n;
+
+        const selection = new Array<boolean>();
+        const indices = new Map();
+        let j = 0;
+        for ( const index of this.vertices.keys()){
+            selection.push(false);
+            indices.set(index,j);
+            j ++;
+        }
+
+        while (true){
+            let i = n-1;
+            while (i >= 0 && selection[i]){
+                selection[i] = false;
+                i --;
+            }
+            if ( i == -1 ){
+                break;      // all assignements have been tried
+            }
+            selection[i] = true;
+            // else next selection
+            // check it
+            let is_vertex_cover = true;
+            for (const link of this.links.values()){
+                if ( link.orientation == ORIENTATION.UNDIRECTED){
+                    if( !selection[indices.get(link.start_vertex)] && !selection[indices.get(link.end_vertex)]){
+                        is_vertex_cover = false;
+                        break;
+                    }
+                }
+            }
+            if (is_vertex_cover){
+                let count = 0;
+                for (const v of selection){
+                    if (v) {
+                        count ++;
+                    }
+                }
+                if (count < record){
+                    record = count;
+                }
+            }
+        }
+
+        return record;
+    }
+        
+
 }
 
 
