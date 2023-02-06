@@ -26,7 +26,7 @@
 - [ ] chromatic index
 - [ ] degree_sequence
 - [ ] tree_width
-- [ ] clique_number
+- [X] clique_number
 - [X] vertex_cover
 
 ## Generators

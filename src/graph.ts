@@ -1018,6 +1018,67 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return record;
     }
         
+    // Compute the clique number of the graph.
+    // It is the minimum integer k such that there exists a subset X of the vertices which is a clique.
+    // TODO: optional parameter m: asserts that the result it at least m
+    // TODO: return a certificate that it has a k-vertex-cover
+    // TODO: better algorithm than the backtract way
+    clique_number(): number {
+        const n = this.vertices.size;
+        let record = 0;
+
+        const selection = new Array<boolean>();
+        const indices = new Map();
+        const reverse_indices = new Map<number, number>();
+        let j = 0;
+        for ( const index of this.vertices.keys()){
+            selection.push(false);
+            indices.set(index,j);
+            reverse_indices.set(j,index);
+            j ++;
+        }
+
+        while (true){
+            let i = n-1;
+            while (i >= 0 && selection[i]){
+                selection[i] = false;
+                i --;
+            }
+            if ( i == -1 ){
+                break;      // all assignements have been tried
+            }
+            selection[i] = true;
+            // else next selection
+            // check it
+            let is_clique = true;
+            let selected_indices = new Set<number>();
+            for (const [key,is_selected] of selection.entries()){
+                 if (is_selected){
+                    const index = reverse_indices.get(key);
+                    for (const index2 of selected_indices.values()){
+                        if (!this.has_link(index, index2, ORIENTATION.UNDIRECTED)){
+                            is_clique = false;
+                        }
+                    }
+                    selected_indices.add(index);
+                 }
+            }
+            
+            if (is_clique){
+                let count = 0;
+                for (const v of selection){
+                    if (v) {
+                        count ++;
+                    }
+                }
+                if (count > record){
+                    record = count;
+                }
+            }
+        }
+
+        return record;
+    }
 
 }
 
