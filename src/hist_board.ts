@@ -16,6 +16,11 @@ export class HistBoard<V extends Vertex,L extends Link, S extends Stroke, A exte
         super();
     }
 
+    append_modification_already_implemented(modif: BoardModification<V,L,S,A,T,R>){
+        this.modifications_stack.push(modif);
+        this.modifications_canceled.length = 0;
+    }
+
     try_push_new_modification(modif: BoardModification<V,L,S,A,T,R>): Set<SENSIBILITY> | string{
         const r = modif.try_implement(this);
         if ( typeof r === "string"){
