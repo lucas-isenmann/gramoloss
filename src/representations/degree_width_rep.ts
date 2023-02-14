@@ -12,7 +12,7 @@ export class DegreeWidthRep implements Representation {
     c2: Coord;
     x: Map<number, number>;
 
-    constructor(g: Graph<Vertex, Link, Stroke, Area>, c1: Coord, c2: Coord){
+    constructor(g: Graph<Vertex, Link>, c1: Coord, c2: Coord){
         this.c1 = c1.copy(); 
         this.c2 = c2.copy();
         this.x = new Map();

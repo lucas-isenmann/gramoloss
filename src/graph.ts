@@ -2,8 +2,7 @@
 import { Link, ORIENTATION } from './link';
 import { Vertex } from './vertex';
 
-import { Coord, middle, Vect } from './coord';
-import { Stroke } from './stroke';
+import { Coord, Vect } from './coord';
 import { Area } from './area';
 
 export enum ELEMENT_TYPE {
@@ -23,24 +22,19 @@ export enum SENSIBILITY {
 
 
 
-export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends Area> {
+export class Graph<V extends Vertex,L extends Link> {
     vertices: Map<number, V>;
     links: Map<number, L>;
-    strokes: Map<number, S>;
-    areas: Map<number, A>;
-
 
     constructor() {
         this.vertices = new Map();
         this.links = new Map();
-        this.strokes = new Map();
-        this.areas = new Map();
     }
 
     // create an Graph<V,L,S,A> which is undirected from a list of edges
     // vertex_default and edge_default are constructors of V and L
-    static from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L,S,A>{
-        const g = new Graph<V,L,S,A>();
+    static from_list_default<V extends Vertex,L extends Link>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+        const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y,w] of l.values()){
             if (indices.has(x) == false){
@@ -59,7 +53,7 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
 
     // create an Undirected Graph from a list of edges represented by couples of number
     // weight is set to ""
-    static from_list(l: Array<[number,number]>): Graph<Vertex,Link,Stroke,Area>{
+    static from_list(l: Array<[number,number]>): Graph<Vertex,Link>{
         const l2 = new Array();
         for (const [x,y] of l){
             l2.push([x,y,""]);
@@ -69,18 +63,18 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
     }
 
     // create a Weighted Undirected Graph from a list of weighted edges represented by couples of number with the weight in third
-    static from_weighted_list(l: Array<[number,number,string]>): Graph<Vertex,Link,Stroke,Area>{
+    static from_weighted_list(l: Array<[number,number,string]>): Graph<Vertex,Link>{
         const g = Graph.from_list_default(l, Vertex.default, Link.default_edge );
         return g;
     }
 	
-     static directed_from_list(l: Array<[number,number]>): Graph<Vertex,Link,Stroke,Area>{
+     static directed_from_list(l: Array<[number,number]>): Graph<Vertex,Link>{
         const g = Graph.directed_from_list_default(l, Vertex.default, Link.default_arc );
         return g;
     }
 
-    static directed_from_list_default<V extends Vertex,L extends Link, S extends Stroke, A extends Area>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L,S,A>{
-        const g = new Graph<V,L,S,A>();
+    static directed_from_list_default<V extends Vertex,L extends Link>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+        const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y] of l.values()){
             if (indices.has(x) == false){
@@ -327,37 +321,15 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
     }
 
 
-    delete_stroke(stroke_index: number) {
-        this.strokes.delete(stroke_index);
-    }
-
-    delete_area(area_index: number) {
-        this.areas.delete(area_index);
-    }
 
     clear() {
         this.vertices.clear();
         this.links.clear();
     }
 
-
     
 
-    
 
-    translate_areas(indices: Set<number>, shift: Vect) {
-        const contained_vertices = new Set<number>();
-        for (const area_index of indices.values()) {
-            const area = this.areas.get(area_index);
-            for (const [vertex_index, vertex] of this.vertices.entries()) {
-                if (area.is_containing(vertex)) {
-                    contained_vertices.add(vertex_index);
-                }
-            }
-            area.translate(shift);
-        }
-        this.translate_vertices(contained_vertices, shift);
-    }
 
     translate_vertices(indices: Iterable<number>, shift: Vect) {
         for (const index of indices) {
@@ -380,28 +352,9 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
         }
     }
 
-    get_subgraph_from_area(area_index: number): Graph<V,L,S,A>{
-        const area = this.areas.get(area_index);
-        const subgraph = new Graph<V,L,S,A>();
+    
 
-         for (const [index, v] of this.vertices.entries()) {
-            if(area.is_containing(v)){
-                subgraph.vertices.set(index, v);
-            }
-        }
-
-        for (const [index, link] of this.links.entries()){
-            const u = this.vertices.get(link.start_vertex);
-            const v = this.vertices.get(link.end_vertex);
-
-            if( area.is_containing(u) && area.is_containing(v)){
-                subgraph.links.set(index, link);
-            }
-        }
-        return subgraph;
-    }
-
-    vertices_contained_by_area(area: A): Set<number>{
+    vertices_contained_by_area<A extends Area>(area: A): Set<number>{
         const set = new Set<number>();
         this.vertices.forEach((vertex,vertex_index)=> {
             if (area.is_containing(vertex)){
@@ -725,8 +678,8 @@ export class Graph<V extends Vertex,L extends Link, S extends Stroke, A extends 
 
     // compute the size of the connected component of vertex of index "vindex"
     // return 0 if vindex is not a vertex index
-    get_connected_component_of(vindex: number): Graph<V,L,S,A> {
-        const g = new Graph<V,L,S,A>();
+    get_connected_component_of(vindex: number): Graph<V,L> {
+        const g = new Graph<V,L>();
         if (this.vertices.has(vindex) == false){
             return g;
         }

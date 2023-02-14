@@ -3,9 +3,9 @@
 - [X] test structure
 - [ ] complete tests
 - [X] create Board
-- [ ] move areas and strokes from Graph to Board
+- [X] move areas and strokes from Graph to Board
 - [X] move modifications out of Graph -> to Board
-- [ ] move modifications to Gracofeu
+- [X] move modifications to Gracofeu
 
 ## Parameters
 
