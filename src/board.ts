@@ -2,17 +2,19 @@ import { Area } from "./area";
 import { Vect } from "./coord";
 import { Graph } from "./graph";
 import { Link } from "./link";
+import { Rectangle } from "./rectangle";
 import { Representation } from "./representations/representation";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
 import { Vertex } from "./vertex";
 
-export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation> {
+export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
     graph: Graph<V,L>;
     text_zones: Map<number, T>;
     representations: Map<number, R>;
     strokes: Map<number, S>;
     areas: Map<number, A>;
+    rectangles: Map<number, Rect>; 
 
     constructor() {
         this.graph = new Graph();
@@ -20,6 +22,7 @@ export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends 
         this.representations = new Map();
         this.strokes = new Map();
         this.areas = new Map();
+        this.rectangles = new Map();
     }
 
     get_next_available_index_representation() {
@@ -54,6 +57,15 @@ export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends 
         return index;
     }
 
+    
+    get_next_available_index_rectangle() {
+        let index = 0;
+        while (this.rectangles.has(index)) {
+            index += 1;
+        }
+        return index;
+    }
+
 
 
     get_value(kind: string, index: number, param: string){
@@ -67,7 +79,11 @@ export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends 
             return this.strokes.get(index)[param];
         } else if (kind == "Area"){
             return this.areas.get(index)[param];
+        } else if (kind == "Rectangle"){
+            return this.rectangles.get(index)[param];
         }
+        
+
     }
 
 
