@@ -1,9 +1,8 @@
-
 import { Link, ORIENTATION } from './link';
 import { Vertex } from './vertex';
-
 import { Coord, Vect } from './coord';
 import { Area } from './area';
+import { is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -1031,6 +1030,53 @@ export class Graph<V extends Vertex,L extends Link> {
         }
 
         return record;
+    }
+
+
+
+    // TODO consider cubic bezier
+    // The drawing of a graph is said to be planar if no link intersect another link
+    // Return true iff the drawing is planar
+    // How it works:
+    // Considering two links, if both have no control points, then we check if the straight segments between the endpoints have an intersection with the is_segments_intersection
+    // If both have cps, then ???
+    // If only one has a cp then ???
+    is_drawing_planar(): boolean{
+        for (const link_index of this.links.keys()) {
+            const link1 = this.links.get(link_index);
+            const v1 = this.vertices.get(link1.start_vertex);
+            const w1 = this.vertices.get(link1.end_vertex);
+            let z1 = v1.pos.middle(w1.pos);
+            if (typeof link1.cp != "string"){
+                z1 = link1.cp;
+            }
+            for (const link_index2 of this.links.keys()) {
+                if ( link_index2 < link_index){
+                    const link2 = this.links.get(link_index2);
+                    const v2 = this.vertices.get(link2.start_vertex);
+                    const w2 = this.vertices.get(link2.end_vertex);
+                    let is_intersecting = false;
+                    let z2 = v2.pos.middle(w2.pos);
+                    // TODO: faster algorithm for intersection between segment and bezier
+                    if (typeof link2.cp != "string"){
+                        z2 = link2.cp;
+                        is_intersecting = is_quadratic_bezier_curves_intersection(v1.pos, z1, w1.pos, v2.pos, z2, w2.pos);
+                    }
+                    else {
+                        if (typeof link1.cp == "string"){
+                            is_intersecting = is_segments_intersection(v1.pos, w1.pos, v2.pos, w2.pos);
+                        } else {
+                            is_intersecting = is_quadratic_bezier_curves_intersection(v1.pos, z1, w1.pos, v2.pos, z2, w2.pos);
+                        }
+                    }
+    
+                    if (is_intersecting){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
 }

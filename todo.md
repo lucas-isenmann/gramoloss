@@ -16,7 +16,7 @@
 - [X] degree (min, max, moyen)
 - [X] is_connected
 - [X] number connected components
-- [ ] is_drawing_planar
+- [X] is_drawing_planar
 - [ ] is_planar
 - [ ] is_bipartite
 - [X] is_coloring_proper
