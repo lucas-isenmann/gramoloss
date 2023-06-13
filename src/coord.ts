@@ -79,6 +79,8 @@ export class Coord {
         return new Coord((this.x + c.x) / 2, (this.y + c.y) / 2);
     }
 
+    // Compute the orthogonal projection of this on the line defined
+    // by a point 'point' and a non zero direction.
     orthogonal_projection(point: Coord, direction: Vect): Coord{
         const norm = direction.norm();
         const u = new Vect(direction.x/norm, direction.y/norm);
