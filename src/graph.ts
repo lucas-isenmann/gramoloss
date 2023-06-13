@@ -864,11 +864,14 @@ export class Graph<V extends Vertex,L extends Link> {
     }
 
 
-    // Compute the chromatic number of the graph.
-    // It is the minimum integer k such that there exists a proper coloring with k colors.
     // TODO: optional parameter which starts the k
     // TODO: return a certificate that it is k-colorable
     // TODO: better algorithm than the backtract way
+    /**
+     * Returns the chromatic number of the graph.
+     * The chromatic number is the minimum integer k such that there exists a proper coloring with k colors.
+     * What happens with arcs? I dont know. TODO
+     */
     chromatic_number() : number {
         let k = 1;
         const n = this.vertices.size;
@@ -1077,6 +1080,16 @@ export class Graph<V extends Vertex,L extends Link> {
             }
         }
         return true;
+    }
+
+
+    /**
+     * Returns true if the graph is bipartite.
+     * A graph is said to be bipartite if it is 2-colorable.
+     * TODO: optimize
+     */
+    isBipartite(): boolean {
+        return this.chromatic_number() <= 2;
     }
 
 }
