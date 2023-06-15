@@ -1199,10 +1199,10 @@ export class Graph<V extends Vertex,L extends Link> {
                     }
                     // Check if the points are in counterclowise order.
                     if ( (v2.pos.x - v1.pos.x)*(v3.pos.y-v1.pos.y)-(v3.pos.x -v1.pos.x)*(v2.pos.y-v1.pos.y) <= 0){
-                        console.log("not ccw", i1, i2, i3);
+                        // console.log("not ccw", i1, i2, i3);
                         continue;
                     }
-                    console.log("ccw", i1, i2, i3);
+                    // console.log("ccw", i1, i2, i3);
 
                     let isPointInside = false;
                     for (const [i4,v4] of this.vertices){
