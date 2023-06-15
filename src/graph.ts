@@ -907,6 +907,30 @@ export class Graph<V extends Vertex,L extends Link> {
         }
     }
 
+    /**
+     * Warning: UNTESTED
+     * @param c1 a corner from the rectangle
+     * @param c2 the opposite corner
+     * @returns the subgraph of this formed by the vertices contained in the rectangle. The links between these vertices are kept.
+     * These links could go out of the rectangle if they are bended.
+     * Vertices and links are not copied, so any modification on these elements affect the original graph.
+     */
+    getSubgraphFromRectangle(c1: Coord, c2: Coord): Graph<V,L>{
+        const newGraph = new Graph<V,L>();
+    
+        for (const [index,vertex] of this.vertices.entries()){
+            if (vertex.isInRectangle(c1,c2)){
+                newGraph.set_vertex(index,vertex);
+            }
+        }
+        for (const [index,link] of this.links.entries()){
+            if (newGraph.vertices.has(link.start_vertex) && newGraph.vertices.has(link.end_vertex)){
+                newGraph.set_link(index, link);
+            }
+        }
+        return newGraph;
+    }
+
 
     // TODO: optional parameter which starts the k
     // TODO: return a certificate that it is k-colorable
