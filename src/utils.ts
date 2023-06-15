@@ -139,3 +139,25 @@ export function is_quadratic_bezier_curves_intersection(p1: Coord, cp1: Coord, p
     return false; 
 }
 
+
+
+/**
+ * Returns the determinant of the matrix.
+ * Algorithm: Leibniz formula (recursive).
+ * @param matrix is supposed to be square and not of size 0
+ * No error are triggered it is not the case.
+ */
+export function det(matrix: Array<Array<number>>){
+    const n = matrix.length;
+    if (n === 1) {
+        return matrix[0][0];
+    }
+    let d = 0;
+    for (let i = 0; i < n; i++) {
+        const subMatrix = matrix.slice(1).map(row => row.filter((_, j) => j !== i));
+        const sign = i % 2 === 0 ? 1 : -1;
+        d += sign * matrix[0][i] * det(subMatrix);
+    }
+
+    return d;
+}

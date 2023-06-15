@@ -6,6 +6,7 @@
 - [X] move areas and strokes from Graph to Board
 - [X] move modifications out of Graph -> to Board
 - [X] move modifications to Gracofeu
+- [ ] set stict=true in tsconfig.json
 
 ## Parameters
 
@@ -28,6 +29,7 @@
 - [ ] tree_width
 - [X] clique_number
 - [X] vertex_cover
+- [ ] stretch
 
 ## Generators
 

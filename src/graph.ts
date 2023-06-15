@@ -2,7 +2,7 @@ import { Link, ORIENTATION } from './link';
 import { Vertex } from './vertex';
 import { Coord, Vect } from './coord';
 import { Area } from './area';
-import { is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
+import { det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -30,8 +30,44 @@ export class Graph<V extends Vertex,L extends Link> {
         this.links = new Map();
     }
 
-    // create an Graph<V,L,S,A> which is undirected from a list of edges
-    // vertex_default and edge_default are constructors of V and L
+
+    /**
+     * Returns an undirected Graph<V,L,S,A> given a list of vertices positions and weights and a list of edges.
+     * @param listVertices the two numbers are the coordinates of the vertices, the string is the weight of the vertex
+     * @param listEdges 
+     * @param vertexConstructor is a constructor of V
+     * @param edgeConstructor is a constructor of L
+     */
+    static fromList<V extends Vertex,L extends Link>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
+        const g = new Graph<V,L>();
+        for ( const [index, [x,y,w]] of listVertices.entries()){
+            g.set_vertex(index, vertexConstructor(x,y,w));
+        }
+        for ( const [indexV1,indexV2,w] of listEdges.values()){
+            if (indexV1 >= listVertices.length || indexV2 >= listVertices.length){
+                console.log("Error: index given in listEdges is impossible: ", indexV1, " or ", indexV2);
+                return g;
+            }
+            g.add_link(edgeConstructor(indexV1,indexV2,w));
+        }
+        return g;
+    }
+
+    /**
+     * Returns an undirected Graph<Vertex,Link> (called basic) from a list of edges represented by couples of indices.
+     * @param listVertices the two numbers are the coordinates of the vertices, the string is the weight of the vertex
+     * @param listEdges 
+     */
+    static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<Vertex,Link>{
+        return Graph.fromList(listVertices, listEdges, (x,y,w) => {return new Vertex(x,y,w)}, (x,y,w) => {return new Link(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
+    }
+    
+
+    /**
+     * Returns an undirected Graph<V,L,S,A> from a list of edges.
+     * @param vertex_default is a constructor of V
+     * @param edge_default is a constructor of L
+     */
     static from_list_default<V extends Vertex,L extends Link>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         const indices = new Set<number>();
@@ -50,8 +86,10 @@ export class Graph<V extends Vertex,L extends Link> {
         return g;
     }
 
-    // create an Undirected Graph from a list of edges represented by couples of number
-    // weight is set to ""
+    /**
+     * Returns an Undirected Graph from a list of edges represented by couples of indices.
+     * Weights are set to "".
+     */
     static from_list(l: Array<[number,number]>): Graph<Vertex,Link>{
         const l2 = new Array();
         for (const [x,y] of l){
@@ -364,6 +402,12 @@ export class Graph<V extends Vertex,L extends Link> {
     }
 
 
+    /**
+     * Returns the distances between each pair of vertices using only edges (undirected links).
+     * It uses the algorithm of Floyd-Warshall.
+     * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.
+     * TODO: oriented case 
+     */
     Floyd_Warhall( weighted: boolean) {
         const dist = new Map<number, Map<number, number>>();
         const next = new Map<number, Map<number, number>>();
@@ -1090,6 +1134,98 @@ export class Graph<V extends Vertex,L extends Link> {
      */
     isBipartite(): boolean {
         return this.chromatic_number() <= 2;
+    }
+
+    /**
+     * Sets all weights of links to the euclidian distance between vertices.
+     * TODO: generalize to other distances.
+     */
+    setEuclidianLinkWeights() {
+        for (const link of this.links.values()){
+            const v1 = this.vertices.get(link.start_vertex);
+            const v2 = this.vertices.get(link.end_vertex);
+            if (v1 && v2){
+                const d = Math.sqrt(v1.pos.dist2(v2.pos));
+                link.weight = String(d);
+            }
+        }
+    }
+
+    /**
+     * Returns the stretch of the graph.
+     * The stretch is defined as the maximal stretch between pairs of vertices.
+     * The stretch of a pair of vertices is defined as the ratio between the euclidian distance in the graph between them and the euclidian distance between them.
+     * Returns undefined if there is 1 vertex or less.
+     */
+    stretch(): number | undefined{
+        this.setEuclidianLinkWeights();
+        const data = this.Floyd_Warhall(true);
+        const distances = data.distances;
+        let maxStretch: number | undefined = undefined;
+        for (const [indexV1, v1] of this.vertices){
+            for (const [indexV2, v2] of this.vertices){
+                if (indexV1 != indexV2){
+                    const v1distances = distances.get(indexV1);
+                    if (v1distances){
+                        const graphDist = v1distances.get(indexV2);
+                        if (graphDist){
+                            const stretch = graphDist / Math.sqrt(v1.pos.dist2(v2.pos));
+                            if (typeof maxStretch === "undefined" ){
+                                maxStretch = stretch;
+                            } else if (stretch > maxStretch){
+                                maxStretch = stretch;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return maxStretch;
+    }
+
+
+    /**
+     * Resets the edges of the graph so that they respect the Delaunay adjacency rule.
+     * 
+     */
+    resetDelaunayGraph(linkConstructor: (i: number, j: number) => L){
+        this.links.clear();
+
+        for (const [i1, v1] of this.vertices){
+            for (const [i2, v2] of this.vertices){
+                for (const [i3, v3] of this.vertices){
+                    if ( i1 == i2 || i1 == i3 || i2 == i3){
+                        continue;
+                    }
+                    // Check if the points are in counterclowise order.
+                    if ( (v2.pos.x - v1.pos.x)*(v3.pos.y-v1.pos.y)-(v3.pos.x -v1.pos.x)*(v2.pos.y-v1.pos.y) <= 0){
+                        console.log("not ccw", i1, i2, i3);
+                        continue;
+                    }
+                    console.log("ccw", i1, i2, i3);
+
+                    let isPointInside = false;
+                    for (const [i4,v4] of this.vertices){
+                       if( i1 != i4 && i2 != i4 && i3 != i4){
+                            const mat = 
+                            [[v1.pos.x, v1.pos.y, v1.pos.x**2 + v1.pos.y**2, 1],
+                             [v2.pos.x, v2.pos.y, v2.pos.x**2 + v2.pos.y**2, 1],
+                             [v3.pos.x, v3.pos.y, v3.pos.x**2 + v3.pos.y**2, 1],
+                             [v4.pos.x, v4.pos.y, v4.pos.x**2 + v4.pos.y**2, 1]];
+                            if (det(mat) > 0){
+                                isPointInside = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isPointInside == false){
+                        this.add_link(linkConstructor(i1,i2));
+                        this.add_link(linkConstructor(i1,i3));
+                        this.add_link(linkConstructor(i2,i3));
+                    }
+                }
+            }
+        }
     }
 
 }
