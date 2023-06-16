@@ -1271,7 +1271,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         for (const [i1, v1] of this.vertices){
             for (const [i2, v2] of this.vertices){
                 for (const [i3, v3] of this.vertices){
-                    if ( i1 == i2 || i1 == i3 || i2 == i3){
+                    if ( !( (i1 < i2 && i2 < i3) || (i1 > i2 && i2 > i3) )){
                         continue;
                     }
                     // Check if the points are in counterclowise order.
