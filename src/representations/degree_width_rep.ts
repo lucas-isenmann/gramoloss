@@ -2,17 +2,16 @@ import { Area } from "../area";
 import { Coord } from "../coord";
 import { Graph } from "../graph";
 import { Link } from "../link";
-import { Stroke } from "../stroke";
 import { Vertex } from "../vertex";
 import { Representation } from "./representation";
 
 
-export class DegreeWidthRep implements Representation {
+export class DegreeWidthRep<V extends Vertex<V>, L extends Link<L>> implements Representation {
     c1: Coord;
     c2: Coord;
     x: Map<number, number>;
 
-    constructor(g: Graph<Vertex, Link>, c1: Coord, c2: Coord){
+    constructor(g: Graph<V, L>, c1: Coord, c2: Coord){
         this.c1 = c1.copy(); 
         this.c2 = c2.copy();
         this.x = new Map();

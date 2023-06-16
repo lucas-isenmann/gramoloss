@@ -26,7 +26,7 @@ export class Area {
         this.c2.rtranslate(shift);
     }
 
-    is_containing(v: Vertex): Boolean {
+    is_containing<V extends Vertex<V>>(v: V): Boolean {
         return Math.min(this.c1.x, this.c2.x) <= v.pos.x && v.pos.x <= Math.max(this.c1.x, this.c2.x) && Math.min(this.c1.y, this.c2.y) <= v.pos.y && v.pos.y <= Math.max(this.c1.y, this.c2.y);
     }
 

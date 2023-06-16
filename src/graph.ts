@@ -1,5 +1,5 @@
-import { Link, ORIENTATION } from './link';
-import { Vertex } from './vertex';
+import { BasicLink, Link, ORIENTATION } from './link';
+import { BasicVertex, Vertex } from './vertex';
 import { Coord, Vect } from './coord';
 import { Area } from './area';
 import { det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
@@ -11,17 +11,12 @@ export enum ELEMENT_TYPE {
     AREA = "AREA"
 }
 
-export enum SENSIBILITY {
-    GEOMETRIC = "GEOMETRIC", // Move of vertex/link
-    COLOR = "COLOR", // Change of color for vertices/links
-    ELEMENT = "ELEMENT", // Create/delete vertex/link
-    WEIGHT = "WEIGHT"
-}
 
 
 
 
-export class Graph<V extends Vertex,L extends Link> {
+
+export class Graph<V extends Vertex<V>,L extends Link<L>> {
     vertices: Map<number, V>;
     links: Map<number, L>;
 
@@ -38,7 +33,7 @@ export class Graph<V extends Vertex,L extends Link> {
      * @param vertexConstructor is a constructor of V
      * @param edgeConstructor is a constructor of L
      */
-    static fromList<V extends Vertex,L extends Link>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
+    static fromList<V extends Vertex<V>,L extends Link<L>>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         for ( const [index, [x,y,w]] of listVertices.entries()){
             g.set_vertex(index, vertexConstructor(x,y,w));
@@ -58,8 +53,8 @@ export class Graph<V extends Vertex,L extends Link> {
      * @param listVertices the two numbers are the coordinates of the vertices, the string is the weight of the vertex
      * @param listEdges 
      */
-    static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<Vertex,Link>{
-        return Graph.fromList(listVertices, listEdges, (x,y,w) => {return new Vertex(x,y,w)}, (x,y,w) => {return new Link(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
+    static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<BasicVertex,BasicLink>{
+        return Graph.fromList(listVertices, listEdges, (x,y,w) => {return new BasicVertex(x,y,w)}, (x,y,w) => {return new BasicLink(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
     }
     
 
@@ -68,7 +63,7 @@ export class Graph<V extends Vertex,L extends Link> {
      * @param vertex_default is a constructor of V
      * @param edge_default is a constructor of L
      */
-    static from_list_default<V extends Vertex,L extends Link>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    static from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y,w] of l.values()){
@@ -90,27 +85,27 @@ export class Graph<V extends Vertex,L extends Link> {
      * Returns an Undirected Graph from a list of edges represented by couples of indices.
      * Weights are set to "".
      */
-    static from_list(l: Array<[number,number]>): Graph<Vertex,Link>{
+    static from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
         const l2 = new Array();
         for (const [x,y] of l){
             l2.push([x,y,""]);
         }
-        const g = Graph.from_list_default(l2, Vertex.default, Link.default_edge );
+        const g = Graph.from_list_default(l2, BasicVertex.default, BasicLink.default_edge );
         return g;
     }
 
     // create a Weighted Undirected Graph from a list of weighted edges represented by couples of number with the weight in third
-    static from_weighted_list(l: Array<[number,number,string]>): Graph<Vertex,Link>{
-        const g = Graph.from_list_default(l, Vertex.default, Link.default_edge );
+    static from_weighted_list(l: Array<[number,number,string]>): Graph<BasicVertex,BasicLink>{
+        const g = Graph.from_list_default(l, BasicVertex.default, BasicLink.default_edge );
         return g;
     }
 	
-     static directed_from_list(l: Array<[number,number]>): Graph<Vertex,Link>{
-        const g = Graph.directed_from_list_default(l, Vertex.default, Link.default_arc );
+     static directed_from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
+        const g = Graph.directed_from_list_default(l, BasicVertex.default, BasicLink.default_arc );
         return g;
     }
 
-    static directed_from_list_default<V extends Vertex,L extends Link>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    static directed_from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y] of l.values()){
@@ -187,8 +182,11 @@ export class Graph<V extends Vertex,L extends Link> {
 
     
 
-
-    get_index(v: Vertex) {
+    /**
+     * SHOULD BE REMOVED
+     * index should be in the vertex
+     */
+    get_index(v: Vertex<V>) {
         for (let [index, vertex] of this.vertices.entries()) {
             if (vertex === v) {
                 return index;
@@ -929,6 +927,25 @@ export class Graph<V extends Vertex,L extends Link> {
             }
         }
         return newGraph;
+    }
+
+    /**
+     * Paste other graph in this by cloning the vertices and links of the other graph.
+     */
+    pasteGraph(other: Graph<V,L>){
+        const corresp = new Map();
+        for(const [oldIndex, vertex] of other.vertices){
+            const newIndex = this.add_vertex(vertex.clone());
+            corresp.set(oldIndex, newIndex);
+        }
+        for (const link of other.links.values()){
+            const newIndexV1 = corresp.get(link.start_vertex);
+            const newIndexV2 = corresp.get(link.end_vertex);
+            if (newIndexV1 && newIndexV2){
+                const l2 = link.clone();
+
+            }
+        }
     }
 
 

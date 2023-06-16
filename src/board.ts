@@ -8,7 +8,7 @@ import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
 import { Vertex } from "./vertex";
 
-export class Board<V extends Vertex,L extends Link, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
+export class Board<V extends Vertex<V>,L extends Link<L>, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
     graph: Graph<V,L>;
     text_zones: Map<number, T>;
     representations: Map<number, R>;
