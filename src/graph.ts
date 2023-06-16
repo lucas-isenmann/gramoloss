@@ -930,11 +930,13 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     }
 
     /**
-     * WARNING: UNTESTED
      * Paste other graph in this by cloning the vertices and links of the other graph.
+     * It creates new indices for the vertices and links of the other graph.
+     * Therefore if 0 was a vertex index of this and 0 also a vertex index of the other graph, then it creates index 1 (or another possible index).
+     * 
      */
     pasteGraph(other: Graph<V,L>){
-        const corresp = new Map();
+        const corresp = new Map<number,number>();
         for(const [oldIndex, vertex] of other.vertices){
             const newIndex = this.add_vertex(vertex.clone());
             corresp.set(oldIndex, newIndex);
@@ -942,9 +944,11 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         for (const link of other.links.values()){
             const newIndexV1 = corresp.get(link.start_vertex);
             const newIndexV2 = corresp.get(link.end_vertex);
-            if (newIndexV1 && newIndexV2){
-                const l2 = link.clone();
-
+            if (typeof newIndexV1 !== "undefined" && typeof newIndexV2 !== "undefined"){
+                const newLink = link.clone();
+                newLink.start_vertex = newIndexV1;
+                newLink.end_vertex = newIndexV2;
+                this.add_link(newLink);
             }
         }
     }
