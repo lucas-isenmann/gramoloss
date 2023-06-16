@@ -930,6 +930,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     }
 
     /**
+     * WARNING: UNTESTED
      * Paste other graph in this by cloning the vertices and links of the other graph.
      */
     pasteGraph(other: Graph<V,L>){
@@ -944,6 +945,37 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
             if (newIndexV1 && newIndexV2){
                 const l2 = link.clone();
 
+            }
+        }
+    }
+
+    /**
+     * WARNING: UNTESTED
+     * Clones the graph.
+     */
+    clone(): Graph<V,L> {
+        const newGraph = new Graph<V,L>();
+        for(const [index, vertex] of this.vertices){
+            newGraph.set_vertex(index, vertex.clone());
+        }
+        for(const [index, link] of this.links){
+            newGraph.set_link(index, link.clone());
+        }
+        return newGraph;
+    }
+
+
+    /**
+     * WARNING: UNTESTED
+     * Translate the graph.
+     */
+    translate(shift: Vect){
+        for(const [index, vertex] of this.vertices){
+            vertex.pos.translate(shift)
+        }
+        for(const [index, link] of this.links){
+            if (typeof link.cp !== "string"){
+                link.cp.translate(shift);
             }
         }
     }
