@@ -33,10 +33,11 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * @param vertexConstructor is a constructor of V
      * @param edgeConstructor is a constructor of L
      */
-    static fromList<V extends Vertex<V>,L extends Link<L>>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
+    static fromList<V extends Vertex<V>,L extends Link<L>>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string, color: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         for ( const [index, [x,y,w]] of listVertices.entries()){
-            g.set_vertex(index, vertexConstructor(x,y,w));
+            const new_vertex = vertexConstructor(x,y,w, "black");
+            g.set_vertex(index, new_vertex );
         }
         for ( const [indexV1,indexV2,w] of listEdges.values()){
             if (indexV1 >= listVertices.length || indexV2 >= listVertices.length){
@@ -54,7 +55,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * @param listEdges 
      */
     static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<BasicVertex,BasicLink>{
-        return Graph.fromList(listVertices, listEdges, (x,y,w) => {return new BasicVertex(x,y,w)}, (x,y,w) => {return new BasicLink(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
+        return Graph.fromList(listVertices, listEdges, (x,y,w,c) => {return new BasicVertex(x,y,w,c)}, (x,y,w) => {return new BasicLink(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
     }
     
 
@@ -63,17 +64,17 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * @param vertex_default is a constructor of V
      * @param edge_default is a constructor of L
      */
-    static from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number, string]>, vertex_default: ()=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    static from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number, string]>, vertex_default: (index: number)=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y,w] of l.values()){
             if (indices.has(x) == false){
                 indices.add(x);
-                g.set_vertex(x,vertex_default());
+                g.set_vertex(x,vertex_default(x));
             }
             if (indices.has(y) == false){
                 indices.add(y);
-                g.set_vertex(y,vertex_default());
+                g.set_vertex(y,vertex_default(y));
             }
             const link = edge_default(x,y,w);
             g.add_link(link);
@@ -105,17 +106,17 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return g;
     }
 
-    static directed_from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number]>, vertex_default: ()=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    static directed_from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number]>, vertex_default: (index: number)=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
         const g = new Graph<V,L>();
         const indices = new Set<number>();
         for ( const [x,y] of l.values()){
             if (indices.has(x) == false){
                 indices.add(x);
-                g.set_vertex(x,vertex_default());
+                g.set_vertex(x,vertex_default(x));
             }
             if (indices.has(y) == false){
                 indices.add(y);
-                g.set_vertex(y,vertex_default());
+                g.set_vertex(y,vertex_default(y));
             }
             const link = arc_default(x,y,"");
             g.add_link(link);
@@ -203,13 +204,17 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return index;
     }
 
-    add_vertex(vertex: V) {
+    /// Add a vertex to the graph.
+    /// Returns the index of the added vertex.
+    addVertex(vertex: V): number {
         let index = this.get_next_available_index_vertex();
+        vertex.index = index;
         this.vertices.set(index, vertex);
         return index;
     }
 
     set_vertex(index: number, vertex: V) {
+        vertex.index = index;
         this.vertices.set(index, vertex );
     }
 
@@ -938,7 +943,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     pasteGraph(other: Graph<V,L>){
         const corresp = new Map<number,number>();
         for(const [oldIndex, vertex] of other.vertices){
-            const newIndex = this.add_vertex(vertex.clone());
+            const newIndex = this.addVertex(vertex.clone());
             corresp.set(oldIndex, newIndex);
         }
         for (const link of other.links.values()){
