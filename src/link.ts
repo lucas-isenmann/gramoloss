@@ -8,6 +8,7 @@ export enum ORIENTATION {
 
 
 export abstract class Link<T extends Link<T>> {
+    index: number | undefined;
     start_vertex: number;
     end_vertex: number;
     cp: Coord | string;
@@ -16,6 +17,7 @@ export abstract class Link<T extends Link<T>> {
     weight: string = "";
 
     constructor(i: number, j: number, cp: Coord | string, orientation: ORIENTATION, color: string, weight: string) {
+        this.index = undefined;
         this.start_vertex = i;
         this.end_vertex = j;
         this.cp = cp;

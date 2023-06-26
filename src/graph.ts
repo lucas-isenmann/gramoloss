@@ -44,7 +44,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                 console.log("Error: index given in listEdges is impossible: ", indexV1, " or ", indexV2);
                 return g;
             }
-            g.add_link(edgeConstructor(indexV1,indexV2,w));
+            g.addLink(edgeConstructor(indexV1,indexV2,w));
         }
         return g;
     }
@@ -77,7 +77,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                 g.set_vertex(y,vertex_default(y));
             }
             const link = edge_default(x,y,w);
-            g.add_link(link);
+            g.addLink(link);
         }
         return g;
     }
@@ -119,7 +119,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                 g.set_vertex(y,vertex_default(y));
             }
             const link = arc_default(x,y,"");
-            g.add_link(link);
+            g.addLink(link);
         }
 
         
@@ -129,19 +129,31 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 
     update_element_weight(element_type: ELEMENT_TYPE, index: number, new_weight: string){
         if ( element_type == ELEMENT_TYPE.LINK && this.links.has(index)){
-            this.links.get(index).weight = new_weight;
+            const link = this.links.get(index);
+            if (typeof link !== "undefined"){
+                link.weight = new_weight;
+            }
         }else if ( element_type == ELEMENT_TYPE.VERTEX && this.vertices.has(index)){
-            this.vertices.get(index).weight = new_weight;
+            const vertex = this.vertices.get(index);
+            if (typeof vertex !== "undefined"){
+                vertex.weight = new_weight;
+            }
         }
     }
 
 
     update_vertex_pos(vertex_index: number, new_pos: Coord) {
-        this.vertices.get(vertex_index).pos = new_pos;
+        const vertex = this.vertices.get(vertex_index);
+        if (typeof vertex !== "undefined"){
+            vertex.pos = new_pos;
+        }
     }
 
     update_control_point(link_index: number, new_pos: Coord) {
-        this.links.get(link_index).cp = new_pos;
+        const link = this.links.get(link_index);
+        if (typeof link !== "undefined"){
+            link.cp = new_pos;
+        }
     }
 
 
@@ -204,8 +216,10 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return index;
     }
 
-    /// Add a vertex to the graph.
-    /// Returns the index of the added vertex.
+    /**
+     * Add a vertex to the graph.
+     * Returns the index of the added vertex.
+     */ 
     addVertex(vertex: V): number {
         let index = this.get_next_available_index_vertex();
         vertex.index = index;
@@ -258,19 +272,31 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return true;
     }
 
-    add_link(link: L) {
+    /**
+     * Adds a link to the graph.
+     * Sets the index of link with a free link index.
+     * Returns undefined if the link is already in the graph.
+     * Returns the index otherwise.
+     */
+    addLink(link: L): number | undefined {
         if (this.check_link(link) == false) {
-            return;
+            return undefined;
         }
         const index = this.get_next_available_index_links();
+        link.index = index;
         this.links.set(index, link);
         return index;
     }
 
-    set_link(link_index: number, link: L) {
+
+    /**
+     * Inserts link at link_index in the links of the graph.
+     */
+    setLink(link_index: number, link: L) {
         if (this.check_link(link) == false) {
             return;
         }
+        link.index = link_index;
         this.links.set(link_index, link);
     }
 
@@ -373,19 +399,23 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 
     translate_vertices(indices: Iterable<number>, shift: Vect) {
         for (const index of indices) {
-            if (this.vertices.has(index)) {
-                const vertex = this.vertices.get(index);
+            const vertex = this.vertices.get(index);
+            if (typeof vertex !== "undefined") {
                 const previous_pos = vertex.pos.copy();
                 vertex.pos.translate(shift);
                 const new_pos = vertex.pos.copy();
 
                 for (const [link_index, link] of this.links.entries()) {
                     if (link.start_vertex == index) {
-                        const end_vertex_pos = this.vertices.get(link.end_vertex).pos;
-                        link.transform_cp(new_pos, previous_pos, end_vertex_pos);
+                        const end_vertex = this.vertices.get(link.end_vertex);
+                        if (typeof end_vertex !== "undefined"){
+                            link.transform_cp(new_pos, previous_pos, end_vertex.pos);
+                        }
                     } else if (link.end_vertex == index) {
-                        const start_vertex_pos = this.vertices.get(link.start_vertex).pos;
-                        link.transform_cp(new_pos, previous_pos, start_vertex_pos);
+                        const start_vertex = this.vertices.get(link.start_vertex);
+                        if (typeof start_vertex !== "undefined"){
+                            link.transform_cp(new_pos, previous_pos, start_vertex.pos);
+                        }
                     }
                 }
             }
@@ -896,12 +926,12 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                     if ( v1.pos.x < v2.pos.x ){
                         if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
                             const new_link = arc_default(index1, index2);
-                            this.add_link(new_link);
+                            this.addLink(new_link);
                         }
                     } else {
                         if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
                             const new_link = arc_default(index2, index1);
-                            this.add_link(new_link);
+                            this.addLink(new_link);
                         }
                     }
                 }
@@ -928,7 +958,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         }
         for (const [index,link] of this.links.entries()){
             if (newGraph.vertices.has(link.start_vertex) && newGraph.vertices.has(link.end_vertex)){
-                newGraph.set_link(index, link);
+                newGraph.setLink(index, link);
             }
         }
         return newGraph;
@@ -953,7 +983,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                 const newLink = link.clone();
                 newLink.start_vertex = newIndexV1;
                 newLink.end_vertex = newIndexV2;
-                this.add_link(newLink);
+                this.addLink(newLink);
             }
         }
     }
@@ -968,7 +998,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
             newGraph.set_vertex(index, vertex.clone());
         }
         for(const [index, link] of this.links){
-            newGraph.set_link(index, link.clone());
+            newGraph.setLink(index, link.clone());
         }
         return newGraph;
     }
@@ -1301,9 +1331,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                         }
                     }
                     if (isPointInside == false){
-                        this.add_link(linkConstructor(i1,i2));
-                        this.add_link(linkConstructor(i1,i3));
-                        this.add_link(linkConstructor(i2,i3));
+                        this.addLink(linkConstructor(i1,i2));
+                        this.addLink(linkConstructor(i1,i3));
+                        this.addLink(linkConstructor(i2,i3));
                     }
                 }
             }
