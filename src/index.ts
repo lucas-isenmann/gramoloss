@@ -8,6 +8,8 @@ export * from "./text_zone";
 export * from "./board";
 export * from "./rectangle";
 export * from "./utils";
+export * from "./option";
+export * from "./traits";
 
 export * from "./representations/representation";
 export * from "./representations/degree_width_rep";

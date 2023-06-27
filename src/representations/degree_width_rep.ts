@@ -2,11 +2,12 @@ import { Area } from "../area";
 import { Coord } from "../coord";
 import { Graph } from "../graph";
 import { Link } from "../link";
+import { Geometric, Weighted } from "../traits";
 import { Vertex } from "../vertex";
 import { Representation } from "./representation";
 
 
-export class DegreeWidthRep<V extends Vertex<V>, L extends Link<L>> implements Representation {
+export class DegreeWidthRep<V extends Geometric & Weighted, L extends Geometric> implements Representation {
     c1: Coord;
     c2: Coord;
     x: Map<number, number>;

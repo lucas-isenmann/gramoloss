@@ -3,6 +3,8 @@ import { BasicVertex, Vertex } from './vertex';
 import { Coord, Vect } from './coord';
 import { Area } from './area';
 import { det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
+import { Option } from "./option";
+import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -16,9 +18,9 @@ export enum ELEMENT_TYPE {
 
 
 
-export class Graph<V extends Vertex<V>,L extends Link<L>> {
-    vertices: Map<number, V>;
-    links: Map<number, L>;
+export class Graph<V,L> {
+    vertices: Map<number, Vertex<V>>;
+    links: Map<number, Link<V,L>>;
 
     constructor() {
         this.vertices = new Map();
@@ -27,24 +29,64 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 
 
     /**
-     * Returns an undirected Graph<V,L,S,A> given a list of vertices positions and weights and a list of edges.
-     * @param listVertices the two numbers are the coordinates of the vertices, the string is the weight of the vertex
-     * @param listEdges 
+     * Returns an undirected Graph given by its edges.
+     * @param edgesList
      * @param vertexConstructor is a constructor of V
-     * @param edgeConstructor is a constructor of L
      */
-    static fromList<V extends Vertex<V>,L extends Link<L>>(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>, vertexConstructor: (x: number, y: number, weight: string, color: string) => V, edgeConstructor: (indexV1: number, indexV2: number, weight: string) => L ): Graph<V,L>{
-        const g = new Graph<V,L>();
-        for ( const [index, [x,y,w]] of listVertices.entries()){
-            const new_vertex = vertexConstructor(x,y,w, "black");
-            g.set_vertex(index, new_vertex );
+    static fromEdgesList<V,L>( edgesList: Array<[number,number, L]>, vertexConstructor: () => V ){
+        return Graph.fromLinksList(edgesList, vertexConstructor, ORIENTATION.UNDIRECTED);
+    }
+
+    /**
+     * Returns an undirected Graph given by its edges.
+     * @param edgesList
+     * @param vertexConstructor is a constructor of V
+     */
+        static fromArcsList<V,L>( arcsList: Array<[number,number, L]>, vertexConstructor: () => V ){
+            return Graph.fromLinksList(arcsList, vertexConstructor, ORIENTATION.DIRECTED);
         }
-        for ( const [indexV1,indexV2,w] of listEdges.values()){
-            if (indexV1 >= listVertices.length || indexV2 >= listVertices.length){
-                console.log("Error: index given in listEdges is impossible: ", indexV1, " or ", indexV2);
-                return g;
+
+    /**
+     * Returns a graph given by its list of links.
+     * @param linksList [startIndex, endIndex, linkData]
+     * @param vertexConstructor is a constructor of V
+     * @param orientation is the orientation of all the links
+     */
+    static fromLinksList<V,L>( linksList: Array<[number,number, L]>, vertexConstructor: () => V, orientation: ORIENTATION ){
+        const g = new Graph<V,L>();
+        const verticesIndices = new Set();
+
+        for ( const [x,y,_] of linksList){
+            if (g.vertices.has(x) == false){
+                g.set_vertex(x, vertexConstructor());
             }
-            g.addLink(edgeConstructor(indexV1,indexV2,w));
+            if (g.vertices.has(y) == false){
+                g.set_vertex(y, vertexConstructor());
+            }
+        }
+        for ( const [indexV1,indexV2, data] of linksList.values()){
+            g.addLink(indexV1, indexV2, orientation, data);
+        }
+        return g;
+    }
+
+
+    /**
+     * Returns a graph given by its list of vertices and links.
+     * @param verticesData [vertexData]
+     * @param linksList [startIndex, endIndex, linkData] indices refer to the indices in the verticesData array.
+     * @param vertexConstructor is a constructor of V
+     * @param orientation is the orientation of all the links
+     */
+    static fromList<V,L>( verticesData: Array<V>, linksList: Array<[number,number, L]>, orientation: ORIENTATION ){
+        const g = new Graph<V,L>();
+        const verticesIndices = new Set();
+
+        for ( const [index, data] of verticesData.entries()){
+            g.set_vertex(index, data);
+        }
+        for ( const [indexV1,indexV2, data] of linksList.values()){
+            g.addLink(indexV1, indexV2, orientation, data);
         }
         return g;
     }
@@ -54,9 +96,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * @param listVertices the two numbers are the coordinates of the vertices, the string is the weight of the vertex
      * @param listEdges 
      */
-    static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<BasicVertex,BasicLink>{
-        return Graph.fromList(listVertices, listEdges, (x,y,w,c) => {return new BasicVertex(x,y,w,c)}, (x,y,w) => {return new BasicLink(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
-    }
+    // static fromListBasic(listVertices: Array<[number,number,string]>, listEdges: Array<[number,number, string]>): Graph<BasicVertex,BasicLink>{
+    //     return Graph.fromList(listVertices, listEdges, (x,y,w,c) => {return new BasicVertex(x,y,w,c)}, (x,y,w) => {return new BasicLink(x,y,"",ORIENTATION.UNDIRECTED, "black", w)});
+    // }
     
 
     /**
@@ -64,97 +106,109 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * @param vertex_default is a constructor of V
      * @param edge_default is a constructor of L
      */
-    static from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number, string]>, vertex_default: (index: number)=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
-        const g = new Graph<V,L>();
-        const indices = new Set<number>();
-        for ( const [x,y,w] of l.values()){
-            if (indices.has(x) == false){
-                indices.add(x);
-                g.set_vertex(x,vertex_default(x));
-            }
-            if (indices.has(y) == false){
-                indices.add(y);
-                g.set_vertex(y,vertex_default(y));
-            }
-            const link = edge_default(x,y,w);
-            g.addLink(link);
-        }
-        return g;
-    }
+    // static from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number, string]>, vertex_default: (index: number)=> V, edge_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    //     const g = new Graph<V,L>();
+    //     const indices = new Set<number>();
+    //     for ( const [x,y,w] of l.values()){
+    //         if (indices.has(x) == false){
+    //             indices.add(x);
+    //             g.set_vertex(x,vertex_default(x));
+    //         }
+    //         if (indices.has(y) == false){
+    //             indices.add(y);
+    //             g.set_vertex(y,vertex_default(y));
+    //         }
+    //         const link = edge_default(x,y,w);
+    //         g.addLink(link);
+    //     }
+    //     return g;
+    // }
 
     /**
      * Returns an Undirected Graph from a list of edges represented by couples of indices.
      * Weights are set to "".
      */
-    static from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
-        const l2 = new Array();
-        for (const [x,y] of l){
-            l2.push([x,y,""]);
-        }
-        const g = Graph.from_list_default(l2, BasicVertex.default, BasicLink.default_edge );
-        return g;
-    }
+    // static from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
+    //     const l2 = new Array();
+    //     for (const [x,y] of l){
+    //         l2.push([x,y,""]);
+    //     }
+    //     const g = Graph.from_list_default(l2, BasicVertex.default, BasicLink.default_edge );
+    //     return g;
+    // }
 
     // create a Weighted Undirected Graph from a list of weighted edges represented by couples of number with the weight in third
-    static from_weighted_list(l: Array<[number,number,string]>): Graph<BasicVertex,BasicLink>{
-        const g = Graph.from_list_default(l, BasicVertex.default, BasicLink.default_edge );
-        return g;
-    }
+    // static from_weighted_list(l: Array<[number,number,string]>): Graph<BasicVertex,BasicLink>{
+    //     const g = Graph.from_list_default(l, BasicVertex.default, BasicLink.default_edge );
+    //     return g;
+    // }
 	
-     static directed_from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
-        const g = Graph.directed_from_list_default(l, BasicVertex.default, BasicLink.default_arc );
-        return g;
-    }
+    //  static directed_from_list(l: Array<[number,number]>): Graph<BasicVertex,BasicLink>{
+    //     const g = Graph.directed_from_list_default(l, BasicVertex.default, BasicLink.default_arc );
+    //     return g;
+    // }
 
-    static directed_from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number]>, vertex_default: (index: number)=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
-        const g = new Graph<V,L>();
-        const indices = new Set<number>();
-        for ( const [x,y] of l.values()){
-            if (indices.has(x) == false){
-                indices.add(x);
-                g.set_vertex(x,vertex_default(x));
-            }
-            if (indices.has(y) == false){
-                indices.add(y);
-                g.set_vertex(y,vertex_default(y));
-            }
-            const link = arc_default(x,y,"");
-            g.addLink(link);
-        }
+    // static directed_from_list_default<V extends Vertex<V>,L extends Link<L>>(l: Array<[number,number]>, vertex_default: (index: number)=> V, arc_default: (x: number, y: number, weight: string) => L ): Graph<V,L>{
+    //     const g = new Graph<V,L>();
+    //     const indices = new Set<number>();
+    //     for ( const [x,y] of l.values()){
+    //         if (indices.has(x) == false){
+    //             indices.add(x);
+    //             g.set_vertex(x,vertex_default(x));
+    //         }
+    //         if (indices.has(y) == false){
+    //             indices.add(y);
+    //             g.set_vertex(y,vertex_default(y));
+    //         }
+    //         const link = arc_default(x,y,"");
+    //         g.addLink(link);
+    //     }
 
         
-        return g;
-    }
+    //     return g;
+    // }
 
 
-    update_element_weight(element_type: ELEMENT_TYPE, index: number, new_weight: string){
-        if ( element_type == ELEMENT_TYPE.LINK && this.links.has(index)){
-            const link = this.links.get(index);
-            if (typeof link !== "undefined"){
-                link.weight = new_weight;
-            }
-        }else if ( element_type == ELEMENT_TYPE.VERTEX && this.vertices.has(index)){
-            const vertex = this.vertices.get(index);
-            if (typeof vertex !== "undefined"){
-                vertex.weight = new_weight;
-            }
-        }
-    }
 
-
-    update_vertex_pos(vertex_index: number, new_pos: Coord) {
-        const vertex = this.vertices.get(vertex_index);
+    setVertexData(index: number, data: V){
+        const vertex = this.vertices.get(index);
         if (typeof vertex !== "undefined"){
-            vertex.pos = new_pos;
+            vertex.data = data;
         }
     }
 
-    update_control_point(link_index: number, new_pos: Coord) {
-        const link = this.links.get(link_index);
+    setLinkData(index: number, data: L){
+        const link = this.links.get(index);
         if (typeof link !== "undefined"){
-            link.cp = new_pos;
+            link.data = data;
         }
     }
+
+
+
+    // update_element_weight(element_type: ELEMENT_TYPE, index: number, new_weight: string){
+    //     if ( element_type == ELEMENT_TYPE.LINK && this.links.has(index)){
+    //         const link = this.links.get(index);
+    //         if (typeof link !== "undefined"){
+    //             link.weight = new_weight;
+    //         }
+    //     }else if ( element_type == ELEMENT_TYPE.VERTEX && this.vertices.has(index)){
+    //         const vertex = this.vertices.get(index);
+    //         if (typeof vertex !== "undefined"){
+    //             vertex.weight = new_weight;
+    //         }
+    //     }
+    // }
+
+
+    // update_vertex_pos(vertex_index: number, new_pos: Coord) {
+    //     const vertex = this.vertices.get(vertex_index);
+    //     if (typeof vertex !== "undefined"){
+    //         vertex.pos = new_pos;
+    //     }
+    // }
+
+    
 
 
 
@@ -220,16 +274,16 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * Add a vertex to the graph.
      * Returns the index of the added vertex.
      */ 
-    addVertex(vertex: V): number {
-        let index = this.get_next_available_index_vertex();
-        vertex.index = index;
-        this.vertices.set(index, vertex);
+    addVertex(vertexData: V): number {
+        const index = this.get_next_available_index_vertex();
+        const new_vertex = new Vertex(index, vertexData);
+        this.vertices.set(index, new_vertex);
         return index;
     }
 
-    set_vertex(index: number, vertex: V) {
-        vertex.index = index;
-        this.vertices.set(index, vertex );
+    set_vertex(index: number, vertexData: V) {
+        const new_vertex = new Vertex(index, vertexData);
+        this.vertices.set(index, new_vertex );
     }
 
     has_link(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
@@ -245,9 +299,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return this.has_link(index_start, index_end, ORIENTATION.DIRECTED);
     }
 
-    check_link(link: L): boolean {
-        const i = link.start_vertex;
-        const j = link.end_vertex;
+    check_link(link: Link<V,L>): boolean {
+        const i = link.startVertex.index;
+        const j = link.endVertex.index;
         const orientation = link.orientation;
         // do not add link if it is a loop (NO LOOP)
         if (i == j) {
@@ -258,12 +312,12 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         for (const link of this.links.values()) {
             if (link.orientation == orientation) {
                 if (orientation == ORIENTATION.UNDIRECTED) {
-                    if ((link.start_vertex == i && link.end_vertex == j) || (link.start_vertex == j && link.end_vertex == i)) {
+                    if ((link.startVertex.index == i && link.endVertex.index == j) || (link.startVertex.index == j && link.endVertex.index == i)) {
                         return false;
                     }
                 }
                 else if (orientation == ORIENTATION.DIRECTED) {
-                    if (link.start_vertex == i && link.end_vertex == j) {
+                    if (link.startVertex.index == i && link.endVertex.index == j) {
                         return false;
                     }
                 }
@@ -278,13 +332,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * Returns undefined if the link is already in the graph.
      * Returns the index otherwise.
      */
-    addLink(link: L): number | undefined {
-        if (this.check_link(link) == false) {
-            return undefined;
-        }
+    addLink(startIndex: number, endIndex: number, orientation: ORIENTATION, data: L): Option<number> {
         const index = this.get_next_available_index_links();
-        link.index = index;
-        this.links.set(index, link);
+        this.setLink(index, startIndex, endIndex, orientation, data);
         return index;
     }
 
@@ -292,80 +342,78 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     /**
      * Inserts link at link_index in the links of the graph.
      */
-    setLink(link_index: number, link: L) {
-        if (this.check_link(link) == false) {
-            return;
+    setLink(linkIndex: number, startIndex: number, endIndex: number, orientation: ORIENTATION, data: L) {
+        const startVertex = this.vertices.get(startIndex);
+        if (typeof startVertex === "undefined"){
+            return undefined;
         }
-        link.index = link_index;
-        this.links.set(link_index, link);
+        const endVertex = this.vertices.get(endIndex);
+        if (typeof endVertex === "undefined"){
+            return undefined;
+        }
+        const new_link = new Link(linkIndex, startVertex, endVertex, orientation, data);
+        if (this.check_link(new_link) == false) {
+            return undefined;
+        }
+        this.links.set(linkIndex, new_link);
     }
 
 
 
 
-/*
-    add_stroke(positions_data: any, color: string, width: number, top_left_data: any, bot_right_data: any) {
-        // console.log(positions_data, old_pos_data, color, width, top_left_data, bot_right_data);
-        const index = this.get_next_available_index_strokes();
-        const positions = [];
-        positions_data.forEach(e => {
-            // console.log(e);
-            positions.push(new Coord(e[1].x, e[1].y));
-        });
-        const top_left = new Coord(top_left_data.x, top_left_data.y);
-        const bot_right = new Coord(bot_right_data.x, bot_right_data.y);
-
-        this.strokes.set(index, new Stroke(positions, color, width, top_left, bot_right));
-    }
-*/
 
 
-    get_neighbors_list(i: number) {
+    /**
+     * Returns the list of the neighbors indices of a vertex.
+     */
+    get_neighbors_list(vertexIndex: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.UNDIRECTED) {
-                if (e.start_vertex == i) {
-                    neighbors.push(e.end_vertex);
-                } else if (e.end_vertex == i) {
-                    neighbors.push(e.start_vertex);
+                if (e.startVertex.index == vertexIndex) {
+                    neighbors.push(e.endVertex.index);
+                } else if (e.endVertex.index == vertexIndex) {
+                    neighbors.push(e.startVertex.index);
                 }
             }
         }
         return neighbors;
     }
+
+
 
     get_neighbors_list_excluding_links(i: number, excluded: Set<number>): Array<number> {
         const neighbors = new Array<number>();
         for (const [link_index, link] of this.links.entries()) {
             if (excluded.has(link_index) == false && link.orientation == ORIENTATION.UNDIRECTED) {
-                if (link.start_vertex == i) {
-                    neighbors.push(link.end_vertex);
-                } else if (link.end_vertex == i) {
-                    neighbors.push(link.start_vertex);
+                if (link.startVertex.index == i) {
+                    neighbors.push(link.endVertex.index);
+                } else if (link.endVertex.index == i) {
+                    neighbors.push(link.startVertex.index);
                 }
             }
         }
         return neighbors;
     }
 
-    get_out_neighbors_list(i: number) {
+    get_out_neighbors_list(i: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
-                if (e.start_vertex == i) {
-                    neighbors.push(e.end_vertex);
+                if (e.startVertex.index == i) {
+                    neighbors.push(e.endVertex.index);
                 }
             }
         }
         return neighbors;
     }
 
-    get_in_neighbors_list(i: number) {
+    get_in_neighbors_list(i: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
-                if (e.end_vertex == i) {
-                    neighbors.push(e.start_vertex);
+                if (e.endVertex.index == i) {
+                    neighbors.push(e.startVertex.index);
                 }
             }
         }
@@ -376,7 +424,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         this.vertices.delete(vertex_index);
 
         this.links.forEach((link, link_index) => {
-            if (link.end_vertex === vertex_index || link.start_vertex === vertex_index) {
+            if (link.endVertex.index === vertex_index || link.startVertex.index === vertex_index) {
                 this.links.delete(link_index);
             }
         })
@@ -397,102 +445,10 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 
 
 
-    translate_vertices(indices: Iterable<number>, shift: Vect) {
-        for (const index of indices) {
-            const vertex = this.vertices.get(index);
-            if (typeof vertex !== "undefined") {
-                const previous_pos = vertex.pos.copy();
-                vertex.pos.translate(shift);
-                const new_pos = vertex.pos.copy();
-
-                for (const [link_index, link] of this.links.entries()) {
-                    if (link.start_vertex == index) {
-                        const end_vertex = this.vertices.get(link.end_vertex);
-                        if (typeof end_vertex !== "undefined"){
-                            link.transform_cp(new_pos, previous_pos, end_vertex.pos);
-                        }
-                    } else if (link.end_vertex == index) {
-                        const start_vertex = this.vertices.get(link.start_vertex);
-                        if (typeof start_vertex !== "undefined"){
-                            link.transform_cp(new_pos, previous_pos, start_vertex.pos);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     
 
-    vertices_contained_by_area<A extends Area>(area: A): Set<number>{
-        const set = new Set<number>();
-        this.vertices.forEach((vertex,vertex_index)=> {
-            if (area.is_containing(vertex)){
-                set.add(vertex_index);
-            }
-        })
-        return set;
-    }
 
 
-    /**
-     * Returns the distances between each pair of vertices using only edges (undirected links).
-     * It uses the algorithm of Floyd-Warshall.
-     * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.
-     * TODO: oriented case 
-     */
-    Floyd_Warhall( weighted: boolean) {
-        const dist = new Map<number, Map<number, number>>();
-        const next = new Map<number, Map<number, number>>();
-
-        for (const v_index of this.vertices.keys()) {
-            dist.set(v_index, new Map<number, number>());
-            next.set(v_index, new Map<number, number>());
-
-            for (const u_index of this.vertices.keys()) {
-                if (v_index === u_index) {
-                    dist.get(v_index).set(v_index, 0);
-                    next.get(v_index).set(v_index, v_index);
-                }
-                else {
-                    dist.get(v_index).set(u_index, Infinity);
-                    next.get(v_index).set(u_index, Infinity);
-                }
-            }
-        }
-
-        for (const e_index of this.links.keys()) {
-            const e = this.links.get(e_index);
-            // TODO: Oriented Case
-            let weight = 1;
-            if (weighted) {
-                weight = parseFloat(e.weight);
-            }
-            dist.get(e.start_vertex).set(e.end_vertex, weight);
-            dist.get(e.end_vertex).set(e.start_vertex, weight);
-
-            next.get(e.start_vertex).set(e.end_vertex, e.start_vertex);
-            next.get(e.end_vertex).set(e.start_vertex, e.end_vertex);
-        }
-
-        for (const k_index of this.vertices.keys()) {
-            for (const i_index of this.vertices.keys()) {
-                for (const j_index of this.vertices.keys()) {
-                    const direct = dist.get(i_index).get(j_index);
-                    const shortcut_part_1 = dist.get(i_index).get(k_index);
-                    const shortcut_part_2 = dist.get(k_index).get(j_index);
-
-                    if (direct > shortcut_part_1 + shortcut_part_2) {
-                        dist.get(i_index).set(j_index, shortcut_part_1 + shortcut_part_2);
-                        next.get(i_index).set(j_index, next.get(i_index).get(k_index));
-                    }
-                }
-            }
-        }
-
-        return { distances: dist, next: next };
-
-    }
 
     get_degrees_data() {
         if (this.vertices.size == 0) {
@@ -766,16 +722,16 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         while (stack.length > 0) {
             const u_index = stack.pop();
             const u = this.vertices.get(u_index);
-            g.set_vertex(u_index, u);
+            g.set_vertex(u_index, u.data);
             if (!visited.has(u_index)) {
                 visited.add(u_index);
                 for (const [link_index, link] of this.links.entries()){
                     if ( link.orientation == ORIENTATION.UNDIRECTED){
-                        if ( link.start_vertex == u_index){
-                            stack.push(link.end_vertex);
+                        if ( link.startVertex.index == u_index){
+                            stack.push(link.endVertex.index);
                             g.links.set(link_index, link);
-                        } else if ( link.end_vertex == u_index){
-                            stack.push(link.start_vertex);
+                        } else if ( link.endVertex.index == u_index){
+                            stack.push(link.startVertex.index);
                             g.links.set(link_index, link);
                         }
                     }
@@ -794,9 +750,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         let record_link_index = -1;
         for ( const [link_index, link] of this.links.entries()){
 
-            const n1 = this.size_connected_component_excluding_links(link.start_vertex, new Set([link_index]));
+            const n1 = this.size_connected_component_excluding_links(link.startVertex.index, new Set([link_index]));
             if (n1 < n ){
-                const n2 = this.size_connected_component_excluding_links(link.end_vertex, new Set([link_index]));
+                const n2 = this.size_connected_component_excluding_links(link.endVertex.index, new Set([link_index]));
                 const m = Math.min(n1,n2);
                 if ( m > record){
                     record = m;
@@ -827,45 +783,6 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
             }
         }
         return true;
-    }
-
-    // Compute a minimum spanning tree using Kruskal algorithm
-    // https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-    // edges in the tree are colored red
-    // other edges are colored black
-    // return the weight of the spanning tree
-    minimum_spanning_tree(): number {
-        const edges = new Array<[L,number]>();
-        for (const link of this.links.values()){
-            if (link.orientation == ORIENTATION.UNDIRECTED){
-                edges.push([link, parseFloat(link.weight)]);
-                
-            }
-        }
-        edges.sort(([e,w],[e2,w2]) => w-w2);
-
-        const component = new Map<number,number>();
-        for (const index of this.vertices.keys()){
-            component.set(index, index);
-        }
-
-        let tree_weight = 0;
-        for (const edge of edges){
-            const c1 = component.get(edge[0].start_vertex);
-            const c2 = component.get(edge[0].end_vertex);
-            if ( c1 != c2 ){
-                edge[0].color = "red";
-                tree_weight += edge[1];
-                for (const [vindex, c] of component.entries()){
-                    if (c == c1){
-                        component.set(vindex, c2);
-                    }
-                }
-            }else {
-                edge[0].color = "black";
-            }
-        }
-        return tree_weight;
     }
 
     
@@ -915,54 +832,9 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 	    return scc; 
     }
 
-    /// for every vertex of vertices_indices
-    /// add arcs between these vertices according to their x-coordinate
-    complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
-        for (const index1 of vertices_indices){
-            const v1 = this.vertices.get(index1);
-            for (const index2 of vertices_indices){
-                const v2 = this.vertices.get(index2);
-                if (index1 < index2 ){
-                    if ( v1.pos.x < v2.pos.x ){
-                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const new_link = arc_default(index1, index2);
-                            this.addLink(new_link);
-                        }
-                    } else {
-                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const new_link = arc_default(index2, index1);
-                            this.addLink(new_link);
-                        }
-                    }
-                }
-                
-            }
-        }
-    }
-
-    /**
-     * Warning: UNTESTED
-     * @param c1 a corner from the rectangle
-     * @param c2 the opposite corner
-     * @returns the subgraph of this formed by the vertices contained in the rectangle. The links between these vertices are kept.
-     * These links could go out of the rectangle if they are bended.
-     * Vertices and links are not copied, so any modification on these elements affect the original graph.
-     */
-    getSubgraphFromRectangle(c1: Coord, c2: Coord): Graph<V,L>{
-        const newGraph = new Graph<V,L>();
     
-        for (const [index,vertex] of this.vertices.entries()){
-            if (vertex.isInRectangle(c1,c2)){
-                newGraph.set_vertex(index,vertex);
-            }
-        }
-        for (const [index,link] of this.links.entries()){
-            if (newGraph.vertices.has(link.start_vertex) && newGraph.vertices.has(link.end_vertex)){
-                newGraph.setLink(index, link);
-            }
-        }
-        return newGraph;
-    }
+
+    
 
     /**
      * Paste other graph in this by cloning the vertices and links of the other graph.
@@ -973,17 +845,14 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     pasteGraph(other: Graph<V,L>){
         const corresp = new Map<number,number>();
         for(const [oldIndex, vertex] of other.vertices){
-            const newIndex = this.addVertex(vertex.clone());
+            const newIndex = this.addVertex(vertex.data); // TODO faut cloner
             corresp.set(oldIndex, newIndex);
         }
         for (const link of other.links.values()){
-            const newIndexV1 = corresp.get(link.start_vertex);
-            const newIndexV2 = corresp.get(link.end_vertex);
+            const newIndexV1 = corresp.get(link.startVertex.index);
+            const newIndexV2 = corresp.get(link.endVertex.index);
             if (typeof newIndexV1 !== "undefined" && typeof newIndexV2 !== "undefined"){
-                const newLink = link.clone();
-                newLink.start_vertex = newIndexV1;
-                newLink.end_vertex = newIndexV2;
-                this.addLink(newLink);
+                this.addLink(newIndexV1, newIndexV2, link.orientation, link.data);  // TODO faut cloner
             }
         }
     }
@@ -992,32 +861,19 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
      * WARNING: UNTESTED
      * Clones the graph.
      */
-    clone(): Graph<V,L> {
-        const newGraph = new Graph<V,L>();
-        for(const [index, vertex] of this.vertices){
-            newGraph.set_vertex(index, vertex.clone());
-        }
-        for(const [index, link] of this.links){
-            newGraph.setLink(index, link.clone());
-        }
-        return newGraph;
-    }
+    // clone(): Graph<V,L> {
+    //     const newGraph = new Graph<V,L>();
+    //     for(const [index, vertex] of this.vertices){
+    //         newGraph.set_vertex(index, vertex.data.clone());
+    //     }
+    //     for(const [index, link] of this.links){
+    //         newGraph.setLink(index, link.data.clone());
+    //     }
+    //     return newGraph;
+    // }
 
 
-    /**
-     * WARNING: UNTESTED
-     * Translate the graph.
-     */
-    translate(shift: Vect){
-        for(const [index, vertex] of this.vertices){
-            vertex.pos.translate(shift)
-        }
-        for(const [index, link] of this.links){
-            if (typeof link.cp !== "string"){
-                link.cp.translate(shift);
-            }
-        }
-    }
+
 
 
     // TODO: optional parameter which starts the k
@@ -1059,7 +915,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                 let is_proper_coloring = true;
                 for (const link of this.links.values()){
                     if ( link.orientation == ORIENTATION.UNDIRECTED){
-                        if( color[indices.get(link.start_vertex)] == color[indices.get(link.end_vertex)]){
+                        if( color[indices.get(link.startVertex.index)] == color[indices.get(link.endVertex.index)]){
                             is_proper_coloring = false;
                             break;
                         }
@@ -1107,7 +963,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
             let is_vertex_cover = true;
             for (const link of this.links.values()){
                 if ( link.orientation == ORIENTATION.UNDIRECTED){
-                    if( !selection[indices.get(link.start_vertex)] && !selection[indices.get(link.end_vertex)]){
+                    if( !selection[indices.get(link.startVertex.index)] && !selection[indices.get(link.endVertex.index)]){
                         is_vertex_cover = false;
                         break;
                     }
@@ -1193,6 +1049,220 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
 
 
 
+
+
+    /**
+     * Returns true if the graph is bipartite.
+     * A graph is said to be bipartite if it is 2-colorable.
+     * TODO: optimize
+     */
+    isBipartite(): boolean {
+        return this.chromatic_number() <= 2;
+    }
+
+
+
+
+
+}
+
+
+
+
+export class AbstractGraph extends Graph<void,void> {
+
+    constructor(){
+        super();
+    }
+
+    static fromEdgesListDefault(edgesList: Array<[number,number]>): AbstractGraph{
+        const fmtEdgesList = new Array<[number,number,void]>();
+        for (const [x,y] of edgesList){
+            fmtEdgesList.push([x,y,null]);
+        }
+        const g = Graph.fromEdgesList(fmtEdgesList, () => {return});
+        return g as AbstractGraph;
+    }
+
+    static fromArcsListDefault(arcsList: Array<[number,number]>): AbstractGraph{
+        const fmtArcsList = new Array<[number,number,void]>();
+        for (const [x,y] of arcsList){
+            fmtArcsList.push([x,y,null]);
+        }
+        const g = Graph.fromArcsList(fmtArcsList, () => {return});
+        return g as AbstractGraph;
+    }
+}
+
+
+
+
+export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> extends Graph<V,L> {
+    vertices: Map<number, BasicVertex<V>>;
+    links: Map<number, BasicLink<V,L>>;
+
+
+    static from<V extends BasicVertexData, L extends BasicLinkData>(rawVerticesList: Array<[number,number,string]>, rawEdgesList: Array<[number, number, string]> ): BasicGraph<V,L>{
+        const verticesList = new Array<BasicVertexData>();
+        for (const [x,y,w] of rawVerticesList){
+            verticesList.push(new BasicVertexData(new Coord(x,y), w, "black"));
+        }
+
+        const edgesList = new Array<[number,number,BasicLinkData]>();
+        for (const [x,y,w] of rawEdgesList){
+            edgesList.push([x,y,  new BasicLinkData(w, "black")]);
+        }
+
+        const g = Graph.fromList(verticesList, edgesList, ORIENTATION.UNDIRECTED);
+        return g as BasicGraph<V,L>;
+    }
+
+    static fromWeightedEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number, string]>): BasicGraph<V,L>{
+        const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
+        for (const [x,y,w] of edgesList){
+            fmtEdgesList.push([x,y,  new BasicLinkData(w, "black")]);
+        }
+
+        const g = Graph.fromEdgesList(fmtEdgesList, () => { return new BasicVertexData(new Coord(0,0), "", "black")});
+        return g as BasicGraph<V,L>;
+    }
+
+
+    setLinkCp(index: number, cp: Option<Coord>){
+        const link = this.links.get(index);
+        if (typeof link !== "undefined"){
+            link.cp = cp;
+        }
+    }
+
+
+    /**
+     * WARNING: UNTESTED
+     * Translates the graph.
+     */
+    translate(shift: Vect){
+        for(const [index, vertex] of this.vertices){
+            vertex.translate(shift)
+        }
+        for(const [index, link] of this.links){
+            if (typeof link.cp !== "string"){
+                link.cp.translate(shift);
+            }
+        }
+    }
+
+
+
+    vertices_contained_by_area<A extends Area>(area: A): Set<number>{
+        const set = new Set<number>();
+        this.vertices.forEach((vertex,vertex_index)=> {
+            if (area.is_containing(vertex)){
+                set.add(vertex_index);
+            }
+        })
+        return set;
+    }
+
+    translate_vertices(indices: Iterable<number>, shift: Vect) {
+        for (const index of indices) {
+            const vertex = this.vertices.get(index);
+            if (typeof vertex !== "undefined") {
+                const previous_pos = vertex.data.getPos().copy();
+                vertex.data.getPos().translate(shift);
+                const new_pos = vertex.data.getPos().copy();
+
+                for (const [link_index, link] of this.links.entries()) {
+                    if (link.startVertex.index == index) {
+                        const end_vertex = this.vertices.get(link.endVertex.index);
+                        if (typeof end_vertex !== "undefined"){
+                            link.transform_cp(new_pos, previous_pos, end_vertex.data.getPos());
+                        }
+                    } else if (link.endVertex.index == index) {
+                        const start_vertex = this.vertices.get(link.startVertex.index);
+                        if (typeof start_vertex !== "undefined"){
+                            link.transform_cp(new_pos, previous_pos, start_vertex.data.getPos());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Warning: UNTESTED
+     * @param c1 a corner from the rectangle
+     * @param c2 the opposite corner
+     * @returns the subgraph of this formed by the vertices contained in the rectangle. The links between these vertices are kept.
+     * These links could go out of the rectangle if they are bended.
+     * Vertices and links are not copied, so any modification on these elements affect the original graph.
+     */
+    getSubgraphFromRectangle(c1: Coord, c2: Coord): BasicGraph<V,L>{
+        const newGraph = new BasicGraph<V,L>();
+    
+        for (const [index,vertex] of this.vertices.entries()){
+            if (vertex.isInRectangle(c1,c2)){
+                newGraph.set_vertex(index,vertex.data);
+            }
+        }
+        for (const [index,link] of this.links.entries()){
+            if (newGraph.vertices.has(link.startVertex.index) && newGraph.vertices.has(link.endVertex.index)){
+                newGraph.setLink(index, link.startVertex.index, link.endVertex.index, link.orientation, link.data);
+            }
+        }
+        return newGraph;
+    }
+
+
+    /**
+     * Resets the edges of the graph so that they respect the Delaunay adjacency rule.
+     */
+    resetDelaunayGraph(linkConstructor: (i: number, j: number) => L){
+        this.links.clear();
+
+        for (const [i1, v1] of this.vertices){
+            for (const [i2, v2] of this.vertices){
+                for (const [i3, v3] of this.vertices){
+                    if ( !( (i1 < i2 && i2 < i3) || (i1 > i2 && i2 > i3) )){
+                        continue;
+                    }
+                    // Check if the points are in counterclowise order.
+                    if ( (v2.getPos().x - v1.getPos().x)*(v3.getPos().y-v1.getPos().y)-(v3.getPos().x -v1.getPos().x)*(v2.getPos().y-v1.getPos().y) <= 0){
+                        // console.log("not ccw", i1, i2, i3);
+                        continue;
+                    }
+                    // console.log("ccw", i1, i2, i3);
+
+                    let isPointInside = false;
+                    for (const [i4,v4] of this.vertices){
+                       if( i1 != i4 && i2 != i4 && i3 != i4){
+                            const mat = 
+                            [[v1.getPos().x, v1.getPos().y, v1.getPos().x**2 + v1.getPos().y**2, 1],
+                             [v2.getPos().x, v2.getPos().y, v2.getPos().x**2 + v2.getPos().y**2, 1],
+                             [v3.getPos().x, v3.getPos().y, v3.getPos().x**2 + v3.getPos().y**2, 1],
+                             [v4.getPos().x, v4.getPos().y, v4.getPos().x**2 + v4.getPos().y**2, 1]];
+                            if (det(mat) > 0){
+                                isPointInside = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isPointInside == false){
+                        this.addLink(i1,i2, ORIENTATION.UNDIRECTED, linkConstructor(i1,i2));
+                        this.addLink(i1,i3, ORIENTATION.UNDIRECTED, linkConstructor(i1,i2));
+                        this.addLink(i2,i3, ORIENTATION.UNDIRECTED, linkConstructor(i1,i2));
+                    }
+                }
+            }
+        }
+    }
+
+
+    
+
+
+
+
     // TODO consider cubic bezier
     // The drawing of a graph is said to be planar if no link intersect another link
     // Return true iff the drawing is planar
@@ -1203,29 +1273,29 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     is_drawing_planar(): boolean{
         for (const link_index of this.links.keys()) {
             const link1 = this.links.get(link_index);
-            const v1 = this.vertices.get(link1.start_vertex);
-            const w1 = this.vertices.get(link1.end_vertex);
-            let z1 = v1.pos.middle(w1.pos);
+            const v1 = link1.startVertex as BasicVertex<V>;
+            const w1 = link1.endVertex as BasicVertex<V>;
+            let z1 = v1.getPos().middle(w1.getPos());
             if (typeof link1.cp != "string"){
                 z1 = link1.cp;
             }
             for (const link_index2 of this.links.keys()) {
                 if ( link_index2 < link_index){
                     const link2 = this.links.get(link_index2);
-                    const v2 = this.vertices.get(link2.start_vertex);
-                    const w2 = this.vertices.get(link2.end_vertex);
+                    const v2 = link2.startVertex as BasicVertex<V>;
+                    const w2 = link2.endVertex as BasicVertex<V>;
                     let is_intersecting = false;
-                    let z2 = v2.pos.middle(w2.pos);
+                    let z2 = v2.getPos().middle(w2.getPos());
                     // TODO: faster algorithm for intersection between segment and bezier
                     if (typeof link2.cp != "string"){
                         z2 = link2.cp;
-                        is_intersecting = is_quadratic_bezier_curves_intersection(v1.pos, z1, w1.pos, v2.pos, z2, w2.pos);
+                        is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
                     }
                     else {
                         if (typeof link1.cp == "string"){
-                            is_intersecting = is_segments_intersection(v1.pos, w1.pos, v2.pos, w2.pos);
+                            is_intersecting = is_segments_intersection(v1.getPos(), w1.getPos(), v2.getPos(), w2.getPos());
                         } else {
-                            is_intersecting = is_quadratic_bezier_curves_intersection(v1.pos, z1, w1.pos, v2.pos, z2, w2.pos);
+                            is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
                         }
                     }
     
@@ -1239,29 +1309,148 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
     }
 
 
-    /**
-     * Returns true if the graph is bipartite.
-     * A graph is said to be bipartite if it is 2-colorable.
-     * TODO: optimize
-     */
-    isBipartite(): boolean {
-        return this.chromatic_number() <= 2;
-    }
-
-    /**
-     * Sets all weights of links to the euclidian distance between vertices.
-     * TODO: generalize to other distances.
-     */
-    setEuclidianLinkWeights() {
-        for (const link of this.links.values()){
-            const v1 = this.vertices.get(link.start_vertex);
-            const v2 = this.vertices.get(link.end_vertex);
-            if (v1 && v2){
-                const d = Math.sqrt(v1.pos.dist2(v2.pos));
-                link.weight = String(d);
+    /// for every vertex of vertices_indices
+    /// add arcs between these vertices according to their x-coordinate
+    complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
+        for (const index1 of vertices_indices){
+            const v1 = this.vertices.get(index1);
+            for (const index2 of vertices_indices){
+                const v2 = this.vertices.get(index2);
+                if (index1 < index2 ){
+                    if ( v1.getPos().x < v2.getPos().x ){
+                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
+                            const newData = arc_default(index1, index2);
+                            this.addLink(index1, index2, ORIENTATION.DIRECTED,newData );
+                        }
+                    } else {
+                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
+                            const newData = arc_default(index2, index1);
+                            this.addLink(index2, index1, ORIENTATION.DIRECTED,newData );
+                        }
+                    }
+                }
+                
             }
         }
     }
+
+    /**
+     * Returns the distances between each pair of vertices using only edges (undirected links).
+     * It uses the algorithm of Floyd-Warshall.
+     * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.
+     * TODO: oriented case 
+     */
+    Floyd_Warhall( weighted: boolean) {
+        const dist = new Map<number, Map<number, number>>();
+        const next = new Map<number, Map<number, number>>();
+
+        for (const v_index of this.vertices.keys()) {
+            dist.set(v_index, new Map<number, number>());
+            next.set(v_index, new Map<number, number>());
+
+            for (const u_index of this.vertices.keys()) {
+                if (v_index === u_index) {
+                    dist.get(v_index).set(v_index, 0);
+                    next.get(v_index).set(v_index, v_index);
+                }
+                else {
+                    dist.get(v_index).set(u_index, Infinity);
+                    next.get(v_index).set(u_index, Infinity);
+                }
+            }
+        }
+
+        for (const e_index of this.links.keys()) {
+            const e = this.links.get(e_index);
+            // TODO: Oriented Case
+            let weight = 1;
+            if (weighted) {
+                weight = parseFloat(e.getWeight());
+            }
+            dist.get(e.startVertex.index).set(e.endVertex.index, weight);
+            dist.get(e.endVertex.index).set(e.startVertex.index, weight);
+
+            next.get(e.startVertex.index).set(e.endVertex.index, e.startVertex.index);
+            next.get(e.endVertex.index).set(e.startVertex.index, e.endVertex.index);
+        }
+
+        for (const k_index of this.vertices.keys()) {
+            for (const i_index of this.vertices.keys()) {
+                for (const j_index of this.vertices.keys()) {
+                    const direct = dist.get(i_index).get(j_index);
+                    const shortcut_part_1 = dist.get(i_index).get(k_index);
+                    const shortcut_part_2 = dist.get(k_index).get(j_index);
+
+                    if (direct > shortcut_part_1 + shortcut_part_2) {
+                        dist.get(i_index).set(j_index, shortcut_part_1 + shortcut_part_2);
+                        next.get(i_index).set(j_index, next.get(i_index).get(k_index));
+                    }
+                }
+            }
+        }
+
+        return { distances: dist, next: next };
+
+    }
+
+
+
+
+    // Compute a minimum spanning tree using Kruskal algorithm
+    // https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+    // edges in the tree are colored red
+    // other edges are colored black
+    // return the weight of the spanning tree
+    minimum_spanning_tree(): number {
+        const edges = new Array<[Link<V,L>,number]>();
+        for (const link of this.links.values()){
+            if (link.orientation == ORIENTATION.UNDIRECTED){
+                edges.push([link, parseFloat(link.getWeight())]);
+                
+            }
+        }
+        edges.sort(([e,w],[e2,w2]) => w-w2);
+
+        const component = new Map<number,number>();
+        for (const index of this.vertices.keys()){
+            component.set(index, index);
+        }
+
+        let tree_weight = 0;
+        for (const edge of edges){
+            const c1 = component.get(edge[0].startVertex.index);
+            const c2 = component.get(edge[0].endVertex.index);
+            if ( c1 != c2 ){
+                // edge[0].color = "red";
+                tree_weight += edge[1];
+                for (const [vindex, c] of component.entries()){
+                    if (c == c1){
+                        component.set(vindex, c2);
+                    }
+                }
+            }else {
+                // edge[0].color = "black";
+            }
+        }
+        return tree_weight;
+    }
+
+
+        /**
+     * Sets all weights of links to the euclidian distance between vertices.
+     * TODO: generalize to other distances.
+     */
+        setEuclidianLinkWeights() {
+            for (const link of this.links.values()){
+                const v1 = this.vertices.get(link.startVertex.index);
+                const v2 = this.vertices.get(link.endVertex.index);
+                if (typeof v1 !== "undefined" && typeof v2 !== "undefined"){
+                    const d = v1.distTo(v2);
+                    link.setWeight(String(d));
+                }
+            }
+        }
+    
 
     /**
      * Returns the stretch of the graph.
@@ -1281,7 +1470,7 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
                     if (v1distances){
                         const graphDist = v1distances.get(indexV2);
                         if (graphDist){
-                            const stretch = graphDist / Math.sqrt(v1.pos.dist2(v2.pos));
+                            const stretch = graphDist / v1.distTo(v2);
                             if (typeof maxStretch === "undefined" ){
                                 maxStretch = stretch;
                             } else if (stretch > maxStretch){
@@ -1295,51 +1484,4 @@ export class Graph<V extends Vertex<V>,L extends Link<L>> {
         return maxStretch;
     }
 
-
-    /**
-     * Resets the edges of the graph so that they respect the Delaunay adjacency rule.
-     * 
-     */
-    resetDelaunayGraph(linkConstructor: (i: number, j: number) => L){
-        this.links.clear();
-
-        for (const [i1, v1] of this.vertices){
-            for (const [i2, v2] of this.vertices){
-                for (const [i3, v3] of this.vertices){
-                    if ( !( (i1 < i2 && i2 < i3) || (i1 > i2 && i2 > i3) )){
-                        continue;
-                    }
-                    // Check if the points are in counterclowise order.
-                    if ( (v2.pos.x - v1.pos.x)*(v3.pos.y-v1.pos.y)-(v3.pos.x -v1.pos.x)*(v2.pos.y-v1.pos.y) <= 0){
-                        // console.log("not ccw", i1, i2, i3);
-                        continue;
-                    }
-                    // console.log("ccw", i1, i2, i3);
-
-                    let isPointInside = false;
-                    for (const [i4,v4] of this.vertices){
-                       if( i1 != i4 && i2 != i4 && i3 != i4){
-                            const mat = 
-                            [[v1.pos.x, v1.pos.y, v1.pos.x**2 + v1.pos.y**2, 1],
-                             [v2.pos.x, v2.pos.y, v2.pos.x**2 + v2.pos.y**2, 1],
-                             [v3.pos.x, v3.pos.y, v3.pos.x**2 + v3.pos.y**2, 1],
-                             [v4.pos.x, v4.pos.y, v4.pos.x**2 + v4.pos.y**2, 1]];
-                            if (det(mat) > 0){
-                                isPointInside = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (isPointInside == false){
-                        this.addLink(linkConstructor(i1,i2));
-                        this.addLink(linkConstructor(i1,i3));
-                        this.addLink(linkConstructor(i2,i3));
-                    }
-                }
-            }
-        }
-    }
-
-}
-
-
+} 

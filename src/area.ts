@@ -1,4 +1,5 @@
 import { Coord, Vect } from "./coord";
+import { Geometric } from "./traits";
 import { Vertex } from "./vertex";
 
 // c1 and c2 are any points in the plane (not necessarily the bottom left corner or other corners)
@@ -26,8 +27,8 @@ export class Area {
         this.c2.rtranslate(shift);
     }
 
-    is_containing<V extends Vertex<V>>(v: V): Boolean {
-        return Math.min(this.c1.x, this.c2.x) <= v.pos.x && v.pos.x <= Math.max(this.c1.x, this.c2.x) && Math.min(this.c1.y, this.c2.y) <= v.pos.y && v.pos.y <= Math.max(this.c1.y, this.c2.y);
+    is_containing<V extends Geometric>(v: Vertex<V>): Boolean {
+        return Math.min(this.c1.x, this.c2.x) <= v.data.getPos().x && v.data.getPos().x <= Math.max(this.c1.x, this.c2.x) && Math.min(this.c1.y, this.c2.y) <= v.data.getPos().y && v.data.getPos().y <= Math.max(this.c1.y, this.c2.y);
     }
 
     top_right_corner(): Coord{

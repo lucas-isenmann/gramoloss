@@ -11,8 +11,8 @@ This package contains a graph structure based on a map of edges and arcs (called
 ## Examples
 
 ```typescript
-import {Graph} from "gramoloss";
-const g = Graph.from_list([[0,1],[0,2],[1,2]]); // create an undirected graph from list of edges
+import {AbstractGraph} from "gramoloss";
+const g = AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[1,2]]); // create an undirected graph from list of edges
 const d = g.max_degree(); // d = 2
 const b = g.has_cycle(); // b = true
 for (const v of g.get_neighbors_list(0)){
@@ -23,8 +23,8 @@ for (const v of g.get_neighbors_list(0)){
 Chromatic number:
 
 ```typescript
-import {Graph} from "gramoloss";
-const g = Graph.from_list([[0,1],[0,2],[1,2]]); // create the graph K3
+import {AbstractGraph} from "gramoloss";
+const g = AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[1,2]]); // create the graph K3
 console.log(g.chromatic_number()); // prints 3
 ```
 

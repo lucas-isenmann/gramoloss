@@ -1,15 +1,14 @@
 import { Area } from "./area";
 import { Vect } from "./coord";
-import { Graph } from "./graph";
-import { Link } from "./link";
+import { BasicGraph, Graph } from "./graph";
 import { Rectangle } from "./rectangle";
 import { Representation } from "./representations/representation";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
-import { Vertex } from "./vertex";
+import { BasicLinkData, BasicVertexData, Geometric, Weighted } from "./traits";
 
-export class Board<V extends Vertex<V>,L extends Link<L>, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
-    graph: Graph<V,L>;
+export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
+    graph: BasicGraph<V,L>;
     text_zones: Map<number, T>;
     representations: Map<number, R>;
     strokes: Map<number, S>;
@@ -17,7 +16,7 @@ export class Board<V extends Vertex<V>,L extends Link<L>, S extends Stroke, A ex
     rectangles: Map<number, Rect>; 
 
     constructor() {
-        this.graph = new Graph();
+        this.graph = new BasicGraph();
         this.text_zones = new Map();
         this.representations = new Map();
         this.strokes = new Map();
@@ -120,8 +119,8 @@ export class Board<V extends Vertex<V>,L extends Link<L>, S extends Stroke, A ex
         }
 
         for (const [index, link] of this.graph.links.entries()){
-            const u = this.graph.vertices.get(link.start_vertex);
-            const v = this.graph.vertices.get(link.end_vertex);
+            const u = this.graph.vertices.get(link.startVertex.index);
+            const v = this.graph.vertices.get(link.endVertex.index);
 
             if( area.is_containing(u) && area.is_containing(v)){
                 subgraph.links.set(index, link);
