@@ -7,6 +7,7 @@
 - [X] move modifications out of Graph -> to Board
 - [X] move modifications to Gracofeu
 - [ ] set stict=true in tsconfig.json
+- [ ] refacto Stroke, Rectangle and Area with Data (so they have index)
 
 ## Parameters
 

@@ -274,16 +274,17 @@ export class Graph<V,L> {
      * Add a vertex to the graph.
      * Returns the index of the added vertex.
      */ 
-    addVertex(vertexData: V): number {
+    addVertex(vertexData: V): Vertex<V> {
         const index = this.get_next_available_index_vertex();
-        const new_vertex = new Vertex(index, vertexData);
-        this.vertices.set(index, new_vertex);
-        return index;
+        const newVertex = new Vertex(index, vertexData);
+        this.vertices.set(index, newVertex);
+        return newVertex;
     }
 
-    set_vertex(index: number, vertexData: V) {
-        const new_vertex = new Vertex(index, vertexData);
-        this.vertices.set(index, new_vertex );
+    set_vertex(index: number, vertexData: V): Vertex<V> {
+        const newVertex = new Vertex(index, vertexData);
+        this.vertices.set(index, newVertex);
+        return newVertex;
     }
 
     has_link(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
@@ -332,17 +333,17 @@ export class Graph<V,L> {
      * Returns undefined if the link is already in the graph.
      * Returns the index otherwise.
      */
-    addLink(startIndex: number, endIndex: number, orientation: ORIENTATION, data: L): Option<number> {
+    addLink(startIndex: number, endIndex: number, orientation: ORIENTATION, data: L): Option<Link<V,L>> {
         const index = this.get_next_available_index_links();
-        this.setLink(index, startIndex, endIndex, orientation, data);
-        return index;
+        const newLink = this.setLink(index, startIndex, endIndex, orientation, data);
+        return newLink;
     }
 
 
     /**
      * Inserts link at link_index in the links of the graph.
      */
-    setLink(linkIndex: number, startIndex: number, endIndex: number, orientation: ORIENTATION, data: L) {
+    setLink(linkIndex: number, startIndex: number, endIndex: number, orientation: ORIENTATION, data: L): Option<Link<V,L>> {
         const startVertex = this.vertices.get(startIndex);
         if (typeof startVertex === "undefined"){
             return undefined;
@@ -351,11 +352,12 @@ export class Graph<V,L> {
         if (typeof endVertex === "undefined"){
             return undefined;
         }
-        const new_link = new Link(linkIndex, startVertex, endVertex, orientation, data);
-        if (this.check_link(new_link) == false) {
+        const newLink = new Link(linkIndex, startVertex, endVertex, orientation, data);
+        if (this.check_link(newLink) == false) {
             return undefined;
         }
-        this.links.set(linkIndex, new_link);
+        this.links.set(linkIndex, newLink);
+        return newLink;
     }
 
 
@@ -845,8 +847,8 @@ export class Graph<V,L> {
     pasteGraph(other: Graph<V,L>){
         const corresp = new Map<number,number>();
         for(const [oldIndex, vertex] of other.vertices){
-            const newIndex = this.addVertex(vertex.data); // TODO faut cloner
-            corresp.set(oldIndex, newIndex);
+            const newVertex = this.addVertex(vertex.data); // TODO faut cloner
+            corresp.set(oldIndex, newVertex.index);
         }
         for (const link of other.links.values()){
             const newIndexV1 = corresp.get(link.startVertex.index);
