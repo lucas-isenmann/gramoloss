@@ -1024,12 +1024,16 @@ export class Graph<V,L> {
             for (const [key,is_selected] of selection.entries()){
                  if (is_selected){
                     const index = reverse_indices.get(key);
-                    for (const index2 of selected_indices.values()){
-                        if (!this.has_link(index, index2, ORIENTATION.UNDIRECTED)){
-                            is_clique = false;
+                    if (typeof index !== "undefined"){
+                        for (const index2 of selected_indices.values()){
+                            if (!this.has_link(index, index2, ORIENTATION.UNDIRECTED)){
+                                is_clique = false;
+                            }
                         }
+                        selected_indices.add(index);
+                    } else {
+                        console.log("bug");
                     }
-                    selected_indices.add(index);
                  }
             }
             
@@ -1147,7 +1151,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             vertex.translate(shift)
         }
         for(const [index, link] of this.links){
-            if (typeof link.cp !== "string"){
+            if (typeof link.cp !== "undefined"){
                 link.cp.translate(shift);
             }
         }
@@ -1273,28 +1277,26 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     // If both have cps, then ???
     // If only one has a cp then ???
     is_drawing_planar(): boolean{
-        for (const link_index of this.links.keys()) {
-            const link1 = this.links.get(link_index);
+        for (const [link_index, link1] of this.links) {
             const v1 = link1.startVertex as BasicVertex<V>;
             const w1 = link1.endVertex as BasicVertex<V>;
             let z1 = v1.getPos().middle(w1.getPos());
-            if (typeof link1.cp != "string"){
+            if (typeof link1.cp != "undefined"){
                 z1 = link1.cp;
             }
-            for (const link_index2 of this.links.keys()) {
+            for (const [link_index2, link2] of this.links) {
                 if ( link_index2 < link_index){
-                    const link2 = this.links.get(link_index2);
                     const v2 = link2.startVertex as BasicVertex<V>;
                     const w2 = link2.endVertex as BasicVertex<V>;
                     let is_intersecting = false;
                     let z2 = v2.getPos().middle(w2.getPos());
                     // TODO: faster algorithm for intersection between segment and bezier
-                    if (typeof link2.cp != "string"){
+                    if (typeof link2.cp != "undefined"){
                         z2 = link2.cp;
                         is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
                     }
                     else {
-                        if (typeof link1.cp == "string"){
+                        if (typeof link1.cp == "undefined"){
                             is_intersecting = is_segments_intersection(v1.getPos(), w1.getPos(), v2.getPos(), w2.getPos());
                         } else {
                             is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
@@ -1316,8 +1318,14 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
         for (const index1 of vertices_indices){
             const v1 = this.vertices.get(index1);
+            if ( typeof v1 === "undefined"){
+                continue;
+            }
             for (const index2 of vertices_indices){
                 const v2 = this.vertices.get(index2);
+                if ( typeof v2 === "undefined"){
+                    continue;
+                }
                 if (index1 < index2 ){
                     if ( v1.getPos().x < v2.getPos().x ){
                         if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
@@ -1362,8 +1370,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             }
         }
 
-        for (const e_index of this.links.keys()) {
-            const e = this.links.get(e_index);
+        for (const [e_index,e] of this.links) {
             // TODO: Oriented Case
             let weight = 1;
             if (weighted) {

@@ -98,7 +98,7 @@ export class BasicLink<V extends Geometric & Weighted, L extends Weighted> exten
      * @param new_pos and @param previous_pos are the positions of the end which has moved
      */
     transform_cp(new_pos: Coord, previous_pos: Coord, fixed_end: Coord) {
-        if (typeof this.cp == "string"){
+        if (typeof this.cp == "undefined"){
             return;
         }
         const w = fixed_end;
