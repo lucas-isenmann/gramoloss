@@ -116,6 +116,17 @@ export class Vect {
         this.y = this.y * s / n;
     }
 
+    /**
+     * Rotates `this` Vect.
+     * @param angle is in radians (3.14 or Math.PI for an half circle)
+     */
+    rotate(angle: number){
+        const a = Math.cos(angle)*this.x - Math.sin(angle)*this.y;
+        const b = Math.sin(angle)*this.x + Math.cos(angle)*this.y;
+        this.x = a;
+        this.y = b;
+    }
+
     set_from(v: Vect){
         this.x = v.x;
         this.y = v.y;
