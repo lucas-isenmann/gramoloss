@@ -70,6 +70,7 @@ export function is_segments_intersection(a: Coord, b: Coord, c: Coord, d: Coord)
 }
 
 /**
+ * UNTESTED
  * Search for an intersection between the segments [a,b] and [c,d].
  * Returns an Option with the coord of the intersection if it exists.
  */
@@ -87,6 +88,22 @@ export function segmentsIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Op
         return undefined;
     }
 }
+
+/**
+ * UNTESTED
+ * Search for an intersection between the lines (AB) and (CD).
+ * Returns an Option with the coord of the intersection if it exists.
+ */
+export function linesIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Option<Coord>{
+    const det = (a.x-b.x)*(d.y-c.y) - (a.y-b.y)*(d.x-c.x);
+    if ( det == 0) {
+        return undefined;
+    }
+    const t1 = ((d.x-b.x)*(d.y-c.y) + (d.y-b.y)*(-(d.x-c.x))) / det;
+    return new Coord(b.x + t1*(a.x-b.x), b.y + t1*(a.y-b.y));
+}
+
+
 
 // ---------------------
 // Given a point and triangle defined by its three corners q1, q2 and q3
