@@ -1,4 +1,5 @@
 import { Coord } from "./coord";
+import { Option } from "./option";
 
 // ---------------------
 // decide if there is equality between two sets xs and ys
@@ -59,14 +60,32 @@ export function solve_linear_equation_2d( u: Coord, v: Coord, c: Coord){
 
 // ---------------------
 // TODO : check the 0.01 precision
+/**
+ * Search for an intersection between the segments [a,b] and [c,d].
+ * Returns an Option with the coord of the intersection if it exists.
+ */
 export function is_segments_intersection(a: Coord, b: Coord, c: Coord, d: Coord): boolean{
+    const r = segmentsIntersection(a,b,c,d);
+    return typeof r === "undefined" ? false : true;
+}
+
+/**
+ * Search for an intersection between the segments [a,b] and [c,d].
+ * Returns an Option with the coord of the intersection if it exists.
+ */
+export function segmentsIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Option<Coord>{
     const det = (a.x-b.x)*(d.y-c.y) - (a.y-b.y)*(d.x-c.x);
     if ( det == 0) {
-        return false;
+        return undefined;
     }
     const t1 = ((d.x-b.x)*(d.y-c.y) + (d.y-b.y)*(-(d.x-c.x))) / det;
     const t2 = ((d.x-b.x)*(-(a.y-b.y))+(d.y-b.y)*(a.x-b.x)) / det;
-    return 0.01 < t1 && t1 < 0.99 && 0.01 < t2 && t2 < 0.99;
+    const condition =  0.01 < t1 && t1 < 0.99 && 0.01 < t2 && t2 < 0.99;
+    if (condition){
+        return new Coord(b.x + t1*(a.x-b.x), b.y + t1*(a.y-b.y));
+    } else {
+        return undefined;
+    }
 }
 
 // ---------------------
