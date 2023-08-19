@@ -107,6 +107,15 @@ export class Vect {
         return Math.sqrt(this.x ** 2 + this.y ** 2);
     }
 
+    /**
+     * `v = v*s/norm(v)`
+     */
+    setNorm(s: number){
+        const n = this.norm();
+        this.x = this.x * s / n;
+        this.y = this.y * s / n;
+    }
+
     set_from(v: Vect){
         this.x = v.x;
         this.y = v.y;
