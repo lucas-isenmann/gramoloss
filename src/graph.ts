@@ -246,7 +246,24 @@ export class Graph<V,L> {
     }
 
 
-
+    /**
+     * Return the array of the neighbors of a vertex v.
+     * They are undirected neighbors.
+     * If a link is oriented, then the oriented neighbor is not considered.
+     */
+    getNeighbors(v: Vertex<V>): Array<Vertex<V>>{
+        const neighbors = new Array<Vertex<V>>();
+        for (const link of this.links.values()){
+            if (link.orientation == ORIENTATION.UNDIRECTED){
+                if (link.startVertex.index == v.index){
+                    neighbors.push(link.endVertex);
+                } else if (link.endVertex.index == v.index){
+                    neighbors.push(link.startVertex);
+                }
+            }
+        }
+        return neighbors;
+    }
     
 
     /**

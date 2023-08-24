@@ -88,6 +88,10 @@ export class Coord {
         const ps = u.x*v.x + u.y*v.y;
         return new Coord( point.x + u.x*ps , point.y + u.y*ps);
     }
+
+    vectorTo(other: Coord){
+        return Vect.from_coords(this, other);
+    }
 }
 
 export function middle(c1: Coord, c2: Coord) {
@@ -101,6 +105,15 @@ export class Vect {
     constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
+    }
+
+    /**
+     * UNTESTED
+     * Return the dot product of this vector with another one.
+     * `u.dot(v) = u.x*v.x + u.y*v.y`
+     */
+    dot(other: Vect): number{
+        return this.x*other.x + this.y*other.y;
     }
 
     norm() {
