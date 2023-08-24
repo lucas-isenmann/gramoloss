@@ -108,6 +108,14 @@ export class Vect {
     }
 
     /**
+     * 
+     */
+    rescale(r: number){
+        this.x *= r;
+        this.y *= r;
+    }
+
+    /**
      * UNTESTED
      * Return the dot product of this vector with another one.
      * `u.dot(v) = u.x*v.x + u.y*v.y`
