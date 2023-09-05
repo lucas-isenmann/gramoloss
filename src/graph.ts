@@ -306,7 +306,7 @@ export class Graph<V,L> {
 
     has_link(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
         for (const link of this.links.values()){
-            if (link.signature_equals(index_start, index_end, orientation)){
+            if (link.signatureEquals(index_start, index_end, orientation)){
                 return true;
             }
         }
@@ -421,6 +421,22 @@ export class Graph<V,L> {
             if (e.orientation == ORIENTATION.DIRECTED) {
                 if (e.startVertex.index == i) {
                     neighbors.push(e.endVertex.index);
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    /**
+     * Return the array of the out-neighbors of a vertex v.
+     * The indices of the vertices are accessible via v.index.
+     */
+    getOutNeighbors(v: Vertex<V>): Array<Vertex<V>>{
+        const neighbors = new Array<Vertex<V>>();
+        for (const link of this.links.values()) {
+            if (link.orientation == ORIENTATION.DIRECTED) {
+                if (link.startVertex.index == v.index) {
+                    neighbors.push(link.endVertex);
                 }
             }
         }
@@ -1133,7 +1149,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
         const edgesList = new Array<[number,number,BasicLinkData]>();
         for (const [x,y,w] of rawEdgesList){
-            edgesList.push([x,y,  new BasicLinkData(w, "black")]);
+            edgesList.push([x,y,  new BasicLinkData(undefined, w, "black")]);
         }
 
         const g = Graph.fromList(verticesList, edgesList, ORIENTATION.UNDIRECTED);
@@ -1143,7 +1159,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     static fromWeightedEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number, string]>): BasicGraph<V,L>{
         const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
         for (const [x,y,w] of edgesList){
-            fmtEdgesList.push([x,y,  new BasicLinkData(w, "black")]);
+            fmtEdgesList.push([x,y,  new BasicLinkData(undefined, w, "black")]);
         }
 
         const g = Graph.fromEdgesList(fmtEdgesList, () => { return new BasicVertexData(new Coord(0,0), "", "black")});
@@ -1154,7 +1170,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     setLinkCp(index: number, cp: Option<Coord>){
         const link = this.links.get(index);
         if (typeof link !== "undefined"){
-            link.cp = cp;
+            link.data.cp = cp;
         }
     }
 
@@ -1168,8 +1184,8 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             vertex.translate(shift)
         }
         for(const [index, link] of this.links){
-            if (typeof link.cp !== "undefined"){
-                link.cp.translate(shift);
+            if (typeof link.data.cp !== "undefined"){
+                link.data.cp.translate(shift);
             }
         }
     }
@@ -1198,12 +1214,12 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                     if (link.startVertex.index == index) {
                         const end_vertex = this.vertices.get(link.endVertex.index);
                         if (typeof end_vertex !== "undefined"){
-                            link.transform_cp(new_pos, previous_pos, end_vertex.data.getPos());
+                            link.transformCP(new_pos, previous_pos, end_vertex.data.getPos());
                         }
                     } else if (link.endVertex.index == index) {
                         const start_vertex = this.vertices.get(link.startVertex.index);
                         if (typeof start_vertex !== "undefined"){
-                            link.transform_cp(new_pos, previous_pos, start_vertex.data.getPos());
+                            link.transformCP(new_pos, previous_pos, start_vertex.data.getPos());
                         }
                     }
                 }
@@ -1298,8 +1314,8 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             const v1 = link1.startVertex as BasicVertex<V>;
             const w1 = link1.endVertex as BasicVertex<V>;
             let z1 = v1.getPos().middle(w1.getPos());
-            if (typeof link1.cp != "undefined"){
-                z1 = link1.cp;
+            if (typeof link1.data.cp != "undefined"){
+                z1 = link1.data.cp;
             }
             for (const [link_index2, link2] of this.links) {
                 if ( link_index2 < link_index){
@@ -1308,12 +1324,12 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                     let is_intersecting = false;
                     let z2 = v2.getPos().middle(w2.getPos());
                     // TODO: faster algorithm for intersection between segment and bezier
-                    if (typeof link2.cp != "undefined"){
-                        z2 = link2.cp;
+                    if (typeof link2.data.cp != "undefined"){
+                        z2 = link2.data.cp;
                         is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
                     }
                     else {
-                        if (typeof link1.cp == "undefined"){
+                        if (typeof link1.data.cp == "undefined"){
                             is_intersecting = is_segments_intersection(v1.getPos(), w1.getPos(), v2.getPos(), w2.getPos());
                         } else {
                             is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
@@ -1330,8 +1346,11 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     }
 
 
-    /// for every vertex of vertices_indices
-    /// add arcs between these vertices according to their x-coordinate
+    /**
+     * 
+     * for every vertex of vertices_indices
+     * add arcs between these vertices according to their x-coordinate
+     */
     complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
         for (const index1 of vertices_indices){
             const v1 = this.vertices.get(index1);

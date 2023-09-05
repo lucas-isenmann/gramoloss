@@ -1,4 +1,5 @@
 import { Coord } from "./coord";
+import { Option } from "./option";
 
 export interface Geometric {
     getPos(): Coord;
@@ -38,10 +39,12 @@ export class BasicVertexData {
 
 
 export class BasicLinkData {
+    cp: Option<Coord>;
     weight: string;
     color: string;
 
-    constructor( weight: string, color: string){
+    constructor(cp: Option<Coord>, weight: string, color: string){
+        this.cp = cp;
         this.weight = weight;
         this.color = color;
     }

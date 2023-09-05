@@ -1,5 +1,5 @@
 import { Coord } from "./coord";
-import { Geometric, Weighted } from "./traits";
+import { BasicLinkData, Geometric, Weighted } from "./traits";
 import { eqSet } from "./utils";
 import { Vertex } from "./vertex";
 import { Option } from "./option";
@@ -28,7 +28,7 @@ export class Link<V,L> {
 
    
 
-    signature_equals(start_index: number, end_index: number, orientation: ORIENTATION): boolean{
+    signatureEquals(start_index: number, end_index: number, orientation: ORIENTATION): boolean{
         if ( this.orientation == orientation ){
             switch (this.orientation){
                 case ORIENTATION.UNDIRECTED: {
@@ -81,8 +81,11 @@ export class Link<V,L> {
 
 
 
-export class BasicLink<V extends Geometric & Weighted, L extends Weighted> extends Link<V,L> {
-    cp: Option<Coord>;
+export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> extends Link<V,L> {
+
+    constructor(index: number, startVertex: Vertex<V>, endVertex: Vertex<V>, orientation: ORIENTATION, data: L ){
+        super(index, startVertex, endVertex, orientation, data);
+    }
 
 
     getWeight(): string {
@@ -97,8 +100,8 @@ export class BasicLink<V extends Geometric & Weighted, L extends Weighted> exten
      *  @param fixed_end is the coord of the fixed_end
      * @param new_pos and @param previous_pos are the positions of the end which has moved
      */
-    transform_cp(new_pos: Coord, previous_pos: Coord, fixed_end: Coord) {
-        if (typeof this.cp == "undefined"){
+    transformCP(new_pos: Coord, previous_pos: Coord, fixed_end: Coord) {
+        if (typeof this.data.cp == "undefined"){
             return;
         }
         const w = fixed_end;
@@ -106,8 +109,8 @@ export class BasicLink<V extends Geometric & Weighted, L extends Weighted> exten
         const nv = new_pos.sub(w);
         const theta = nv.getTheta(u);
         const rho = u.getRho(nv);
-        const cp = this.cp.copy();
-        this.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
-        this.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
+        const cp = this.data.cp.copy();
+        this.data.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
+        this.data.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
     }
 } 
