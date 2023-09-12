@@ -1229,6 +1229,11 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
     /**
+     * !!!!!!!!!!!!!!!!!!!!! DOES NOT WORK
+     * it creates Link and not BasicLink
+     * TODO: change this by adding a creation function in the arguements like in complete in tournament
+     * 
+     * 
      * Warning: UNTESTED
      * @param c1 a corner from the rectangle
      * @param c2 the opposite corner
@@ -1347,11 +1352,10 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
     /**
-     * 
      * for every vertex of vertices_indices
      * add arcs between these vertices according to their x-coordinate
      */
-    complete_subgraph_into_tournament(vertices_indices: Iterable<number>, arc_default: (x: number, y: number) => L){
+    completeSubgraphIntoTournament(vertices_indices: Iterable<number>, arcDefault: (index: number, startId: number, endId: number) => BasicLink<V,L>){
         for (const index1 of vertices_indices){
             const v1 = this.vertices.get(index1);
             if ( typeof v1 === "undefined"){
@@ -1365,13 +1369,15 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                 if (index1 < index2 ){
                     if ( v1.getPos().x < v2.getPos().x ){
                         if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const newData = arc_default(index1, index2);
-                            this.addLink(index1, index2, ORIENTATION.DIRECTED,newData );
+                            const arcIndex = this.get_next_available_index_links();
+                            const newArc = arcDefault(arcIndex, index1, index2);
+                            this.links.set(arcIndex, newArc);
                         }
                     } else {
                         if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const newData = arc_default(index2, index1);
-                            this.addLink(index2, index1, ORIENTATION.DIRECTED,newData );
+                            const arcIndex = this.get_next_available_index_links();
+                            const newArc = arcDefault(arcIndex, index2, index1);
+                            this.links.set(arcIndex, newArc);
                         }
                     }
                 }

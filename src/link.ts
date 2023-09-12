@@ -48,9 +48,9 @@ export class Link<V,L> {
         return false;
     }
 
- 
-
 }
+
+
 
 
 // export class BasicLink extends Link<BasicLink> {
@@ -79,8 +79,6 @@ export class Link<V,L> {
 
 
 
-
-
 export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> extends Link<V,L> {
 
     constructor(index: number, startVertex: Vertex<V>, endVertex: Vertex<V>, orientation: ORIENTATION, data: L ){
@@ -96,21 +94,23 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
         this.data.setWeight(weight);
     }
 
-    /**
-     *  @param fixed_end is the coord of the fixed_end
-     * @param new_pos and @param previous_pos are the positions of the end which has moved
+     /**
+     * @param fixedEnd is the coord of the extremity which has not moved
+     * @param newPos and @param previousPos are the positions of the extremity which has moved
      */
-    transformCP(new_pos: Coord, previous_pos: Coord, fixed_end: Coord) {
+    transformCP(newPos: Coord, previousPos: Coord, fixedEnd: Coord){
         if (typeof this.data.cp == "undefined"){
             return;
         }
-        const w = fixed_end;
-        const u = previous_pos.sub(w);
-        const nv = new_pos.sub(w);
+        const w = fixedEnd;
+        const u = previousPos.sub(w);
+        const nv = newPos.sub(w);
         const theta = nv.getTheta(u);
         const rho = u.getRho(nv);
         const cp = this.data.cp.copy();
         this.data.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
         this.data.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
     }
+
+
 } 
