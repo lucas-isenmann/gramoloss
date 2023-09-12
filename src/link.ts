@@ -1,7 +1,7 @@
 import { Coord } from "./coord";
 import { BasicLinkData, Geometric, Weighted } from "./traits";
 import { eqSet } from "./utils";
-import { Vertex } from "./vertex";
+import { BasicVertex, Vertex } from "./vertex";
 import { Option } from "./option";
 
 export enum ORIENTATION {
@@ -80,8 +80,10 @@ export class Link<V,L> {
 
 
 export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> extends Link<V,L> {
+    startVertex: BasicVertex<V>;
+    endVertex: BasicVertex<V>;
 
-    constructor(index: number, startVertex: Vertex<V>, endVertex: Vertex<V>, orientation: ORIENTATION, data: L ){
+    constructor(index: number, startVertex: BasicVertex<V>, endVertex: BasicVertex<V>, orientation: ORIENTATION, data: L ){
         super(index, startVertex, endVertex, orientation, data);
     }
 
