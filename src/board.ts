@@ -67,13 +67,13 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
 
 
 
-    get_value(kind: string, index: number, param: string){
+    get_value(kind: string, index: number, param: string): any{
         if (kind == "TextZone"){
             return this.text_zones.get(index)[param];
         } else if (kind == "Vertex"){
-            return this.graph.vertices.get(index)[param];
+            return this.graph.vertices.get(index).data[param];
         } else if (kind == "Link"){
-            return this.graph.links.get(index)[param];
+            return this.graph.links.get(index).data[param];
         } else if (kind == "Stroke"){
             return this.strokes.get(index)[param];
         } else if (kind == "Area"){
