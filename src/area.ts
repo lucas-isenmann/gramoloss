@@ -8,13 +8,15 @@ export class Area {
     c2: Coord;
     color: string;
     label: string;
+    index: number;
 
 
-    constructor(label: string, c1: Coord, c2: Coord, color: string) {
+    constructor(label: string, c1: Coord, c2: Coord, color: string, index: number) {
         this.c1 = c1;
         this.c2 = c2;
         this.label = label;
         this.color = "#E60007";
+        this.index = index;
     }
 
     translate(shift: Vect) {

@@ -747,26 +747,28 @@ export class Graph<V,L> {
     // return 0 if vindex is not a vertex index
     get_connected_component_of(vindex: number): Graph<V,L> {
         const g = new Graph<V,L>();
-        if (this.vertices.has(vindex) == false){
+        const initVertex = this.vertices.get(vindex);
+        if ( typeof initVertex == "undefined"){
             return g;
         }
         const visited = new Set();
-        const stack = Array();
-        stack.push(vindex);
+        const stack = Array<Vertex<V>>();
+        stack.push(initVertex);
 
+        
         while (stack.length > 0) {
-            const u_index = stack.pop();
-            const u = this.vertices.get(u_index);
-            g.set_vertex(u_index, u.data);
-            if (!visited.has(u_index)) {
-                visited.add(u_index);
+            const u = stack.pop();
+            if (typeof u == "undefined") break;
+            g.set_vertex(u.index, u.data);
+            if (!visited.has(u.index)) {
+                visited.add(u.index);
                 for (const [link_index, link] of this.links.entries()){
                     if ( link.orientation == ORIENTATION.UNDIRECTED){
-                        if ( link.startVertex.index == u_index){
-                            stack.push(link.endVertex.index);
+                        if ( link.startVertex.index == u.index){
+                            stack.push(link.endVertex);
                             g.links.set(link_index, link);
-                        } else if ( link.endVertex.index == u_index){
-                            stack.push(link.startVertex.index);
+                        } else if ( link.endVertex.index == u.index){
+                            stack.push(link.startVertex);
                             g.links.set(link_index, link);
                         }
                     }

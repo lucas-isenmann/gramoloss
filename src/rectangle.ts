@@ -4,11 +4,13 @@ export class Rectangle {
     c1 : Coord;
     c2 : Coord;
     color: string;
+    index: number;
 
-    constructor(c1: Coord, c2: Coord, color: string){
+    constructor(c1: Coord, c2: Coord, color: string, index: number){
         this.c1 = c1.copy();
         this.c2 = c2.copy();
         this.color = color;
+        this.index = index;
     }
 
 

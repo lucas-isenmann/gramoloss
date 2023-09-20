@@ -6,11 +6,18 @@ export class Stroke {
     width: number;
     top_left: Coord;
     bot_right: Coord;
+    index: number;
 
-    constructor(positions: any, color: string, width: number) {
+    /**
+     * Positions should be non empty, otherwise top_left and bot_right are erroneous.
+     */
+    constructor(positions: Array<Coord>, color: string, width: number, index: number) {
         this.positions = positions;
         this.color = color;
         this.width = width;
+        this.index = index;
+        this.top_left = new Coord(0,0);
+        this.bot_right = new Coord(0,0);
         if(positions.length>0){
             this.top_left = new Coord(positions[0].x, positions[0].y);
             this.bot_right = new Coord(positions[0].x, positions[0].y);
@@ -20,10 +27,6 @@ export class Stroke {
                 this.bot_right.y = Math.max(positions[i].y, this.bot_right.y);
                 this.top_left.y = Math.min(positions[i].y, this.top_left.y);
             }
-        }
-        else{
-            this.top_left = null;
-            this.bot_right = null;
         }
     }
 

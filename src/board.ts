@@ -98,12 +98,14 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
         const contained_vertices = new Set<number>();
         for (const area_index of indices.values()) {
             const area = this.areas.get(area_index);
-            for (const [vertex_index, vertex] of this.graph.vertices.entries()) {
-                if (area.is_containing(vertex)) {
-                    contained_vertices.add(vertex_index);
+            if (typeof area != "undefined"){
+                for (const [vertex_index, vertex] of this.graph.vertices.entries()) {
+                    if (area.is_containing(vertex)) {
+                        contained_vertices.add(vertex_index);
+                    }
                 }
+                area.translate(shift);
             }
-            area.translate(shift);
         }
         this.graph.translate_vertices(contained_vertices, shift);
     }
@@ -111,16 +113,17 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
     get_subgraph_from_area(area_index: number): Graph<V,L>{
         const area = this.areas.get(area_index);
         const subgraph = new Graph<V,L>();
+        if (typeof area == "undefined") return subgraph;
 
-         for (const [index, v] of this.graph.vertices.entries()) {
-            if(area.is_containing(v)){
+        for (const [index, v] of this.graph.vertices.entries()) {
+            if (area.is_containing(v)){
                 subgraph.vertices.set(index, v);
             }
         }
 
         for (const [index, link] of this.graph.links.entries()){
-            const u = this.graph.vertices.get(link.startVertex.index);
-            const v = this.graph.vertices.get(link.endVertex.index);
+            const u = link.startVertex;
+            const v = link.endVertex;
 
             if( area.is_containing(u) && area.is_containing(v)){
                 subgraph.links.set(index, link);

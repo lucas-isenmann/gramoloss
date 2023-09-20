@@ -85,6 +85,8 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
 
     constructor(index: number, startVertex: BasicVertex<V>, endVertex: BasicVertex<V>, orientation: ORIENTATION, data: L ){
         super(index, startVertex, endVertex, orientation, data);
+        this.startVertex = startVertex;
+        this.endVertex = endVertex;
     }
 
 
