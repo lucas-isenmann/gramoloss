@@ -9,7 +9,7 @@ export enum GeneratorId {
     RandomTournament = "RandomTournament",
     RandomGNP = "RandomGNP",
     Star = "Star",
-    CompeteBipartite = "CompleteBipartite",
+    CompleteBipartite = "CompleteBipartite",
     Grid = "Grid",
     AztecDiamond = "AztecDiamond"
 }
@@ -82,7 +82,7 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
         const n = params[0];
         if (typeof n != "number") return undefined;
         return generateStar(n); 
-    } else if (generatorId == GeneratorId.CompeteBipartite){
+    } else if (generatorId == GeneratorId.CompleteBipartite){
         if (params.length != 2){
             logErrorNbParams(params.length, 2);
             return undefined;
