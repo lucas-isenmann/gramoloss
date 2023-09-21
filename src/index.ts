@@ -10,6 +10,8 @@ export * from "./rectangle";
 export * from "./utils";
 export * from "./option";
 export * from "./traits";
+export * from "./generators";
+export * from "./mutators";
 
 export * from "./representations/representation";
 export * from "./representations/degree_width_rep";
