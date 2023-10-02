@@ -122,6 +122,16 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
         const n = params[0];
         if (typeof n != "number") return undefined;
         return generatePaleyGraph(n); 
+    } else if (generatorId == GeneratorId.UnitDisk){
+        if (params.length != 2){
+            logErrorNbParams(params.length, 2);
+            return undefined;
+        }
+        const n = params[0];
+        if (typeof n != "number") return undefined;
+        const d = params[1];
+        if (typeof n != "number") return undefined;
+        return generateUnitDisk(n, d); 
     }
 
     return undefined;
