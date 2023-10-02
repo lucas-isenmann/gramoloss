@@ -36,7 +36,7 @@ console.log(g.chromatic_number()); // prints 3
 
 *Generators* are function which return a graph (like generating a random graph with the GNP method).
 
-*Modifiers* are function which modify the underlying graph and which do not return anything (like removing all the leaves of a graph).
+*Mutators* are function which modify the underlying graph and which do not return anything (like removing all the leaves of a graph).
 
 *Representations* are structures which represent the graph with a particular geometrical point of view. For example planar graphs can be represented by contact of circles (unimplemented). An other example is to represent tournaments on a line with only the backwards which are drawn.
 

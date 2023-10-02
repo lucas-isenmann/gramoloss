@@ -197,3 +197,22 @@ export function det(matrix: Array<Array<number>>){
 
     return d;
 }
+
+
+
+/**
+ * Return true if n is a square modulo m.
+ * @param n integer
+ * @param m integer
+ * @example
+ * isModSquare(4,5) == true // because 4 = 2^2 mod 5
+ * isModSquare(3,5) == false // because 0, 1 and 4 are the only squares in Z/5Z.
+ */
+export function isModSquare(n: number, m: number){
+    for( let i = 0 ; i < m ; i ++){
+        if ( (n - i*i) % m == 0 ){
+            return true;
+        }
+    }
+    return false;
+}

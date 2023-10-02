@@ -2,6 +2,8 @@ import { Coord } from "./coord";
 import { Graph } from "./graph";
 import { ORIENTATION } from "./link";
 import { Option } from "./option";
+import { isModSquare } from "./utils";
+import { Vertex } from "./vertex";
 
 export enum GeneratorId {
     CliqueCircle = "CliqueCircle",
@@ -11,7 +13,9 @@ export enum GeneratorId {
     Star = "Star",
     CompleteBipartite = "CompleteBipartite",
     Grid = "Grid",
-    AztecDiamond = "AztecDiamond"
+    AztecDiamond = "AztecDiamond",
+    Paley = "Paley",
+    UnitDisk = "UnitDisk"
 }
 
 
@@ -110,6 +114,14 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
         const n = params[0];
         if (typeof n != "number") return undefined;
         return generateAztecDiamond(n); 
+    } else if (generatorId == GeneratorId.Paley){
+        if (params.length != 1){
+            logErrorNbParams(params.length, 1);
+            return undefined;
+        }
+        const n = params[0];
+        if (typeof n != "number") return undefined;
+        return generatePaleyGraph(n); 
     }
 
     return undefined;
@@ -257,7 +269,72 @@ function generateIndependentCircle(n: number): EmbeddedGraph {
         graph.addVertex( new EmbeddedVertexData(new Coord( r*Math.cos( (2*Math.PI*i) /n), r*Math.sin( (2*Math.PI*i) /n) )));
     }
     return graph;
- }
+}
+
+
+/**
+ * 
+ * @param p should be a prime number = 1 mod 4
+ */
+export function generatePaleyGraph(p: number): EmbeddedGraph {
+    if ( Number.isInteger(p) == false ) throw Error(`p (given ${p}) should be an integer`);
+    if ( (p -1) % 4 != 0 && (p+1) % 4 != 0 ) throw Error(`param p (given ${p}) should be = +-1 mod 4 (here p = ${p%4} mod 4)`);
+
+    const orientation = (p-1)%4 == 0 ? ORIENTATION.UNDIRECTED : ORIENTATION.DIRECTED;
+
+    const graph = new EmbeddedGraph();
+    const r = 50;
+    for ( let i = 0 ; i < p ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord( r*Math.cos( (2*Math.PI*i) /p), r*Math.sin( (2*Math.PI*i) /p) )));
+    }
+
+    if (orientation == ORIENTATION.UNDIRECTED){
+        for ( let i = 0 ; i < p ; i ++){
+            for (let j = i+1 ; j < p ; j ++){
+                if ( isModSquare(j-i, p) ){
+                    graph.addLink(i, j, ORIENTATION.UNDIRECTED, undefined);
+                }
+            }
+        }
+    } else {
+        for ( let i = 0 ; i < p ; i ++){
+            for (let j = 0 ; j < p ; j ++){
+                if ( i != j &&  isModSquare(j-i, p) ){
+                    graph.addLink(i, j, ORIENTATION.DIRECTED, undefined);
+                }
+            }
+        }
+    }
+    
+    return graph;
+}
+
+
+/**
+ * Return a random Unit Disk graph where vertices are set uniformely randomly in [-50,50]^2.
+ * @param n integer >= 0, the number of vertices
+ * @param d maximum distance between adjacent vertiecs
+ */
+export function generateUnitDisk(n: number, d: number): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+
+    const vertices = new Array<Vertex<EmbeddedVertexData>>();
+    for (let i = 0 ; i < n ; i ++){
+        vertices.push(graph.addVertex( new EmbeddedVertexData(new Coord( Math.random()*100-50, Math.random()*100 -50))));
+    }
+    for (let i = 0 ; i < n ; i ++){
+        for (let j = i+1 ; j < n ; j ++){
+            const dist = Math.sqrt(vertices[i].data.pos.dist2(vertices[j].data.pos));
+            if (dist < d){
+                graph.addLink(i, j, ORIENTATION.UNDIRECTED, undefined);
+            }
+        }
+    }
+
+    return graph;
+}
+
+
 
 
 

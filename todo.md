@@ -34,10 +34,9 @@
 
 ## Generators
 
-- [ ] random unit disk graph
+- [X] random unit disk graph
 - [ ] random delaunay graph
-- [ ] random independent
 - [ ] acyclic tournament
-- [ ] random tournament
 - [ ] random trees
 - [ ] Petersen
+- [X] Paley
