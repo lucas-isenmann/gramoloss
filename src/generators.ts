@@ -15,7 +15,8 @@ export enum GeneratorId {
     Grid = "Grid",
     AztecDiamond = "AztecDiamond",
     Paley = "Paley",
-    UnitDisk = "UnitDisk"
+    UnitDisk = "UnitDisk",
+    UTournament = "UTournament"
 }
 
 
@@ -50,16 +51,6 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
             return undefined;
         }
         return generateIndependentCircle(n);
-    } else if (generatorId == GeneratorId.RandomTournament){
-        if (params.length != 1){
-            logErrorNbParams(params.length, 1);
-            return undefined;
-        }
-        const n = params[0];
-        if (typeof n != "number"){
-            return undefined;
-        }
-        return generateRandomTournament(n); 
     } else if (generatorId == GeneratorId.RandomTournament){
         if (params.length != 1){
             logErrorNbParams(params.length, 1);
@@ -132,11 +123,34 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
         const d = params[1];
         if (typeof n != "number") return undefined;
         return generateUnitDisk(n, d); 
+    }  else if (generatorId == GeneratorId.UTournament){
+        if (params.length != 1){
+            logErrorNbParams(params.length, 1);
+            return undefined;
+        }
+        const n = params[0];
+        if (typeof n != "number") return undefined;
+        return generateUTournament(n); 
     }
 
     return undefined;
 }
 
+
+export function generateUTournament(n: number): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+    const r = 50;
+    for ( let i = 0 ; i < n ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord(i*50, 0 )));
+        if (i > 0){
+            graph.addLink(i, i-1, ORIENTATION.DIRECTED, undefined);
+        }
+        for ( let j = 0 ; j < i-1 ; j ++ ){
+            graph.addLink(j, i, ORIENTATION.DIRECTED, undefined);
+        }
+    }
+    return graph;
+}
 
 function generateAztecDiamond(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
