@@ -258,7 +258,7 @@ function generateRandomGNP(n: number, p: number): EmbeddedGraph {
 }
 
 
-function generateRandomTournament(n: number): EmbeddedGraph {
+export function generateRandomTournament(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
     for ( let i = 0 ; i < n ; i ++){
@@ -297,8 +297,10 @@ function generateIndependentCircle(n: number): EmbeddedGraph {
 
 
 /**
- * 
- * @param p should be a prime number = 1 mod 4
+ * PaleyGraph is unoriented if p = 1 mod 4.
+ * It is oriented if p = -1 mod 4.
+ * @param p should be a prime number = +-1 mod 4
+ * @example undirected: 5 13 17, directed: 3 7 11
  */
 export function generatePaleyGraph(p: number): EmbeddedGraph {
     if ( Number.isInteger(p) == false ) throw Error(`p (given ${p}) should be an integer`);

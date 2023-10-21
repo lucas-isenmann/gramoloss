@@ -967,11 +967,114 @@ export class Graph<V,L> {
     }
 
 
-    // Compute the vertex cover number of the graph.
-    // It is the minimum integer k such that there exists a subset X of the vertices which is of size k and such that every edge is incident to at least one vertex of X.
-    // TODO: optional parameter m: asserts that the result it at least m
-    // TODO: return a certificate that it has a k-vertex-cover
-    // TODO: better algorithm than the backtract way
+    
+
+
+    /** 
+     * # Feedback Vertex Set Number 
+     * A subset X of V(G) is a Feedback Vertex Set if G-X (deletion of vertices) is acyclic.
+     * The Feedback Vertex Set Number (FVSN) is the minimum size of a FVS.
+     * @returns the FVSN
+     * @example fvsn(directed cycle 3) = 1 
+     */
+    fvsn(): number {
+        const n = this.vertices.size;
+
+        const selection = new Array<boolean>();
+        const indices = new Map<number, number>();
+        let j = 0;
+        for ( const index of this.vertices.keys()){
+            selection.push(false);
+            indices.set(index,j);
+            j ++;
+        }
+
+        for ( let k = 0 ; k <= n ; k ++){
+            // Check if there exists a FVS of size k
+
+            // Initialize the selection to the first k vertices
+            for (let i = 0 ; i < n ; i ++){
+                selection[i] = i < k;
+            }
+
+            while (true){
+                // Check if the selection is a FVS
+                let isFeedbackVertexSet = true;
+                const outDegrees = new Set<number>();
+                for (const v of this.vertices.values()){
+                    const i = indices.get(v.index);
+                    if (typeof i != "undefined"){
+                        let outDegree = 0;
+                        if ( selection[i] == false){
+                            for (const neighbor of this.getOutNeighbors(v)){
+                                const j = indices.get(neighbor.index);
+                                if (typeof j == "undefined") return 0; // bug
+                                if ( selection[j] == false ){
+                                    outDegree += 1
+                                }
+                            }
+                            if (outDegrees.has(outDegree)){
+                                isFeedbackVertexSet = false;
+                                break;
+                            } else {
+                                outDegrees.add(outDegree);
+                            }
+                        }
+                    }
+                }
+
+                // If selection is a FVS then return its size
+                if (isFeedbackVertexSet){
+                    let count = 0;
+                    for (const v of selection){
+                        if (v) {
+                            count ++;
+                        }
+                    }
+                    return count;
+                }
+
+                // Compute next selection if possible
+                let i = n-1;
+                let nbTrue = 0;
+                while (selection[i] == true){
+                    i --;
+                    nbTrue ++;
+                }
+                let nbFalse = 0;
+                while (i >= 0 && selection[i] == false){
+                    i --;
+                    nbFalse ++;
+                }
+                if (i == -1){ 
+                    break;
+                }
+                if (nbTrue == 0){
+                    selection[n-1-nbFalse] = false;
+                    selection[n-1-nbFalse+1] = true;
+                } else {
+                    for (let h = 0; n-1-nbFalse-nbTrue+h < n ; h ++){
+                        selection[n-1-nbFalse-nbTrue+h] = false;
+                    }
+
+                    for (let h = 1; h <= nbTrue+1 ; h ++){
+                        selection[n-1-nbFalse-nbTrue+h] = true;
+                    }
+                }
+                // console.log(booleanArrayToString(selection));
+            }
+        }
+    }
+
+
+    
+    /**
+     * Compute the vertex cover number of the graph.
+     * It is the minimum integer k such that there exists a subset X of the vertices which is of size k and such that every edge is incident to at least one vertex of X.
+     * TODO: optional parameter m: asserts that the result it at least m
+     * TODO: return a certificate that it has a k-vertex-cover
+     * TODO: better algorithm than the backtract way
+     */
     vertex_cover_number(): number {
         const n = this.vertices.size;
         let record = n;
@@ -1538,3 +1641,6 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     }
 
 } 
+
+
+

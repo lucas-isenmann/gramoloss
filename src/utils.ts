@@ -7,14 +7,16 @@ export function eqSet (xs: Set<number>, ys: Set<number>): boolean {
     return xs.size === ys.size && [...xs].every((x) => ys.has(x));
 }
 
-// -------------------------------
-// (1-t)^2 p0 + 2t(1-t)p1 + t^2 p2
+/**
+ * (1-t)^2 p0 + 2t(1-t)p1 + t^2 p2
+ */
 export function bezierValue(t: number, p0: number, p1: number, p2: number) {
     return (1.0 - t) * (1.0 - t) * p0 + 2.0 * (1.0 - t) * t * p1 + t * t * p2;
 }
 
-// ----------------
-// Compute the binomial coefficient C(n,k) by recurrence
+/**
+ *  Compute the binomial coefficient C(n,k) by recurrence
+ *  */
 export function binomial_coef(n: number, k: number): number{
     if ( k == 0 || k == n ){
         return 1;
@@ -215,4 +217,13 @@ export function isModSquare(n: number, m: number){
         }
     }
     return false;
+}
+
+
+
+
+
+
+export function booleanArrayToString(array: boolean[]): string {
+    return array.map((value) => value ? '1' : '0').join('');
 }
