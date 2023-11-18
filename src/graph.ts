@@ -252,19 +252,27 @@ export class Graph<V,L> {
      * If a link is oriented, then the oriented neighbor is not considered.
      */
     getNeighbors(v: Vertex<V>): Array<Vertex<V>>{
+        return this.getNeighborsFromIndex(v.index);
+    }
+    
+    /**
+     * Return the array of the neighbors of a vertex v.
+     * They are undirected neighbors.
+     * If a link is oriented, then the oriented neighbor is not considered.
+     */
+    getNeighborsFromIndex(vIndex: number): Array<Vertex<V>>{
         const neighbors = new Array<Vertex<V>>();
         for (const link of this.links.values()){
             if (link.orientation == ORIENTATION.UNDIRECTED){
-                if (link.startVertex.index == v.index){
+                if (link.startVertex.index == vIndex){
                     neighbors.push(link.endVertex);
-                } else if (link.endVertex.index == v.index){
+                } else if (link.endVertex.index == vIndex){
                     neighbors.push(link.startVertex);
                 }
             }
         }
         return neighbors;
     }
-    
 
     /**
      * SHOULD BE REMOVED
@@ -913,60 +921,250 @@ export class Graph<V,L> {
 
 
 
-    // TODO: optional parameter which starts the k
-    // TODO: return a certificate that it is k-colorable
-    // TODO: better algorithm than the backtract way
     /**
      * Returns the chromatic number of the graph.
      * The chromatic number is the minimum integer k such that there exists a proper coloring with k colors.
      * What happens with arcs? I dont know. TODO
      */
-    chromatic_number() : number {
-        let k = 1;
-        const n = this.vertices.size;
+    // chromatic_number() : number {
+    //     let k = 1;
+    //     const n = this.vertices.size;
 
+    //     while (true){
+    //         const color = new Array();
+    //         const indices = new Map();
+    //         let j = 0;
+    //         for ( const index of this.vertices.keys()){
+    //             color.push(0);
+    //             indices.set(index,j);
+    //             j ++;
+    //         }
+    //         while (true){
+    //             let i = n-1;
+    //             while (i >= 0 && color[i] == k-1){
+    //                 color[i] = 0;
+    //                 i --;
+    //             }
+    //             if ( i == -1 ){ // every color was set to k-1
+    //                 break;      // all assignements have been tried
+    //             }
+    //             color[i] ++;
+    //             // else next color assignement
+    //             // check it
+    //             let is_proper_coloring = true;
+    //             for (const link of this.links.values()){
+    //                 if ( link.orientation == ORIENTATION.UNDIRECTED){
+    //                     if( color[indices.get(link.startVertex.index)] == color[indices.get(link.endVertex.index)]){
+    //                         is_proper_coloring = false;
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+    //             if (is_proper_coloring){
+    //                 return k;
+    //             }
+    //         }
+    //         k += 1;
+    //     }
+    // }
+
+    /**
+     * Compute a clique with a greedy algorithm.
+     */
+    greedyClique(): Set<number>{
+        const clique = new Set<number>();
         while (true){
-            if (k >= 5){
-                return -1;
-            }
-            const color = new Array();
-            const indices = new Map();
-            let j = 0;
-            for ( const index of this.vertices.keys()){
-                color.push(0);
-                indices.set(index,j);
-                j ++;
-            }
-            while (true){
-                let i = n-1;
-                while (i >= 0 && color[i] == k-1){
-                    color[i] = 0;
-                    i --;
-                }
-                if ( i == -1 ){ // every color was set to k-1
-                    break;      // all assignements have been tried
-                }
-                color[i] ++;
-                // else next color assignement
-                // check it
-                let is_proper_coloring = true;
-                for (const link of this.links.values()){
-                    if ( link.orientation == ORIENTATION.UNDIRECTED){
-                        if( color[indices.get(link.startVertex.index)] == color[indices.get(link.endVertex.index)]){
-                            is_proper_coloring = false;
-                            break;
-                        }
+            let maxd = 0;
+            let maxIndex = undefined;
+            for (const v of this.vertices.values()){
+                let k = 0;
+                for (const neighbor of this.getNeighborsFromIndex(v.index)){
+                    if (clique.has(neighbor.index)){
+                        k ++;
                     }
                 }
-                if (is_proper_coloring){
-                    return k;
+                if (k < clique.size){
+                    continue;
+                }
+                const d = this.degree(v.index);
+                if (d > maxd){
+                    maxd = d;
+                    maxIndex = v.index;
                 }
             }
-            k += 1;
+            if (typeof maxIndex == "undefined"){
+                return clique;
+            } else {
+                clique.add(maxIndex);
+            }
         }
     }
 
 
+    /**
+     * Return the degree of the vertex of index `vIndex`.
+     * If `vIndex` is not a vertex index, then 0 is returned.
+     */
+    degree(vIndex: number): number {
+        let d = 0;
+        for (const link of this.links.values()){
+            if ( link.startVertex.index == vIndex || link.endVertex.index == vIndex){
+                d ++;
+            }
+        }
+        return d;
+    }
+
+    /**
+     * Return the index of a maximal degree vertex or `undefined` if there is no vertices.
+     */
+    maximalDegreeVertex(): Option<number> {
+        let record = -1;
+        let index = undefined;
+        for (const vIndex of this.vertices.keys()){
+            if (this.degree(vIndex) > record){
+                index = vIndex;
+            }
+        }
+        return index;
+    }
+
+
+    
+
+    /**
+     * Return true if the current coloring can be completed
+     */
+    private auxChroma(k: number, coloring: Map<number,number>, possibleColors: Map<number,Set<number>>, neighbors: Map<number, Array<Vertex<V>>>, cliques?: Set<Set<number>>): boolean{
+
+        // If a clique has not enough colors to color itself then stop
+        if (typeof cliques != "undefined"){
+            for (const clique of cliques){
+                const pColors = new Set<number>();
+                let s = 0;
+                for (const vId of clique){
+                    if (coloring.has(vId) == false){
+                        s ++;
+                        for( const color of possibleColors.get(vId)){
+                            pColors.add(color);
+                        }
+                    }
+                }
+                if (pColors.size < s){
+                    return false;
+                }
+            }
+        }
+        
+
+        let minPoss = k+1;
+        let minId = undefined;
+        // Choose the uncolored vertex which has the less color choice
+        for (const [vIndex, possibilities] of possibleColors){
+            if (coloring.has(vIndex) == false && possibilities.size < minPoss){
+                minPoss = possibilities.size;
+                minId = vIndex;
+                if (minPoss == 0){
+                    return false;
+                }
+            }
+        }
+        if (typeof minId == "undefined"){
+            // All vertices have a color
+            // console.log(coloring);
+            return true;
+        } else {
+            const possib = possibleColors.get(minId);
+            for (const color of possib){
+                coloring.set(minId, color);
+                const modified = new Array();
+                for (const neighbor of neighbors.get(minId)){
+                    const set = possibleColors.get(neighbor.index);
+                    if (set.has(color) && coloring.has(neighbor.index) == false){
+                        set.delete(color);
+                        modified.push(neighbor.index);                        
+                    }
+                }
+                const result = this.auxChroma(k, coloring, possibleColors, neighbors, cliques);
+                if (result) return true;
+
+                // If cannot extend: backtrack
+                coloring.delete(minId);
+                for (const modifiedNeigborId of modified){
+                    const set = possibleColors.get(modifiedNeigborId);
+                    set.add(color);
+                }
+
+                
+            }
+            return false;
+        }
+    }
+
+     /**
+     * Returns the chromatic number of the graph.
+     * The chromatic number is the minimum integer k such that there exists a proper coloring with k colors.
+     * TODO: What happens with arcs? I dont know.
+     * Algorithm: Backtrack
+     * @param cliques is a set of cliques (sets of vIndices) of the graph. There are used to cut the search. The best would be to give the set of maximal cliques but it is NP-hard to compute. So if your graph has known cliques it is better.
+     */
+    chromatic_number(cliques?: Set<Set<number>>): number {
+        const coloring = this.minimalProperColoring(cliques);
+        let colors = new Set();
+        for (const color of coloring.values()){
+            colors.add(color);
+        }
+        return colors.size;
+    }
+
+    /**
+     * Return a miniaml proper coloring.
+     * A coloring is proper if any two adjacent vertices have different colors.
+     * The chromatic number is the size of a minimal proper coloring.
+     * @param cliques is a set of cliques (sets of vIndices) of the graph. There are used to cut the search.
+     */
+    minimalProperColoring(cliques?: Set<Set<number>>) : Map<number, number> {
+        const n = this.vertices.size;
+        if (n == 0) return new Map();
+
+        let clique = new Set<number>();
+        if(typeof cliques == "undefined"){
+            clique = this.greedyClique();
+        } else {
+            for (const c of cliques){
+                if (c.size > clique.size){
+                    clique = c;
+                }
+            }
+        }
+
+        const neighbors = new Map<number, Array<Vertex<V>>>();
+        for (const vId of this.vertices.keys()){
+            neighbors.set(vId, this.getNeighborsFromIndex(vId));
+        }
+
+        let k = clique.size;
+        while (true){
+            const coloring = new Map<number,number>();
+            const possibleColors = new Map<number,Set<number>>();
+            for (const vIndex of this.vertices.keys()){
+                possibleColors.set(vIndex, new Set(Array.from({length: k}, (_, i) => i)))
+            }
+
+            let i = 0;
+            for (const vId of clique){
+                coloring.set(vId, i);
+                for (const neighbor of this.getNeighborsFromIndex(vId)){
+                    const set = possibleColors.get(neighbor.index);
+                    set.delete(i);
+                }
+                i ++;
+            }
+
+            if (this.auxChroma(k, coloring, possibleColors, neighbors, cliques)) return coloring;
+            k += 1;
+        }
+    }
     
 
 
@@ -1235,6 +1433,62 @@ export class AbstractGraph extends Graph<void,void> {
         }
         const g = Graph.fromArcsList(fmtArcsList, () => {return});
         return g as AbstractGraph;
+    }
+
+    static generateClique(n: number): AbstractGraph{
+        const g = new AbstractGraph();
+        for (let i = 0 ; i < n ; i ++){
+            g.addVertex();
+            for (let j = 0 ; j < i ; j ++){
+                g.addLink(j,i, ORIENTATION.UNDIRECTED, null);
+            }
+        }
+        return g;
+    }
+
+    /**
+     * The line graph is the graph associated to an undirected graph where the vertices are the edges of the initial graph.
+     * Two edges are adjacent in the line graph if they share a common endpoint.
+     * @returns 
+     */
+    static lineGraph<V,L>(graph: Graph<V,L>): AbstractGraph{
+        const g = new AbstractGraph();
+        for (const linkId of graph.links.keys()){
+            g.set_vertex(linkId, null);
+        }
+        for (const link1 of graph.links.values()){
+            for (const link2 of graph.links.values()){
+                if (link1.index <= link2.index) continue;
+                if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                }
+            }
+        }
+        return g;
+    }
+
+
+    /**
+     * Return the geometric line graph is the graph whose vertices are the links of the initial graph.
+     * Two links are considered adjacent if the geometric paths intersect (they can intersect at their endpoints).
+     * Therefore the geometric line graph is a super graph of the line graph.
+     */
+    static geometricLineGraph<V extends BasicVertexData,L extends BasicLinkData>(graph: BasicGraph<V,L>): AbstractGraph{
+        const g = new AbstractGraph();
+        for (const linkId of graph.links.keys()){
+            g.set_vertex(linkId, null);
+        }
+        for (const link1 of graph.links.values()){
+            for (const link2 of graph.links.values()){
+                if (link1.index <= link2.index) continue;
+                if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                } else if (link1.intersectsLink(link2)){
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                }
+            }
+        }
+        return g;
     }
 }
 

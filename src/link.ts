@@ -1,6 +1,6 @@
 import { Coord } from "./coord";
 import { BasicLinkData, Geometric, Weighted } from "./traits";
-import { eqSet } from "./utils";
+import { eqSet, is_quadratic_bezier_curves_intersection, is_segments_intersection } from "./utils";
 import { BasicVertex, Vertex } from "./vertex";
 import { Option } from "./option";
 
@@ -87,6 +87,27 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
         super(index, startVertex, endVertex, orientation, data);
         this.startVertex = startVertex;
         this.endVertex = endVertex;
+    }
+
+    /**
+     * Test if this link intersect another link 
+    // TODO: faster algorithm for intersection between segment and bezier
+     * TODO use in the planar test of a graph
+     */
+    intersectsLink(link: BasicLink<V,L>): boolean{
+        const v1 = this.startVertex.getPos();
+        const w1 = this.endVertex.getPos();
+        const v2 = link.startVertex.getPos();
+        const w2 = link.endVertex.getPos();
+        let cp1 = v1.middle(w1);
+        let cp2 = v2.middle(w2);
+        if (typeof this.data.cp != "undefined"){
+            cp1 = this.data.cp;
+        }
+        if (typeof link.data.cp != "undefined"){
+            cp2 = link.data.cp;
+        }
+        return is_quadratic_bezier_curves_intersection(v1, cp1, w1, v2, cp2, w2);
     }
 
 
