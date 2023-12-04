@@ -451,6 +451,24 @@ export class Graph<V,L> {
         return neighbors;
     }
 
+    /**
+     * Return the array of the in-neighbors of a vertex v.
+     * The indices of the vertices are accessible via v.index.
+     */
+    getInNeighbors(v: Vertex<V>): Array<Vertex<V>>{
+        const neighbors = new Array<Vertex<V>>();
+        for (const link of this.links.values()) {
+            if (link.orientation == ORIENTATION.DIRECTED) {
+                if (link.endVertex.index == v.index) {
+                    neighbors.push(link.endVertex);
+                }
+            }
+        }
+        return neighbors;
+    }
+
+
+
     get_in_neighbors_list(i: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
