@@ -1472,6 +1472,22 @@ export class AbstractGraph extends Graph<void,void> {
      * Return the geometric line graph is the graph whose vertices are the links of the initial graph.
      * Two links are considered adjacent if the geometric paths intersect (they can intersect at their endpoints).
      * Therefore the geometric line graph is a super graph of the line graph.
+     * @example for K4
+     * o---o
+     * |\ /|   This K4 embedding
+     * | X |   has one more edge in the geometric line graph
+     * |/ \|
+     * o---o
+     * 
+     * @example
+     *      o
+     *     /|\
+     *    / | \    This K4 embedding
+     *   /  o  \   has the same geometric line graph and line graph
+     *  /__/ \__\
+     * o---------o
+     * 
+     * 
      */
     static geometricLineGraph<V extends BasicVertexData,L extends BasicLinkData>(graph: BasicGraph<V,L>): AbstractGraph{
         const g = new AbstractGraph();
@@ -1523,6 +1539,14 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
         const g = Graph.fromEdgesList(fmtEdgesList, () => { return new BasicVertexData(new Coord(0,0), "", "black")});
         return g as BasicGraph<V,L>;
+    }
+
+
+    override addVertex(vertexData: V): BasicVertex<V> {
+        const index = this.get_next_available_index_vertex();
+        const newVertex = new BasicVertex(index, vertexData);
+        this.vertices.set(index, newVertex);
+        return newVertex;
     }
 
 

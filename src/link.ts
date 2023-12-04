@@ -99,6 +99,9 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
         const w1 = this.endVertex.getPos();
         const v2 = link.startVertex.getPos();
         const w2 = link.endVertex.getPos();
+        if (typeof this.data.cp == "undefined" && typeof link.data.cp == "undefined"){
+            return is_segments_intersection(v1, w1, v2, w2);
+        }
         let cp1 = v1.middle(w1);
         let cp2 = v2.middle(w2);
         if (typeof this.data.cp != "undefined"){

@@ -1,4 +1,8 @@
-import { AbstractGraph } from "../graph";
+import { Coord } from "../coord";
+import { EmbeddedGraph, generateGraph, GeneratorId } from "../generators";
+import { AbstractGraph, BasicGraph } from "../graph";
+import { BasicLink, ORIENTATION } from "../link";
+import { BasicLinkData, BasicVertexData } from "../traits";
 
 // chi(Pn) = 2 
 // chi(Cn) = 2 or 3 if n is odd, for n >= 3
@@ -64,3 +68,40 @@ console.timeEnd('vPetersen');
 
 
 console.log( petersenGraph.minimalProperColoring());
+
+
+checkGeomChromaticClique(4)
+
+
+// K4 in circle should have GCI 4
+function checkGeomChromaticClique(n: number){
+    const g2 = new BasicGraph();
+    const v0 = g2.addVertex(new BasicVertexData(new Coord(0,0), "", "black"));
+    const v1 = g2.addVertex(new BasicVertexData(new Coord(1,0), "", "black"));
+    const v2 = g2.addVertex(new BasicVertexData(new Coord(0,1), "", "black"));
+    const v3 = g2.addVertex(new BasicVertexData(new Coord(1,1), "", "black"));
+    
+    g2.links.set(0, new BasicLink(0, v0, v1, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+    g2.links.set(1, new BasicLink(1, v0, v2, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+    g2.links.set(2, new BasicLink(2, v0, v3, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+    g2.links.set(3, new BasicLink(3, v1, v2, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+    g2.links.set(4, new BasicLink(4, v1, v3, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+    g2.links.set(5, new BasicLink(5, v2, v3, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, "", "black")))
+
+    const glg2 = AbstractGraph.geometricLineGraph(g2);
+
+    const cliques = new Set<Set<number>>();
+    for (let i = 0 ; i < n ; i ++){
+        const clique = new Set<number>();
+        for (const link of g2.links.values()){
+            if (link.startVertex.index == i || link.endVertex.index == i){
+                clique.add(link.index);
+            }
+        }
+        cliques.add(clique);
+    }
+
+    console.log(glg2.chromatic_number(cliques));
+    // console.log(glg2.minimalProperColoring(cliques));
+    
+}

@@ -83,7 +83,7 @@ export function segmentsIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Op
     }
     const t1 = ((d.x-b.x)*(d.y-c.y) + (d.y-b.y)*(-(d.x-c.x))) / det;
     const t2 = ((d.x-b.x)*(-(a.y-b.y))+(d.y-b.y)*(a.x-b.x)) / det;
-    const condition =  0.01 < t1 && t1 < 0.99 && 0.01 < t2 && t2 < 0.99;
+    const condition =  0 <= t1 && t1 <= 1 && 0 <= t2 && t2 <= 1;
     if (condition){
         return new Coord(b.x + t1*(a.x-b.x), b.y + t1*(a.y-b.y));
     } else {

@@ -1,6 +1,6 @@
 {
   "name": "gramoloss",
-  "version": "1.9.9",
+  "version": "1.9.10",
   "description": "Graph theory package for edition and computation",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
