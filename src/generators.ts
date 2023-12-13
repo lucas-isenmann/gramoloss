@@ -300,6 +300,7 @@ function generateIndependentCircle(n: number): EmbeddedGraph {
  * PaleyGraph is unoriented if p = 1 mod 4.
  * It is oriented if p = -1 mod 4.
  * @param p should be a prime number = +-1 mod 4
+ * @returns Error if p is not such a number
  * @example undirected: 5 13 17, directed: 3 7 11
  */
 export function generatePaleyGraph(p: number): EmbeddedGraph {

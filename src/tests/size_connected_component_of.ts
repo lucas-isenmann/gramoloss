@@ -1,4 +1,4 @@
-import { AbstractGraph } from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[3,4],[4,5]]).size_connected_component_of(0) == 3);
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[3,4],[4,5]]).size_connected_component_of(1) == 3);

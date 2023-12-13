@@ -1,6 +1,6 @@
 import { Coord } from "../coord";
-import { EmbeddedGraph, generateGraph, GeneratorId } from "../generators";
-import { AbstractGraph, BasicGraph } from "../graph";
+import { BasicGraph } from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 import { BasicLink, ORIENTATION } from "../link";
 import { BasicLinkData, BasicVertexData } from "../traits";
 

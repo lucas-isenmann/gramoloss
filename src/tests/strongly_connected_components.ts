@@ -1,4 +1,4 @@
-import {AbstractGraph, Graph} from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 
 const g0 = AbstractGraph.fromArcsListDefault([[0, 1]]);
 console.log(g0.strongly_connected_components().length == 2);

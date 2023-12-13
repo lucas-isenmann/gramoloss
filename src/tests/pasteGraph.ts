@@ -1,4 +1,5 @@
-import { AbstractGraph, Graph } from "../graph";
+import { Graph } from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 
 const g1 = new Graph();
 const g2 = AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]);

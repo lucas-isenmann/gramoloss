@@ -7,7 +7,7 @@
 - [X] move modifications out of Graph -> to Board
 - [X] move modifications to Gracofeu
 - [ ] set stict=true in tsconfig.json
-- [ ] refacto Stroke, Rectangle and Area with Data (so they have index)
+- [X] refacto Stroke, Rectangle and Area with Data (so they have index)
 
 ## Parameters
 
@@ -25,12 +25,12 @@
 - [ ] radius
 - [ ] girth
 - [X] chromatic number
-- [ ] chromatic index
+- [X] chromatic index
 - [ ] degree_sequence
 - [ ] tree_width
 - [X] clique_number
 - [X] vertex_cover
-- [ ] stretch
+- [X] stretch
 
 ## Generators
 
@@ -40,3 +40,4 @@
 - [ ] random trees
 - [ ] Petersen
 - [X] Paley
+- [ ] Paley prime power

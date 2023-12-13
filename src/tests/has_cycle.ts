@@ -1,4 +1,4 @@
-import { AbstractGraph, Graph } from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 
 console.log(AbstractGraph.fromEdgesListDefault([[2,3]]).has_cycle() == false);
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).has_cycle() == true);

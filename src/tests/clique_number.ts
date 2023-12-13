@@ -1,13 +1,13 @@
 // Clique Number unit tests
 // p(Pm) = 2 
 
-import { AbstractGraph, Graph } from "../graph";
+import { AbstractGraph } from "../graph_abstract";
 
 // p(P2) = 2
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2]]).clique_number() == 2);
+console.log(AbstractGraph.generatePath(3).clique_number() == 2);
 
 // p(P3) = 2
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3]]).clique_number() == 2);
+console.log(AbstractGraph.generatePath(4).clique_number() == 2);
 
 // p(K3) = 3
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).clique_number() == 3);
@@ -20,3 +20,10 @@ console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).
 
 // p(K33) = 2
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[0,3],[0,5],[2,1],[2,3],[2,5],[4,1],[4,3],[4,5]]).clique_number() == 2);
+
+
+
+// Paley graphs
+console.log(AbstractGraph.generatePaley(5).clique_number() == 2);
+console.log(AbstractGraph.generatePaley(13).clique_number() == 3);
+console.log(AbstractGraph.generatePaley(17).clique_number() == 3);

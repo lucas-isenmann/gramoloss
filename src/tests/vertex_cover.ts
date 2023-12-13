@@ -1,5 +1,6 @@
 // Vertex Cover tests
-import { AbstractGraph } from "../graph";
+
+import { AbstractGraph } from "../graph_abstract";
 
 
 

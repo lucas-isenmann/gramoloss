@@ -1340,13 +1340,87 @@ export class Graph<V,L> {
 
         return record;
     }
-        
-    // Compute the clique number of the graph.
-    // It is the minimum integer k such that there exists a subset X of the vertices which is a clique.
-    // TODO: optional parameter m: asserts that the result it at least m
-    // TODO: return a certificate that it has a k-vertex-cover
-    // TODO: better algorithm than the backtract way
-    clique_number(): number {
+
+
+    /**
+     * Return the maximum size of a clique extending `clique` if it is higher than record.
+     * @param commonNeighbors is the set of commonNeighbors of clique. Therefore any vertex extending the clique should be taken in this set.
+     * @param neighbors is the map of all the neighbors of every vertex.
+     * @param record is the current record. It is immediately updated by the size of the clique.
+    */
+    private auxCliqueNumber( clique: Set<number>, commonNeighbors: Set<number>, neighbors: Map<number, Set<number>>, record: number): number{
+
+        // Cut if clique + cliqueNeighbors < record
+        if (clique.size + commonNeighbors.size <= record){
+            return record;
+        }
+
+        if (clique.size > record){
+            record = clique.size;
+        }
+
+        const commonNeighborsList = Array.from(commonNeighbors);
+        for (const neighbor of commonNeighborsList){
+            clique.add(neighbor);
+
+            const deletedCommonNeighbors = [neighbor];
+            for (const a of commonNeighbors){
+                const na = neighbors.get(a);
+                if (na.has(neighbor) == false){
+                    commonNeighbors.delete(a);
+                    deletedCommonNeighbors.push(a);
+                }
+            }
+
+            record = Math.max(record, this.auxCliqueNumber(clique, commonNeighbors, neighbors, record));
+
+            for (const a of deletedCommonNeighbors){
+                commonNeighbors.add(a);
+            }
+            clique.delete(neighbor);
+        }
+
+        return record;
+    }
+
+            
+    /**
+     * Compute the clique number of the graph.
+     * It is the maximum size of a clique of the graph.
+     * @param recordInit is a lower bound on the clique number
+     * @todo return a certificate (a maximum clique) 
+     */
+    clique_number(recordInit?: number): number {
+        const neighbors = new Map<number, Set<number>>();
+        for (const vertex of this.vertices.values()){
+            neighbors.set(vertex.index, new Set());
+        }
+        for (const link of this.links.values()){
+            neighbors.get(link.startVertex.index)?.add(link.endVertex.index);
+            neighbors.get(link.endVertex.index)?.add(link.startVertex.index);
+        }
+
+
+        let record = (typeof recordInit != "undefined") ? recordInit : 1;
+
+        for (const [index, v] of this.vertices){
+            const clique = new Set([index]);
+            // console.log(neighbors.get(index));
+            
+            const commonNeighbors = new Set<number>();
+            const vNeighbors = neighbors.get(index);
+            if (typeof vNeighbors == "undefined") continue;
+            for (const neighbor of vNeighbors){
+                commonNeighbors.add(neighbor)
+            }
+            const lol = this.auxCliqueNumber(clique, commonNeighbors, neighbors, record);
+            record = Math.max(record, lol);
+            // console.log(index, lol, record);
+        }
+        return record;
+    }
+
+    cliqueNumberObsolete(): number {
         const n = this.vertices.size;
         let record = 0;
 
@@ -1427,104 +1501,6 @@ export class Graph<V,L> {
 }
 
 
-
-
-export class AbstractGraph extends Graph<void,void> {
-
-    constructor(){
-        super();
-    }
-
-    static fromEdgesListDefault(edgesList: Array<[number,number]>): AbstractGraph{
-        const fmtEdgesList = new Array<[number,number,void]>();
-        for (const [x,y] of edgesList){
-            fmtEdgesList.push([x,y,null]);
-        }
-        const g = Graph.fromEdgesList(fmtEdgesList, () => {return});
-        return g as AbstractGraph;
-    }
-
-    static fromArcsListDefault(arcsList: Array<[number,number]>): AbstractGraph{
-        const fmtArcsList = new Array<[number,number,void]>();
-        for (const [x,y] of arcsList){
-            fmtArcsList.push([x,y,null]);
-        }
-        const g = Graph.fromArcsList(fmtArcsList, () => {return});
-        return g as AbstractGraph;
-    }
-
-    static generateClique(n: number): AbstractGraph{
-        const g = new AbstractGraph();
-        for (let i = 0 ; i < n ; i ++){
-            g.addVertex();
-            for (let j = 0 ; j < i ; j ++){
-                g.addLink(j,i, ORIENTATION.UNDIRECTED, null);
-            }
-        }
-        return g;
-    }
-
-    /**
-     * The line graph is the graph associated to an undirected graph where the vertices are the edges of the initial graph.
-     * Two edges are adjacent in the line graph if they share a common endpoint.
-     * @returns 
-     */
-    static lineGraph<V,L>(graph: Graph<V,L>): AbstractGraph{
-        const g = new AbstractGraph();
-        for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId, null);
-        }
-        for (const link1 of graph.links.values()){
-            for (const link2 of graph.links.values()){
-                if (link1.index <= link2.index) continue;
-                if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
-                }
-            }
-        }
-        return g;
-    }
-
-
-    /**
-     * Return the geometric line graph is the graph whose vertices are the links of the initial graph.
-     * Two links are considered adjacent if the geometric paths intersect (they can intersect at their endpoints).
-     * Therefore the geometric line graph is a super graph of the line graph.
-     * @example for K4
-     * o---o
-     * |\ /|   This K4 embedding
-     * | X |   has one more edge in the geometric line graph
-     * |/ \|
-     * o---o
-     * 
-     * @example
-     *      o
-     *     /|\
-     *    / | \    This K4 embedding
-     *   /  o  \   has the same geometric line graph and line graph
-     *  /__/ \__\
-     * o---------o
-     * 
-     * 
-     */
-    static geometricLineGraph<V extends BasicVertexData,L extends BasicLinkData>(graph: BasicGraph<V,L>): AbstractGraph{
-        const g = new AbstractGraph();
-        for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId, null);
-        }
-        for (const link1 of graph.links.values()){
-            for (const link2 of graph.links.values()){
-                if (link1.index <= link2.index) continue;
-                if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
-                } else if (link1.intersectsLink(link2)){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
-                }
-            }
-        }
-        return g;
-    }
-}
 
 
 

@@ -4,6 +4,7 @@ export * from './link';
 export * from './stroke';
 export * from './area';
 export * from './graph';
+export * from "./graph_abstract";
 export * from "./text_zone";
 export * from "./board";
 export * from "./rectangle";
