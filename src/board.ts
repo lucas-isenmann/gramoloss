@@ -42,6 +42,42 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
         return indices;
     }
 
+     /**
+     * @param n 
+     * @returns n available stroke indices
+     * 
+     * It does not start from the max of the current stroke indices.
+     */
+     getNextNAvailableRectangleIndices(n: number): Array<number> {
+        let index = 0;
+        const indices = new Array<number>();
+        while (indices.length < n) {
+            if (this.rectangles.has(index) == false) {
+                indices.push(index);
+            }
+            index += 1;
+        }
+        return indices;
+    }
+
+    /**
+     * @param n 
+     * @returns n available stroke indices
+     * 
+     * It does not start from the max of the current stroke indices.
+     */
+    getNextNAvailableTextZoneIndices(n: number): Array<number> {
+        let index = 0;
+        const indices = new Array<number>();
+        while (indices.length < n) {
+            if (this.text_zones.has(index) == false) {
+                indices.push(index);
+            }
+            index += 1;
+        }
+        return indices;
+    }
+
     get_next_available_index_representation() {
         let index = 0;
         while (this.representations.has(index)) {
