@@ -24,6 +24,24 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
         this.rectangles = new Map();
     }
 
+    /**
+     * @param n 
+     * @returns n available stroke indices
+     * 
+     * It does not start from the max of the current stroke indices.
+     */
+    getNextNAvailableStrokeIndices(n: number): Array<number> {
+        let index = 0;
+        const indices = new Array<number>();
+        while (indices.length < n) {
+            if (this.strokes.has(index) == false) {
+                indices.push(index);
+            }
+            index += 1;
+        }
+        return indices;
+    }
+
     get_next_available_index_representation() {
         let index = 0;
         while (this.representations.has(index)) {
