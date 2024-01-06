@@ -1,11 +1,13 @@
 import { Area } from "./area";
 import { Vect } from "./coord";
 import { BasicGraph, Graph } from "./graph";
+import { BasicLink } from "./link";
 import { Rectangle } from "./rectangle";
 import { Representation } from "./representations/representation";
 import { Stroke } from "./stroke";
 import { TextZone } from "./text_zone";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from "./traits";
+import { BasicVertex } from "./vertex";
 
 export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends Stroke, A extends Area, T extends TextZone, R extends Representation, Rect extends Rectangle> {
     graph: BasicGraph<V,L>;
@@ -120,23 +122,69 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
     }
 
 
-
-    get_value(kind: string, index: number, param: string): any{
+    /**
+     * Return an element of a certain kind and index.
+     * @todo an error should be triggered if kind does not exists or index
+     */
+    getElement(kind: string, index: number): undefined | BasicVertex<V> | BasicLink<V,L> | S | T | A | Rect {
         if (kind == "TextZone"){
-            return this.text_zones.get(index)[param];
+            const elt = this.text_zones.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
         } else if (kind == "Vertex"){
-            return this.graph.vertices.get(index).data[param];
+            const elt = this.graph.vertices.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
         } else if (kind == "Link"){
-            return this.graph.links.get(index).data[param];
+            const elt = this.graph.links.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
         } else if (kind == "Stroke"){
-            return this.strokes.get(index)[param];
+            const elt = this.strokes.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
         } else if (kind == "Area"){
-            return this.areas.get(index)[param];
+            const elt = this.areas.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
         } else if (kind == "Rectangle"){
-            return this.rectangles.get(index)[param];
+            const elt = this.rectangles.get(index);
+            if (typeof elt == "undefined"){
+                return undefined;
+            } else {
+                return elt;
+            }
+        } else {
+            return undefined;
         }
-        
+    }
 
+    /**
+     * Return the value of a param of an element of a certain kind and index.
+     * @todo return type should exist
+     */
+    get_value(kind: string, index: number, param: string): undefined | any{
+        const elt = this.getElement(kind, index);
+        if (typeof elt == "undefined"){
+            return undefined;
+        } else {
+            return elt[param];
+        }
     }
 
 
