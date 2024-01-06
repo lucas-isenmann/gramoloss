@@ -1,8 +1,14 @@
 import { Board } from "../board";
 import { Coord } from "../coord";
 import { TextZone } from "../text_zone";
+import { BasicVertexData } from "../traits";
 
 const b = new Board();
+
+b.graph.addVertex(new BasicVertexData(new Coord(0,0), "hello", "Neutral"));
+
+const v = b.get_value("Vertex", 0, "weight")
+console.log(v);
 
 b.text_zones.set(0, new TextZone(new Coord(0,0), 100, "salut", 0))
 

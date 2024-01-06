@@ -124,9 +124,10 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
 
     /**
      * Return an element of a certain kind and index.
+     * @warning for vertices and links it returns data of these elements not all the data
      * @todo an error should be triggered if kind does not exists or index
      */
-    getElement(kind: string, index: number): undefined | BasicVertex<V> | BasicLink<V,L> | S | T | A | Rect {
+    getElement(kind: string, index: number): undefined | V | L | S | T | A | Rect {
         if (kind == "TextZone"){
             const elt = this.text_zones.get(index);
             if (typeof elt == "undefined"){
@@ -139,14 +140,14 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
             if (typeof elt == "undefined"){
                 return undefined;
             } else {
-                return elt;
+                return elt.data;
             }
         } else if (kind == "Link"){
             const elt = this.graph.links.get(index);
             if (typeof elt == "undefined"){
                 return undefined;
             } else {
-                return elt;
+                return elt.data;
             }
         } else if (kind == "Stroke"){
             const elt = this.strokes.get(index);
