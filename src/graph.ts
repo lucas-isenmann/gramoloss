@@ -1283,62 +1283,407 @@ export class Graph<V,L> {
     }
 
 
+    /**
+     * OSBOLETE by V4
+     * Return true if the selection of vertices can be completed to a vertex cover of size at most k.
+     * @param k a nonnegative integer 
+     * @param selection the vertices currently selection
+     */
+    auxVertexCoverV2K(k: number, selection: Set<number>, rec: number): boolean {
+        // console.log("aux", k, selection, rec);
+        if (selection.size > k){
+            return false;
+        }
+        for (const link of this.links.values()){
+            if (!selection.has(link.startVertex.index) && !selection.has(link.endVertex.index)){
+                // console.log(link.index, link.startVertex.index, link.endVertex.index);
+
+                // Branch
+                selection.add(link.startVertex.index);
+                const r = this.auxVertexCoverV2K(k, selection, rec+1);
+                selection.delete(link.startVertex.index);
+                if (r){
+                    
+                    return true;
+                } else {
+                    selection.add(link.endVertex.index);
+                    const r2 = this.auxVertexCoverV2K(k, selection, rec+1);
+                    selection.delete(link.endVertex.index);
+                    return r2;
+                }
+            }
+        }
+        // If this line is reached, then all links have been covered
+        return true; 
+    }
+
+    /**
+     * OSBOLETE by V4
+     * @param k 
+     * @returns 
+     */
+    vertexCoverV2K(k: number): boolean{
+        return this.auxVertexCoverV2K(k, new Set(), 0);
+    }
+
+     /**
+     * OSBOLETE by V4
+     * @param k 
+     * @returns 
+     */
+    auxVertexCover3(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
+        // console.log("aux", k, selection, rec);
+        if (selection.size > record){
+            return record;
+        }
+        const link = links.pop();
+        if (typeof link == "undefined"){
+            return selection.size;
+        } else {
+            // Branch
+            const x = link.startVertex.index;
+            selection.add(x);
+            const links1 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != x && l.endVertex.index != x){
+                    links1.push(l);
+                }
+            }
+            const r = this.auxVertexCover3(links1, selection, record);
+            selection.delete(x);
+            if (r < record) record = r;
+
+            const y = link.endVertex.index;
+            const links2 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != y && l.endVertex.index != y){
+                    links2.push(l);
+                }
+            }
+            selection.add(y);
+            const r2 = this.auxVertexCover3(links2, selection, record);
+            selection.delete(y);
+            if (r2 < record) record = r2;
+            return record;
+        }
+    }
+
+     /**
+     * OSBOLETE by V4
+     */
+    vertexCoverV3(): number {
+        const links = new Array();
+        for (const link of this.links.values()){
+            links.push(link);
+        }
+        return this.auxVertexCover3(links, new Set(), this.vertices.size);
+    }
+
+     /**
+     * OSBOLETE by V4
+     */
+    auxVertexCover3Bis(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
+        // console.log("aux", k, selection, rec);
+
+        const approx = this.vertexCover2Approx(links);
+        if (selection.size + approx/2 > record ){
+            return record;
+        }
+
+
+        const link = links.pop();
+        if (typeof link == "undefined"){
+            return selection.size;
+        } else {
+            // Branch
+            const x = link.startVertex.index;
+            selection.add(x);
+            const links1 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != x && l.endVertex.index != x){
+                    links1.push(l);
+                }
+            }
+            const r = this.auxVertexCover3Bis(links1, selection, record);
+            selection.delete(x);
+            if (r < record) record = r;
+
+            const y = link.endVertex.index;
+            const links2 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != y && l.endVertex.index != y){
+                    links2.push(l);
+                }
+            }
+            selection.add(y);
+            const r2 = this.auxVertexCover3Bis(links2, selection, record);
+            selection.delete(y);
+            if (r2 < record) record = r2;
+            return record;
+        }
+    }
+    
+     /**
+     * OSBOLETE by V4
+     */
+    vertexCoverV3Bis(): number {
+        const links = new Array();
+        for (const link of this.links.values()){
+            links.push(link);
+        }
+        return this.auxVertexCover3Bis(links, new Set(), this.vertices.size);
+    }
+
+    auxVertexCover4(k: number, links: Array<Link<V,L>>, selection: Set<number>): boolean {
+        // console.log("aux", k, selection, rec);
+        
+
+        // const approx = this.vertexCover2Approx(links);
+        // if (selection.size + approx/2 > k ){
+        //     return false;
+        // }
+
+        // Kernelization
+        const kernelSelection = new Set<number>();
+        while(true){
+            let found = false;
+            for (const vertex of this.vertices.values()){
+                const x = vertex.index;
+                if (selection.has(x) == false){
+                    let degree = 0;
+                    for (const link of links){
+                        if (link.startVertex.index == x || link.endVertex.index == x){
+                            degree ++;
+                        }
+                    }
+                    if (degree > k- selection.size){
+                        selection.add(vertex.index);
+                        kernelSelection.add(vertex.index);
+                        links = links.filter( (link) => {return link.startVertex.index != x && link.endVertex.index != x })
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (found == false){
+                break;
+            }
+        }
+        // console.log(kernelSelection.size);
+        if (selection.size > k ){
+            return false;
+        }
+        
+
+        // const matching = this.generateRandomMaximalSubMatching(links);
+        // if (selection.size + matching > k){
+        //     return false;
+        // }
+
+        const link = links.pop();
+        if (typeof link == "undefined"){
+            for (const x of kernelSelection){
+                selection.delete(x);
+            }
+            return true;
+        } else {
+            // Branch
+            const x = link.startVertex.index;
+            selection.add(x);
+            const links1 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != x && l.endVertex.index != x){
+                    links1.push(l);
+                }
+            }
+            const r = this.auxVertexCover4(k, links1, selection);
+            selection.delete(x);
+            if (r){
+                for (const x of kernelSelection){
+                    selection.delete(x);
+                }
+                return true;
+            } 
+
+            const y = link.endVertex.index;
+            const links2 = new Array();
+            for (const l of links){
+                if (l.startVertex.index != y && l.endVertex.index != y){
+                    links2.push(l);
+                }
+            }
+            selection.add(y);
+            const r2 = this.auxVertexCover4(k, links2, selection);
+            selection.delete(y);
+            for (const x of kernelSelection){
+                selection.delete(x);
+            }
+            return r2;
+        }
+    }
+
+    vertexCoverV4launcher(k :number): boolean {
+        let links = new Array<Link<V,L>>();
+        for (const link of this.links.values()){
+            links.push(link);
+        }
+
+        const preselection = new Set<number>();
+        let nbKer = 0;
+
+        while(true){
+            let found = false;
+            for (const vertex of this.vertices.values()){
+                const x = vertex.index;
+                if (preselection.has(x) == false){
+                    let degree = 0;
+                    for (const link of links){
+                        if (link.startVertex.index == x || link.endVertex.index == x){
+                            degree ++;
+                        }
+                    }
+                    if (degree > k){
+                        preselection.add(vertex.index);
+                        links = links.filter( (link) => {return link.startVertex.index != x && link.endVertex.index != x })
+                        found = true;
+                        nbKer ++;
+                        break;
+                    }
+                }
+            }
+            if (found == false){
+                break;
+            }
+        }
+        // console.log(nbKer)
+        return this.auxVertexCover4(k, links, preselection);
+    }
+
+    vertexCoverV4(): number {
+        const matching = this.generateRandomMaximalMatching();
+        console.log("matching size", matching.length);
+        // const links = new Array();
+        // for (const link of this.links.values()){
+        //     links.push(link);
+        // }
+        // console.log("VC 2-approx", this.vertexCover2Approx(links))
+        // return 0;
+        for (let k = matching.length ; k <= this.vertices.size ; k ++ ){
+            // console.time("lol");
+            if (this.vertexCoverV4launcher(k)){
+                return k;
+            }
+            // console.timeEnd("lol");
+        }
+    }
+
+    
+
+    vertexCoverV2(): number {
+        for (let k = 0 ; k <= this.vertices.size ; k ++ ){
+            // console.log(k);
+            if (this.vertexCoverV2K(k)){
+                return k;
+            }
+        }
+    }
+
+    /**
+     * Return a 2-approximation of the vertex number of the subgraphLinks
+     * @param subgraphLinks 
+     * @returns 
+     */
+    vertexCover2Approx(subgraphLinks: Array<Link<V,L>>): number {
+        // Copy subgraph links
+        let links = new Array<Link<V,L>>();
+        for (const link of subgraphLinks){
+            links.push(link);
+        }
+
+        let approx = 0;
+        let link = links.pop();
+        while (typeof link != "undefined"){
+            approx += 2;
+            const x = link.startVertex.index;
+            const y = link.endVertex.index;
+            // console.log( link.index, x, y);
+
+            links = links.filter( l => {
+                return l.startVertex.index != x &&
+                l.startVertex.index != y &&
+                l.endVertex.index != x &&
+                l.endVertex.index != y })
+            link = links.pop();
+        }
+
+        return approx;
+
+    }
+
+
+    generateRandomMaximalSubMatching(subgraphLinks: Array<Link<V,L>>): number{
+
+        // Copy subgraph links
+        let links = new Array<Link<V,L>>();
+        for (const link of subgraphLinks){
+            links.push(link);
+        }
+
+        let matchingSize = 0;
+
+        let link = links.pop();
+        while (typeof link != "undefined"){
+            matchingSize ++;
+            const x = link.startVertex.index;
+            const y = link.endVertex.index;
+
+            links = links.filter( l => {
+                return l.startVertex.index != x &&
+                l.startVertex.index != y &&
+                l.endVertex.index != x &&
+                l.endVertex.index != y })
+            link = links.pop();
+        }
+
+        return matchingSize;
+    }
+
+    generateRandomMaximalMatching(): Array<Link<V,L>>{
+        
+        // console.log(this.links.size);
+        const matching = new Array<Link<V,L>>();
+        let links = new Array<Link<V,L>>();
+        for (const link of this.links.values()){
+            links.push(link);
+        }
+        const vertices = new Set<number>();
+
+        let link = links.pop();
+        while (typeof link != "undefined"){
+            matching.push(link);
+            const x = link.startVertex.index;
+            const y = link.endVertex.index;
+
+            vertices.add(x);
+            vertices.add(y);
+
+            links = links.filter( l => {return !vertices.has(l.startVertex.index) && !vertices.has(l.endVertex.index)})
+            link = links.pop();
+        }
+
+        return matching;
+    }
+
     
     /**
      * Compute the vertex cover number of the graph.
      * It is the minimum integer k such that there exists a subset X of the vertices which is of size k and such that every edge is incident to at least one vertex of X.
      * TODO: optional parameter m: asserts that the result it at least m
      * TODO: return a certificate that it has a k-vertex-cover
-     * TODO: better algorithm than the backtract way
+     * ALGO: uses kernelization and branch
      */
     vertex_cover_number(): number {
-        const n = this.vertices.size;
-        let record = n;
-
-        const selection = new Array<boolean>();
-        const indices = new Map();
-        let j = 0;
-        for ( const index of this.vertices.keys()){
-            selection.push(false);
-            indices.set(index,j);
-            j ++;
-        }
-
-        while (true){
-            let i = n-1;
-            while (i >= 0 && selection[i]){
-                selection[i] = false;
-                i --;
-            }
-            if ( i == -1 ){
-                break;      // all assignements have been tried
-            }
-            selection[i] = true;
-            // else next selection
-            // check it
-            let is_vertex_cover = true;
-            for (const link of this.links.values()){
-                if ( link.orientation == ORIENTATION.UNDIRECTED){
-                    if( !selection[indices.get(link.startVertex.index)] && !selection[indices.get(link.endVertex.index)]){
-                        is_vertex_cover = false;
-                        break;
-                    }
-                }
-            }
-            if (is_vertex_cover){
-                let count = 0;
-                for (const v of selection){
-                    if (v) {
-                        count ++;
-                    }
-                }
-                if (count < record){
-                    record = count;
-                }
-            }
-        }
-
-        return record;
+        return this.vertexCoverV4();
     }
 
 
