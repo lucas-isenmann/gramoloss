@@ -27,6 +27,13 @@ export class Link<V,L> {
     }
 
    
+    /**
+     * Return true iff at least one extremity of the link is in the set `s`.
+     * @return `s.has(startIndex) || s.has(endIndex)`
+     */
+    hasAnExtrimityIn(s: Set<number>){
+        return s.has(this.startVertex.index) || s.has(this.endVertex.index);
+    }
 
     signatureEquals(start_index: number, end_index: number, orientation: ORIENTATION): boolean{
         if ( this.orientation == orientation ){

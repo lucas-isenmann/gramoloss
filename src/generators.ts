@@ -2,7 +2,7 @@ import { Coord } from "./coord";
 import { Graph } from "./graph";
 import { ORIENTATION } from "./link";
 import { Option } from "./option";
-import { isModSquare } from "./utils";
+import { isModSquare, isPrime } from "./utils";
 import { Vertex } from "./vertex";
 
 export enum GeneratorId {
@@ -136,7 +136,11 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
     return undefined;
 }
 
-
+/**
+ * OBSOLETE generateUGTOurnament is a generalisation.
+ * @param n number of vertices
+ * @returns 
+ */
 export function generateUTournament(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
@@ -151,6 +155,53 @@ export function generateUTournament(n: number): EmbeddedGraph {
     }
     return graph;
 }
+
+
+/**
+ * v(i) -> v(i-j) for all j in [1,k]
+ * @param n number of vertices
+ * @param k order
+ * @example k = 0: acyclic
+ * @example k = 1: U-tournaments
+ */
+export function generateUGTournament(n: number, k: number): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+    for ( let i = 0 ; i < n ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord(i*50, 0 )));
+        for ( let j = 1; j <= k; j ++){
+            if (i-j >= 0){
+                graph.addLink(i, i-j, ORIENTATION.DIRECTED, undefined);
+            }
+        }
+        for ( let j = 0 ; j < i-k ; j ++ ){
+            graph.addLink(j, i, ORIENTATION.DIRECTED, undefined);
+        }
+    }
+    return graph;
+}
+
+
+/**
+ * for every i < j, i -> j iff i+j is prime
+ * @param n 
+ */
+export function generateTestTournament(n: number): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+    for ( let i = 0 ; i < n ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord(i*50, 0 )));
+        for ( let j = 0 ; j < i ; j ++ ){
+            if (isPrime(i+j)){
+                graph.addLink(j, i, ORIENTATION.DIRECTED, undefined);
+            } else {
+                graph.addLink(i, j, ORIENTATION.DIRECTED, undefined);
+            }
+            
+        }
+    }
+    return graph;
+}
+
+
 
 function generateAztecDiamond(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();

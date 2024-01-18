@@ -227,3 +227,16 @@ export function isModSquare(n: number, m: number){
 export function booleanArrayToString(array: boolean[]): string {
     return array.map((value) => value ? '1' : '0').join('');
 }
+
+
+
+
+
+
+export function isPrime(num: number): boolean {
+    if (num <= 1) return false;
+    for (let i = 2; i <= Math.sqrt(num); i++) {
+        if (num % i === 0) return false;
+    }
+    return true;
+ }

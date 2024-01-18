@@ -17,7 +17,6 @@ export enum ELEMENT_TYPE {
 
 
 
-
 export class Graph<V,L> {
     vertices: Map<number, Vertex<V>>;
     links: Map<number, Link<V,L>>;
@@ -169,6 +168,18 @@ export class Graph<V,L> {
     // }
 
 
+    /**
+     * Return the list of the extremeties of the arcs.
+     */
+    arcsList(): Array<[number, number]>{
+        const l = new Array<[number, number]>();
+        for (const link of this.links.values()){
+            if (link.orientation == ORIENTATION.DIRECTED){
+                l.push([link.startVertex.index, link.endVertex.index]);
+            }
+        }
+        return l;
+    }
 
     setVertexData(index: number, data: V){
         const vertex = this.vertices.get(index);
@@ -1185,6 +1196,83 @@ export class Graph<V,L> {
     }
     
 
+    /**
+     * Undirected Feedback Vertex Set (UFVS)
+     * 
+     * UNDER DEVELOPPEMENT
+     */
+    private auxUFVS(k: number, links: Array<Link<V,L>>, selection: Set<number>): boolean {
+
+        // Kernelization
+        // Removes all degree 1 vertices (leaves)
+        while(true){
+            let degrees = new Map<number, number>();
+            for ( const link of links){
+                const extremities = [link.startVertex.index, link.endVertex.index];
+                for (const x of extremities){
+                    const dx = degrees.get(x);
+                    if (typeof dx == "undefined"){
+                        degrees.set(x, 1);
+                    } else {
+                        degrees.set(x, dx +1);
+                    }
+                }
+            }
+
+            const degree1vertices = new Set<number>();
+            for (const [x,dx] of degrees.entries()){
+                if (dx == 1){
+                    degree1vertices.add(x);
+                }
+            }
+
+            links = links.filter( link => {return !link.hasAnExtrimityIn(degree1vertices)})
+
+            if (degree1vertices.size == 0) break;
+        }
+
+        // Manage degree 2 vertices
+        // TODO ...
+
+        // Manage flowers
+        // TODO ...
+
+        // End of kernelization
+
+        // Branch
+        const link = links.pop();
+        if (typeof link == "undefined"){
+            return true;
+        } else {
+            const x = link.startVertex.index;
+
+            if (this.auxUFVS(k, links, selection)) {
+                links.push(link);   
+                return true;
+            }
+            selection.add(x);
+            const newLinks = links.filter( l => {return l.hasAnExtrimityIn(new Set([x])) })
+            const r = this.auxUFVS(k-1, newLinks, selection);
+            selection.delete(x);
+
+            links.push(link);
+            return r;
+        }
+
+    }
+
+    /**
+     * UNDER DEVELOPPEMENT
+     */
+    private ufvsLauncher(k : number): boolean {
+        const links = new Array<Link<V,L>>();
+
+        for (const link of this.links.values()){
+            links.push(link);
+        }
+
+        return this.auxUFVS(k, links, new Set());
+    }
 
     /** 
      * # Feedback Vertex Set Number 
@@ -1289,7 +1377,7 @@ export class Graph<V,L> {
      * @param k a nonnegative integer 
      * @param selection the vertices currently selection
      */
-    auxVertexCoverV2K(k: number, selection: Set<number>, rec: number): boolean {
+    private auxVertexCoverV2K(k: number, selection: Set<number>, rec: number): boolean {
         // console.log("aux", k, selection, rec);
         if (selection.size > k){
             return false;
@@ -1322,7 +1410,7 @@ export class Graph<V,L> {
      * @param k 
      * @returns 
      */
-    vertexCoverV2K(k: number): boolean{
+    private vertexCoverV2K(k: number): boolean{
         return this.auxVertexCoverV2K(k, new Set(), 0);
     }
 
@@ -1331,7 +1419,7 @@ export class Graph<V,L> {
      * @param k 
      * @returns 
      */
-    auxVertexCover3(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
+     private auxVertexCover3(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
         // console.log("aux", k, selection, rec);
         if (selection.size > record){
             return record;
@@ -1371,7 +1459,7 @@ export class Graph<V,L> {
      /**
      * OSBOLETE by V4
      */
-    vertexCoverV3(): number {
+     private vertexCoverV3(): number {
         const links = new Array();
         for (const link of this.links.values()){
             links.push(link);
@@ -1382,7 +1470,7 @@ export class Graph<V,L> {
      /**
      * OSBOLETE by V4
      */
-    auxVertexCover3Bis(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
+     private auxVertexCover3Bis(links: Array<Link<V,L>>, selection: Set<number>, record: number): number {
         // console.log("aux", k, selection, rec);
 
         const approx = this.vertexCover2Approx(links);
@@ -1422,11 +1510,11 @@ export class Graph<V,L> {
             return record;
         }
     }
-    
+
      /**
      * OSBOLETE by V4
      */
-    vertexCoverV3Bis(): number {
+     privatevertexCoverV3Bis(): number {
         const links = new Array();
         for (const link of this.links.values()){
             links.push(link);
@@ -1434,7 +1522,7 @@ export class Graph<V,L> {
         return this.auxVertexCover3Bis(links, new Set(), this.vertices.size);
     }
 
-    auxVertexCover4(k: number, links: Array<Link<V,L>>, selection: Set<number>): boolean {
+    private auxVertexCover4(k: number, links: Array<Link<V,L>>, selection: Set<number>): boolean {
         // console.log("aux", k, selection, rec);
         
 
@@ -1522,7 +1610,7 @@ export class Graph<V,L> {
         }
     }
 
-    vertexCoverV4launcher(k :number): boolean {
+    private vertexCoverV4launcher(k :number): boolean {
         let links = new Array<Link<V,L>>();
         for (const link of this.links.values()){
             links.push(link);
@@ -1559,7 +1647,7 @@ export class Graph<V,L> {
         return this.auxVertexCover4(k, links, preselection);
     }
 
-    vertexCoverV4(): number {
+    private vertexCoverV4(): number {
         const matching = this.generateRandomMaximalMatching();
         console.log("matching size", matching.length);
         // const links = new Array();
@@ -1575,17 +1663,19 @@ export class Graph<V,L> {
             }
             // console.timeEnd("lol");
         }
+        return 0; // Should not happen
     }
 
     
 
-    vertexCoverV2(): number {
+    private vertexCoverV2(): number {
         for (let k = 0 ; k <= this.vertices.size ; k ++ ){
             // console.log(k);
             if (this.vertexCoverV2K(k)){
                 return k;
             }
         }
+        return 0; // Should not happen
     }
 
     /**
@@ -1840,6 +1930,222 @@ export class Graph<V,L> {
     }
 
 
+    /**
+     * Return true if is is possible to complete the positions of vertices so that dw(v) <= alpha(v) for every vertex.
+     * 
+     * NOTE: there is a ruin of cut strategy, but it was not so much better.
+     * For each vertex x,
+     * if the number of vertices v such that indegree(v,x) > alpha(v)
+     * (where indegree(v,x) is the number of inneighbor of v which are outneighbors of x)
+     * is bigger than alpha(x), then it is not possible to complete the positions.
+     * Thus cut there.
+     * The PROBLEM is that it is too long to compute.
+     * 
+     * IDEA: to improve the algorithm, use a matrix for the adjacency
+     * and a stack (or a set) for the vertices that remain to position
+     * 
+     * @param i the number of vertices already positioned
+     * @param outNeighbors not mutated
+     * @param pos the position of the vertices in the order
+     * @param indegree the indegree array
+     * @param alpha the alpha array
+     * @returns 
+     */
+    private auxDegreewidth( i: number, outNeighbors: Array<Set<number>>, pos: Array<number>, indegree: Array<number>, alpha: Array<number>): boolean {
+        
+        const n = pos.length;
+        if (i == n){
+            return true;
+        }
+
+        // -------------
+        // With the alpha[x] 
+        //-------------
+        // let cont = true;
+        // for (let x = 0 ; x < n ; x ++){
+        //     if (pos[x] != -1) continue;
+        //     let counter = 0;
+        //     for (let y = 0; y < n ; y ++){
+        //         if (pos[y] != -1) continue;
+        //         if (outNeighbors[x].has(y)) continue;
+        //         if (ind2[y][x] > alpha[y]) counter ++;
+        //     }
+        //     if (counter > alpha[x]){
+        //         cont = false;
+        //         return false;
+        //     }
+        // }
+        
+
+
+
+
+        for (let j = 0 ; j < n; j++){
+            if (pos[j] == -1 && indegree[j] <= alpha[j]){
+                let ok = true;
+                for (let l = 0 ; l < n; l++){
+                    if (pos[l] == -1 && l != j && alpha[l] == 0){
+                        if (outNeighbors[j].has(l) == false){
+                            ok = false;
+                            break;
+                        }
+                    }
+                } 
+                if (ok){
+                    // console.log("branch",i, j);
+                    // Branch
+                    pos[j] = i;
+                    for (let l = 0 ; l < n ; l ++){
+                        if (pos[l] == -1){
+                            if (outNeighbors[j].has(l)){
+                                indegree[l] --;
+                            }
+                            if (outNeighbors[l].has(j)){
+                                alpha[l] --;
+                            }
+                        }
+                    }
+
+                    // -------------
+                    // With the alpha[x] 
+                    //-------------
+                    // for (let x = 0 ; x < n ; x ++){
+                    //     if (pos[x] == -1 && outNeighbors[x].has(j)){
+                    //         for (let y = 0 ; y < n ; y ++){
+                    //             if (pos[y] == -1 && outNeighbors[j].has(y)){
+                    //                 ind2[y][x] --;
+                    //             }
+                    //         }
+                    //     }
+                    // }
+
+                    // console.log(pos, indegree, alpha);
+                    const r = this.auxDegreewidth( i+1, outNeighbors, pos, indegree, alpha);
+
+                    // -------------
+                    // With the alpha[x] branch cut
+                    //-------------
+                    // const r = this.auxDegreewidth(k, i+1, outNeighbors, pos, indegree, alpha, ind2);
+
+                    if (r) return true;
+
+                    // -------------
+                    // With the alpha[x] branch cut
+                    //-------------
+                    // for (let x = 0 ; x < n ; x ++){
+                    //     if (pos[x] == -1 && outNeighbors[x].has(j)){
+                    //         for (let y = 0 ; y < n ; y ++){
+                    //             if (pos[y] == -1 && outNeighbors[j].has(y)){
+                    //                 ind2[y][x] ++;
+                    //             }
+                    //         }
+                    //     }
+                    // }
+
+                    for (let l = 0 ; l < n ; l ++){
+                        if (pos[l] == -1){
+                            if (outNeighbors[j].has(l)){
+                                indegree[l] ++;
+                            }
+                            if (outNeighbors[l].has(j)){
+                                alpha[l] ++; 
+                            }
+                        }
+                    }
+                    pos[j] = -1;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Return [dw, ordering] where dw is the degreewidth
+     * and ordering is an optimal ordering of the vertices.
+     */
+    degreewidth(): [number, Array<number>] {
+
+        const corresp = new Map<number, number>();
+        const icorresp = new Array<number>();
+        const indegrees = new Array<number>();
+        const outNeighbors = new Array<Set<number>>();
+        let minInDegree = this.vertices.size;
+        const pos = new Array<number>();
+        const alpha = new Array();
+
+        let n = 0;
+        for (const v of this.vertices.values()){
+            corresp.set(v.index, n);
+            icorresp.push(v.index);
+            const indegree = this.getInNeighbors(v).length;
+            indegrees.push(indegree);
+            if (indegree < minInDegree) minInDegree = indegree;
+            pos.push(-1);
+            alpha.push(0);
+            outNeighbors.push(new Set());
+            n ++;
+        }
+
+        for (const link of this.links.values()){
+            if (link.orientation == ORIENTATION.DIRECTED){
+                const x = link.startVertex.index;
+                const y = link.endVertex.index;
+                const nx = corresp.get(x);
+                const ny = corresp.get(y);
+                if (typeof nx != "undefined" && typeof ny != "undefined"){
+                    outNeighbors[nx].add(ny);
+                }
+            }
+        }
+
+        // For the forgotten cut strategy.
+
+        // const ind2 = new Array<Array<number>>();
+        // for (let x = 0 ; x < n ; x ++){
+        //     ind2.push(new Array<number>());
+        //     for (let y = 0 ; y < n ; y ++){
+        //         ind2[x].push(0);
+        //     }
+        // }
+        // for (let x = 0 ; x < n ; x ++){
+        //     for (let y = 0 ; y < n ; y ++){
+        //         for (const z of outNeighbors[x]){
+        //             if (outNeighbors[z].has(y)) ind2[y][x] ++;
+        //         }
+        //     }
+        // }
+
+
+        // console.log(minInDegree);
+        // console.log(corresp);
+        // console.log(indegrees);
+        // for (let i = 0 ; i < n ; i ++){
+        //     console.log(`neighbors(${i})`, outNeighbors[i])
+        // }
+    
+
+        for (let k = minInDegree ; k < n ; k ++){
+            for (let i = 0 ; i < n ; i ++){
+                alpha[i] = k;
+            }
+            if (this.auxDegreewidth(0, outNeighbors, pos, indegrees, alpha)){
+                const ordering = new Array();
+                for (let i = 0 ; i < n ; i ++){
+                    ordering.push(-1);
+                }
+                for (let i = 0 ; i < n ; i ++){
+                    ordering[pos[i]] = icorresp[i];
+                }
+                // console.log(cutnb, lol, cutnb/lol);
+                // console.log(ordering);
+                return [k, ordering];
+            }
+        }
+
+        return [0,new Array()]; // Should not happen
+
+    }
 
 
 
@@ -2257,6 +2563,8 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return maxStretch;
     }
 
+
+   
 } 
 
 
