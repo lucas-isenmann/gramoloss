@@ -478,6 +478,34 @@ export class Graph<V,L> {
         return neighbors;
     }
 
+    /**
+     * Return the indegree of a vertex.
+     * The indegree is the number of vertices `w` such that there exists an arc from `w` to this vertex.
+     */
+    inDegree(vIndex: number): number | undefined {
+        const v = this.vertices.get(vIndex);
+        if (typeof v == "undefined"){
+            return undefined;
+        } else {
+            return this.getInNeighbors(v).length;
+        }
+    }
+
+    /**
+     * Return the indegree of a vertex.
+     * The indegree is the number of vertices `w` such that there exists an arc from `w` to this vertex.
+     */
+    outDegree(vIndex: number): number | undefined {
+        const v = this.vertices.get(vIndex);
+        if (typeof v == "undefined"){
+            return undefined;
+        } else {
+            return this.getOutNeighbors(v).length;
+        }
+    }
+
+    
+
 
 
     get_in_neighbors_list(i: number): Array<number> {
