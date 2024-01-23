@@ -2,7 +2,7 @@ import { BasicLink, Link, ORIENTATION } from './link';
 import { BasicVertex, Vertex } from './vertex';
 import { Coord, Vect } from './coord';
 import { Area } from './area';
-import { det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
+import { bezier_curve_point, det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
 import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 
@@ -2406,6 +2406,51 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return true;
     }
 
+    /**
+     * Subdivide links from linksIndices into k+1 links (rectilinear, with the same color, weight = "").
+     * @param linksIndices 
+     * @param k >= 1, number of vertices inserted between each links.
+     * @param vertexDefault vertex default constructor
+     * @param linkDefault link default constructor
+     */
+    subdivideLinks(linksIndices: Set<number>, k: number, 
+        vertexDefault: (index: number, pos: Coord) => BasicVertex<V>,
+        linkDefault: (index: number, orientation: ORIENTATION, color: string, startVertex: BasicVertex<V>, endVertex: BasicVertex<V>) => BasicLink<V,L>){
+        
+        
+        for (const linkId of linksIndices){
+            const link = this.links.get(linkId);
+            if (typeof link != "undefined"){
+
+                // Create k vertices and k links
+                let previousVertex = link.startVertex;
+                for (let i = 0 ; i < k ; i ++){
+                    const bezierPoints = typeof link.data.cp == "undefined" ? 
+                    [link.startVertex.getPos(), link.endVertex.getPos()] :
+                    [link.startVertex.getPos(), link.data.cp, link.endVertex.getPos()];
+                    const vertexPos = bezier_curve_point(i/k, bezierPoints);
+                    const newVertexId = this.get_next_available_index_vertex();
+                    const v = vertexDefault(newVertexId, vertexPos);
+                    this.vertices.set(newVertexId, v);
+
+                    const newLinkId = this.get_next_available_index_links();
+                    const newLink = linkDefault(newLinkId, link.orientation, link.data.color, previousVertex, v);
+                    this.links.set(newLinkId, newLink);
+                    
+                    previousVertex = v;
+                }
+
+                const newLinkId = this.get_next_available_index_links();
+                const newLink = linkDefault(newLinkId, link.orientation, link.data.color, previousVertex, link.endVertex);
+                this.links.set(newLinkId, newLink);
+
+                // Delete link
+                this.links.delete(link.index);
+
+            }
+        }
+
+    }
 
     /**
      * for every vertex of vertices_indices
@@ -2503,11 +2548,14 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
 
-    // Compute a minimum spanning tree using Kruskal algorithm
-    // https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-    // edges in the tree are colored red
-    // other edges are colored black
-    // return the weight of the spanning tree
+    
+    /**
+     * Compute a minimum spanning tree using Kruskal algorithm
+     * https://en.wikipedia.org/wiki/Kruskal%27s_algorithm.
+     * Edges in the tree are colored red.
+     * Other edges are colored black.
+     * Return the weight of the spanning tree.
+     */
     minimum_spanning_tree(): number {
         const edges = new Array<[Link<V,L>,number]>();
         for (const link of this.links.values()){
@@ -2543,7 +2591,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     }
 
 
-        /**
+    /**
      * Sets all weights of links to the euclidian distance between vertices.
      * TODO: generalize to other distances.
      */

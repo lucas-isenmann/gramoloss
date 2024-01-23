@@ -27,8 +27,12 @@ export function binomial_coef(n: number, k: number): number{
     }
 }
 
-// -------------
-// Compute B(t) where t is in [0,1] and B is a Bezier curve given by its list of points
+/**
+ * Compute B(t) where t is in [0,1] and B is a Bezier curve given by its list of points
+ * @param t in [0,1]
+ * @param points 
+ * @returns Sum( points[i]*t^i*Binom(n,i))
+ */
 export function bezier_curve_point(t: number, points: Array<Coord>): Coord {
     const n = points.length-1;
     const q = 1 - t;
