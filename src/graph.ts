@@ -2204,14 +2204,31 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return g as BasicGraph<V,L>;
     }
 
-    static fromWeightedEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number, string]>): BasicGraph<V,L>{
+    static fromWeightedEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number, string]>): BasicGraph<BasicVertexData,BasicLinkData>{
         const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
         for (const [x,y,w] of edgesList){
             fmtEdgesList.push([x,y,  new BasicLinkData(undefined, w, "black")]);
         }
 
-        const g = Graph.fromEdgesList(fmtEdgesList, () => { return new BasicVertexData(new Coord(0,0), "", "black")});
-        return g as BasicGraph<V,L>;
+        const g = new BasicGraph<BasicVertexData,BasicLinkData>();
+
+        for ( const [x,y,_] of fmtEdgesList){
+            if (g.vertices.has(x) == false){
+                g.vertices.set(x, new BasicVertex(x, new BasicVertexData(new Coord(0,0), "", "black") ));
+            }
+            if (g.vertices.has(y) == false){
+                g.vertices.set(y, new BasicVertex(y, new BasicVertexData(new Coord(0,0), "", "black") ));
+            }
+        }
+        for ( const [indexV1,indexV2, data] of fmtEdgesList.values()){
+            const newLinkIndex = g.get_next_available_index_links();
+            const startVertex = g.vertices.get(indexV1);
+            const endVertex = g.vertices.get(indexV2);
+            if (typeof startVertex == "undefined" || typeof endVertex == "undefined") continue;
+            g.links.set(newLinkIndex, new BasicLink(newLinkIndex, startVertex, endVertex, ORIENTATION.UNDIRECTED, data) )
+        }
+
+        return g;
     }
 
 
@@ -2552,11 +2569,9 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     /**
      * Compute a minimum spanning tree using Kruskal algorithm
      * https://en.wikipedia.org/wiki/Kruskal%27s_algorithm.
-     * Edges in the tree are colored red.
-     * Other edges are colored black.
-     * Return the weight of the spanning tree.
+     * Return the weight of the spanning tree and the list of the edges of the tree.
      */
-    minimum_spanning_tree(): number {
+    minimum_spanning_tree(): [number, Array<Link<V,L>>] {
         const edges = new Array<[Link<V,L>,number]>();
         for (const link of this.links.values()){
             if (link.orientation == ORIENTATION.UNDIRECTED){
@@ -2571,23 +2586,23 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             component.set(index, index);
         }
 
-        let tree_weight = 0;
+        let treeWeight = 0;
+        const treeEdges = new Array<Link<V,L>>();
         for (const edge of edges){
             const c1 = component.get(edge[0].startVertex.index);
             const c2 = component.get(edge[0].endVertex.index);
             if ( c1 != c2 ){
-                // edge[0].color = "red";
-                tree_weight += edge[1];
+                treeEdges.push(edge[0]);
+                treeWeight += edge[1];
                 for (const [vindex, c] of component.entries()){
                     if (c == c1){
                         component.set(vindex, c2);
                     }
                 }
             }else {
-                // edge[0].color = "black";
             }
         }
-        return tree_weight;
+        return [treeWeight, treeEdges];
     }
 
 
