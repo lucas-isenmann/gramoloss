@@ -2204,6 +2204,34 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return g as BasicGraph<V,L>;
     }
 
+    static fromBasicEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number]>): BasicGraph<BasicVertexData,BasicLinkData>{
+        const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
+        for (const [x,y] of edgesList){
+            fmtEdgesList.push([x,y,  new BasicLinkData(undefined, "", "")]);
+        }
+
+        const g = new BasicGraph<BasicVertexData,BasicLinkData>();
+
+        for ( const [x,y,_] of fmtEdgesList){
+            if (g.vertices.has(x) == false){
+                g.vertices.set(x, new BasicVertex(x, new BasicVertexData(new Coord(0,0), "", "") ));
+            }
+            if (g.vertices.has(y) == false){
+                g.vertices.set(y, new BasicVertex(y, new BasicVertexData(new Coord(0,0), "", "") ));
+            }
+        }
+        for ( const [indexV1,indexV2, data] of fmtEdgesList.values()){
+            const newLinkIndex = g.get_next_available_index_links();
+            const startVertex = g.vertices.get(indexV1);
+            const endVertex = g.vertices.get(indexV2);
+            if (typeof startVertex == "undefined" || typeof endVertex == "undefined") continue;
+            g.links.set(newLinkIndex, new BasicLink(newLinkIndex, startVertex, endVertex, ORIENTATION.UNDIRECTED, data) )
+        }
+
+        return g;
+    }
+
+
     static fromWeightedEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number, string]>): BasicGraph<BasicVertexData,BasicLinkData>{
         const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
         for (const [x,y,w] of edgesList){
@@ -2214,10 +2242,10 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
         for ( const [x,y,_] of fmtEdgesList){
             if (g.vertices.has(x) == false){
-                g.vertices.set(x, new BasicVertex(x, new BasicVertexData(new Coord(0,0), "", "black") ));
+                g.vertices.set(x, new BasicVertex(x, new BasicVertexData(new Coord(0,0), "", "") ));
             }
             if (g.vertices.has(y) == false){
-                g.vertices.set(y, new BasicVertex(y, new BasicVertexData(new Coord(0,0), "", "black") ));
+                g.vertices.set(y, new BasicVertex(y, new BasicVertexData(new Coord(0,0), "", "") ));
             }
         }
         for ( const [indexV1,indexV2, data] of fmtEdgesList.values()){
@@ -2570,13 +2598,16 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * Compute a minimum spanning tree using Kruskal algorithm
      * https://en.wikipedia.org/wiki/Kruskal%27s_algorithm.
      * Return the weight of the spanning tree and the list of the edges of the tree.
+     * @note if weight of edge is "" or cannot be parsed into a float, then weight is set to 1
+     * @note it only considers edges
      */
     minimum_spanning_tree(): [number, Array<Link<V,L>>] {
         const edges = new Array<[Link<V,L>,number]>();
         for (const link of this.links.values()){
             if (link.orientation == ORIENTATION.UNDIRECTED){
-                edges.push([link, parseFloat(link.getWeight())]);
-                
+                const parsedWeight = parseFloat(link.getWeight());
+                const weight = isNaN(parsedWeight) ? 1 : parsedWeight;
+                edges.push([link, weight]);
             }
         }
         edges.sort(([e,w],[e2,w2]) => w-w2);
