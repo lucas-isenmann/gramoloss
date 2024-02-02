@@ -1560,6 +1560,7 @@ export class Graph<V,L> {
         // }
 
         // Kernelization
+        // Add recursively all vertex such that d(v) > k-|selection|
         const kernelSelection = new Set<number>();
         while(true){
             let found = false;
@@ -1587,6 +1588,7 @@ export class Graph<V,L> {
         }
         // console.log(kernelSelection.size);
         if (selection.size > k ){
+            // TODO: faudrait pas annuler ici kernel selection ?
             return false;
         }
         
@@ -1597,10 +1599,10 @@ export class Graph<V,L> {
         // }
 
         const link = links.pop();
-        if (typeof link == "undefined"){
-            for (const x of kernelSelection){
-                selection.delete(x);
-            }
+        if (typeof link == "undefined"){ // THere is no link to cover
+            // for (const x of kernelSelection){
+            //     selection.delete(x);
+            // }
             return true;
         } else {
             // Branch
@@ -1613,13 +1615,14 @@ export class Graph<V,L> {
                 }
             }
             const r = this.auxVertexCover4(k, links1, selection);
-            selection.delete(x);
+            
             if (r){
-                for (const x of kernelSelection){
-                    selection.delete(x);
-                }
+                // for (const x of kernelSelection){
+                //     selection.delete(x);
+                // }
                 return true;
             } 
+            selection.delete(x); // il était au dessus du if avant
 
             const y = link.endVertex.index;
             const links2 = new Array();
@@ -1630,15 +1633,18 @@ export class Graph<V,L> {
             }
             selection.add(y);
             const r2 = this.auxVertexCover4(k, links2, selection);
-            selection.delete(y);
-            for (const x of kernelSelection){
-                selection.delete(x);
+            if (r2 == false){
+                selection.delete(y);
+                for (const x of kernelSelection){
+                    selection.delete(x);
+                }
             }
+            
             return r2;
         }
     }
 
-    private vertexCoverV4launcher(k :number): boolean {
+    private vertexCoverV4launcher(k :number): undefined | Set<number> {
         let links = new Array<Link<V,L>>();
         for (const link of this.links.values()){
             links.push(link);
@@ -1672,26 +1678,22 @@ export class Graph<V,L> {
             }
         }
         // console.log(nbKer)
-        return this.auxVertexCover4(k, links, preselection);
+        if (this.auxVertexCover4(k, links, preselection)){
+            return preselection;
+        } else {
+            return undefined;
+        }
     }
 
-    private vertexCoverV4(): number {
+    private vertexCoverV4(): [number, Set<number>] {
         const matching = this.generateRandomMaximalMatching();
-        console.log("matching size", matching.length);
-        // const links = new Array();
-        // for (const link of this.links.values()){
-        //     links.push(link);
-        // }
-        // console.log("VC 2-approx", this.vertexCover2Approx(links))
-        // return 0;
         for (let k = matching.length ; k <= this.vertices.size ; k ++ ){
-            // console.time("lol");
-            if (this.vertexCoverV4launcher(k)){
-                return k;
+            const r = this.vertexCoverV4launcher(k);
+            if (typeof r != "undefined"){
+                return [k, r];
             }
-            // console.timeEnd("lol");
         }
-        return 0; // Should not happen
+        return [0, new Set()]; // Should not happen
     }
 
     
@@ -1801,7 +1803,11 @@ export class Graph<V,L> {
      * ALGO: uses kernelization and branch
      */
     vertex_cover_number(): number {
-        return this.vertexCoverV4();
+        return this.vertexCoverV4()[0];
+    }
+
+    minVertexCover(): Set<number> {
+        return this.vertexCoverV4()[1];
     }
 
 
