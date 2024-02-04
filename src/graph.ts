@@ -631,7 +631,7 @@ export class Graph<V,L> {
         let record: number | undefined = undefined;
         for ( const vIndex of this.vertices.keys()){
             let indegree = this.get_in_neighbors_list(vIndex).length;
-            if (typeof record == undefined){
+            if (typeof record == "undefined"){
                 record = indegree;
             } else if ( indegree > record ){
                 record = indegree;
@@ -648,7 +648,7 @@ export class Graph<V,L> {
         let record: number | undefined = undefined;
         for ( const vIndex of this.vertices.keys()){
             let d = this.get_out_neighbors_list(vIndex).length;
-            if (typeof record == undefined){
+            if (typeof record == "undefined"){
                 record = d;
             } else if ( d > record ){
                 record = d;
@@ -757,9 +757,9 @@ export class Graph<V,L> {
                 const previous = new Map<number,number>();
                 stack.push(v);
                 let last = -1;
-                while (stack.length > 0){
+                let u_index = stack.pop();
+                while (typeof u_index != "undefined"){
                     // console.log(stack);
-                    const u_index = stack.pop();
                     // console.log(u_index);
                     if (visited.has(u_index)){
                         console.log("bug")
@@ -783,7 +783,7 @@ export class Graph<V,L> {
                                 cycle.push(u_index);
                                 let j = previous.get(u_index);
                                 // console.log(j);
-                                while (j != n_index){
+                                while ( typeof j != "undefined" && j != n_index){
                                     cycle.push(j);
                                     j = previous.get(j);
                                 }
@@ -793,6 +793,7 @@ export class Graph<V,L> {
                         }
                     }
                     last = u_index;
+                    u_index = stack.pop();
                     // console.log([...previous])
                     // console.log("--")
                 }
