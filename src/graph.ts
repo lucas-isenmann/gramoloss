@@ -588,8 +588,12 @@ export class Graph<V,L> {
         return { min_value: min_degree, min_vertices: min_indices, max_value: max_degree, max_vertices: max_indices, avg: average };
     }
 
-    // return maximum (undirected) degree of the graph
-    // return -1 if there is no vertex
+    /**
+     * Return maximum (undirected) degree of the graph.
+     * Out-neighbors and In-neighbors are not taken in account.
+     * @returns -1 if there is no vertex
+     * @TODO should return undefined if no vertex
+     */
     max_degree(): number{
         let record = -1;
         for ( const v_index of this.vertices.keys()){
@@ -601,8 +605,11 @@ export class Graph<V,L> {
         return record;
     }
 
-    // return minimum indegree of the graph
-    // return "" if there is no vertex
+    /**
+     * Return minimum in-degree of the graph
+     * @returns `""` if there is no vertex
+     * @TODO replace string return by undefined
+     */
     min_indegree(): number | string{
         let record: number | string = "";
         for ( const v_index of this.vertices.keys()){
@@ -615,6 +622,42 @@ export class Graph<V,L> {
         }
         return record;
     }
+
+    /**
+     * Return maximum in-degree of the graph
+     * @returns undefined if there is no vertex
+     */
+    maxIndegree(): number | undefined{
+        let record: number | undefined = undefined;
+        for ( const vIndex of this.vertices.keys()){
+            let indegree = this.get_in_neighbors_list(vIndex).length;
+            if (typeof record == undefined){
+                record = indegree;
+            } else if ( indegree > record ){
+                record = indegree;
+            }
+        }
+        return record;
+    }
+
+    /**
+     * Return maximum out-degree of the graph
+     * @returns undefined if there is no vertex
+     */
+    maxOutdegree(): number | undefined{
+        let record: number | undefined = undefined;
+        for ( const vIndex of this.vertices.keys()){
+            let d = this.get_out_neighbors_list(vIndex).length;
+            if (typeof record == undefined){
+                record = d;
+            } else if ( d > record ){
+                record = d;
+            }
+        }
+        return record;
+    }
+
+
 
     // return minimum outdegree of the graph
     // return "" if there is no vertex
@@ -667,6 +710,7 @@ export class Graph<V,L> {
         return visited;
     }
 
+
     has_cycle(): boolean {
         let ok_list = new Set();
         let g = this;
@@ -698,33 +742,63 @@ export class Graph<V,L> {
         return false;
     }
 
-    // iterative version of has_cycle
-    // seems better on trees
-    has_cycle2(): boolean {
-        let visited = new Set();
+    /**
+     * 
+     * @returns [b, cycle] where b is a boolean which is true iff there exists a cycle.
+     * If b is true, a cycle is returned.
+     * @remark Iterative version
+     */
+    has_cycle2(): [boolean, Array<number>] {
+        const visited = new Set();
         for (const v of this.vertices.keys()) {
+            // console.log("start", v);
             if ( visited.has(v) == false){
-                let stack = new Array();
+                const stack = new Array<number>();
+                const previous = new Map<number,number>();
                 stack.push(v);
                 let last = -1;
                 while (stack.length > 0){
+                    // console.log(stack);
                     const u_index = stack.pop();
+                    // console.log(u_index);
                     if (visited.has(u_index)){
-                        return true;
+                        console.log("bug")
+                        return [true, []];
                     }
                     visited.add(u_index);
                     
                     const neighbors = this.get_neighbors_list(u_index);
+                    // console.log("neighbors of", u_index)
                     for (const n_index of neighbors) {
+                        // console.log(n_index);
                         if ( n_index != last ){
-                            stack.push(n_index);
-                            last = u_index;
+                            if (visited.has(n_index) == false){
+                                previous.set(n_index, u_index);
+                                stack.push(n_index);
+                            }
+                            else {
+                                // console.log([...previous]);
+                                const cycle = new Array<number>();
+                                cycle.push(n_index);
+                                cycle.push(u_index);
+                                let j = previous.get(u_index);
+                                // console.log(j);
+                                while (j != n_index){
+                                    cycle.push(j);
+                                    j = previous.get(j);
+                                }
+                                // console.log(cycle);
+                                return [true, cycle];
+                            }
                         }
                     }
+                    last = u_index;
+                    // console.log([...previous])
+                    // console.log("--")
                 }
             }
         }
-        return false;
+        return [false, []];
     }
 
     has_directed_cycle():boolean {

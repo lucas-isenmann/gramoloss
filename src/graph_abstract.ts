@@ -27,6 +27,27 @@ export class AbstractGraph extends Graph<void,void> {
         return g as AbstractGraph;
     }
 
+    /**
+     * Returns a random graph with n vertices.
+     * @param n number of vertices. Should be >= 0. Return empty graph if n < 1.
+     * @param p probabilty of appearance of an edge. Should be between 0 and 1.
+     */
+    static generateRandomGNP(n: number, p: number): AbstractGraph {
+        const g = new AbstractGraph();
+        if (n < 1){
+            return g;
+        }
+        for (let i = 0 ; i < n ; i ++){
+            g.addVertex();
+            for (let j = 0; j < i ; j ++){
+                if (Math.random() < p){
+                    g.addLink(i,j, ORIENTATION.UNDIRECTED, null);
+                }
+            }
+        }
+        return g;
+    }
+
     static generateClique(n: number): AbstractGraph{
         const g = new AbstractGraph();
         for (let i = 0 ; i < n ; i ++){
