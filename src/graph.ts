@@ -753,14 +753,13 @@ export class Graph<V,L> {
         for (const v of this.vertices.keys()) {
             // console.log("start", v);
             if ( visited.has(v) == false){
-                const stack = new Array<number>();
+                const stack = new Array<[number, number]>();
                 const previous = new Map<number,number>();
-                stack.push(v);
-                let last = -1;
-                let u_index = stack.pop();
-                while (typeof u_index != "undefined"){
-                    // console.log(stack);
-                    // console.log(u_index);
+                stack.push([v,-1]);
+                let r = stack.pop();
+                while (typeof r != "undefined"){
+                    const [u_index, last] = r;
+                    // console.log("stack", u_index);
                     if (visited.has(u_index)){
                         console.log("bug")
                         return [true, []];
@@ -770,14 +769,16 @@ export class Graph<V,L> {
                     const neighbors = this.get_neighbors_list(u_index);
                     // console.log("neighbors of", u_index)
                     for (const n_index of neighbors) {
-                        // console.log(n_index);
+                        // console.log(`neighbor ${n_index}, last ${last}`)
                         if ( n_index != last ){
                             if (visited.has(n_index) == false){
+                                // console.log(`set ${n_index} from ${u_index}`)
                                 previous.set(n_index, u_index);
-                                stack.push(n_index);
+                                stack.push([n_index, u_index]);
                             }
                             else {
                                 // console.log([...previous]);
+                                // console.log(n_index, u_index);
                                 const cycle = new Array<number>();
                                 cycle.push(n_index);
                                 cycle.push(u_index);
@@ -787,13 +788,13 @@ export class Graph<V,L> {
                                     cycle.push(j);
                                     j = previous.get(j);
                                 }
+                                // console.log(cycle)
                                 // console.log(cycle);
                                 return [true, cycle];
                             }
                         }
                     }
-                    last = u_index;
-                    u_index = stack.pop();
+                    r = stack.pop();
                     // console.log([...previous])
                     // console.log("--")
                 }
