@@ -1,19 +1,20 @@
 // Clique Number unit tests
-// p(Pm) = 2 
 
 import { AbstractGraph } from "../graph_abstract";
 
-// p(P2) = 2
-console.log(AbstractGraph.generatePath(3).clique_number() == 2);
 
-// p(P3) = 2
-console.log(AbstractGraph.generatePath(4).clique_number() == 2);
+// w(Pm) = 2 if m >= 1
+console.log("Test paths");
+for (let i = 3; i < 8; i ++){
+    console.log(AbstractGraph.generatePath(i).clique_number() == 2);
+}
 
-// p(K3) = 3
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).clique_number() == 3);
+// w(Kn) = n 
+console.log("Test cliques");
+for (let i = 3; i < 8; i ++){
+    console.log(AbstractGraph.generateClique(i).clique_number() == i);
+}
 
-// p(K4) = 4
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]).clique_number() == 4);
 
 // p(C5) = 2
 console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).clique_number() == 2);

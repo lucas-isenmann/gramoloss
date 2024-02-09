@@ -920,9 +920,11 @@ export class Graph<V,L> {
         return g;
     }
 
-    // return a cut edge which maximizes the minimum of the size of the connected components of its endvertices
-    // return -1 if there is no cut edge 
-    max_cut_edge(){
+    /**
+     * Return a cut edge which maximizes the minimum of the size of the connected components of its endvertices.
+     * Return -1 if there is no cut edge 
+     */
+    max_cut_edge(): number{
         const n = this.vertices.size;
         let record = 0;
         let record_link_index = -1;
@@ -942,6 +944,10 @@ export class Graph<V,L> {
     }
     
 
+    /**
+     * An undirected graph is said to be connected if there is a path between any pair of vertices.
+     * @returns true iff the graph is connected
+     */
     is_connected(): boolean {
         if (this.vertices.size < 2) {
             return true;
@@ -1052,54 +1058,6 @@ export class Graph<V,L> {
 
 
 
-
-
-    /**
-     * Returns the chromatic number of the graph.
-     * The chromatic number is the minimum integer k such that there exists a proper coloring with k colors.
-     * What happens with arcs? I dont know. TODO
-     */
-    // chromatic_number() : number {
-    //     let k = 1;
-    //     const n = this.vertices.size;
-
-    //     while (true){
-    //         const color = new Array();
-    //         const indices = new Map();
-    //         let j = 0;
-    //         for ( const index of this.vertices.keys()){
-    //             color.push(0);
-    //             indices.set(index,j);
-    //             j ++;
-    //         }
-    //         while (true){
-    //             let i = n-1;
-    //             while (i >= 0 && color[i] == k-1){
-    //                 color[i] = 0;
-    //                 i --;
-    //             }
-    //             if ( i == -1 ){ // every color was set to k-1
-    //                 break;      // all assignements have been tried
-    //             }
-    //             color[i] ++;
-    //             // else next color assignement
-    //             // check it
-    //             let is_proper_coloring = true;
-    //             for (const link of this.links.values()){
-    //                 if ( link.orientation == ORIENTATION.UNDIRECTED){
-    //                     if( color[indices.get(link.startVertex.index)] == color[indices.get(link.endVertex.index)]){
-    //                         is_proper_coloring = false;
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             if (is_proper_coloring){
-    //                 return k;
-    //             }
-    //         }
-    //         k += 1;
-    //     }
-    // }
 
     /**
      * Compute a clique with a greedy algorithm.
@@ -1891,17 +1849,17 @@ export class Graph<V,L> {
      * Return the maximum size of a clique extending `clique` if it is higher than record.
      * @param commonNeighbors is the set of commonNeighbors of clique. Therefore any vertex extending the clique should be taken in this set.
      * @param neighbors is the map of all the neighbors of every vertex.
-     * @param record is the current record. It is immediately updated by the size of the clique.
+     * @param currentMaximumClique It is immediately updated by the size of the clique.
     */
-    private auxCliqueNumber( clique: Set<number>, commonNeighbors: Set<number>, neighbors: Map<number, Set<number>>, record: number): number{
+    private auxCliqueNumber( clique: Set<number>, commonNeighbors: Set<number>, neighbors: Map<number, Set<number>>, currentMaximumClique: Set<number>): Set<number>{
 
         // Cut if clique + cliqueNeighbors < record
-        if (clique.size + commonNeighbors.size <= record){
-            return record;
+        if (clique.size + commonNeighbors.size <= currentMaximumClique.size){
+            return currentMaximumClique;
         }
 
-        if (clique.size > record){
-            record = clique.size;
+        if (clique.size > currentMaximumClique.size){
+            currentMaximumClique = new Set(clique);
         }
 
         const commonNeighborsList = Array.from(commonNeighbors);
@@ -1917,25 +1875,34 @@ export class Graph<V,L> {
                 }
             }
 
-            record = Math.max(record, this.auxCliqueNumber(clique, commonNeighbors, neighbors, record));
+            const newClique = this.auxCliqueNumber(clique, commonNeighbors, neighbors, currentMaximumClique);
+            if (newClique.size > currentMaximumClique.size){
+                currentMaximumClique = newClique;
+            }
 
             for (const a of deletedCommonNeighbors){
                 commonNeighbors.add(a);
             }
             clique.delete(neighbor);
         }
-
-        return record;
+        return currentMaximumClique;
     }
 
             
     /**
      * Compute the clique number of the graph.
      * It is the maximum size of a clique of the graph.
-     * @param recordInit is a lower bound on the clique number
-     * @todo return a certificate (a maximum clique) 
+     * @param cliqueSample is a clique known before computation
      */
-    clique_number(recordInit?: number): number {
+    clique_number(cliqueSample?: Set<number>): number {
+        return this.maximumClique(cliqueSample).size;
+    }
+
+    /**
+     * Compute a maximum clique of the graph.
+     * @param cliqueSample is a clique known before computation
+     */
+    maximumClique(cliqueSample?: Set<number>): Set<number> {
         const neighbors = new Map<number, Set<number>>();
         for (const vertex of this.vertices.values()){
             neighbors.set(vertex.index, new Set());
@@ -1945,12 +1912,10 @@ export class Graph<V,L> {
             neighbors.get(link.endVertex.index)?.add(link.startVertex.index);
         }
 
-
-        let record = (typeof recordInit != "undefined") ? recordInit : 1;
+        let currentMaximumClique = (typeof cliqueSample != "undefined") ? cliqueSample: new Set<number>();
 
         for (const [index, v] of this.vertices){
             const clique = new Set([index]);
-            // console.log(neighbors.get(index));
             
             const commonNeighbors = new Set<number>();
             const vNeighbors = neighbors.get(index);
@@ -1958,74 +1923,12 @@ export class Graph<V,L> {
             for (const neighbor of vNeighbors){
                 commonNeighbors.add(neighbor)
             }
-            const lol = this.auxCliqueNumber(clique, commonNeighbors, neighbors, record);
-            record = Math.max(record, lol);
-            // console.log(index, lol, record);
+            currentMaximumClique = this.auxCliqueNumber(clique, commonNeighbors, neighbors, currentMaximumClique);
         }
-        return record;
+        return currentMaximumClique;
     }
 
-    cliqueNumberObsolete(): number {
-        const n = this.vertices.size;
-        let record = 0;
-
-        const selection = new Array<boolean>();
-        const indices = new Map();
-        const reverse_indices = new Map<number, number>();
-        let j = 0;
-        for ( const index of this.vertices.keys()){
-            selection.push(false);
-            indices.set(index,j);
-            reverse_indices.set(j,index);
-            j ++;
-        }
-
-        while (true){
-            let i = n-1;
-            while (i >= 0 && selection[i]){
-                selection[i] = false;
-                i --;
-            }
-            if ( i == -1 ){
-                break;      // all assignements have been tried
-            }
-            selection[i] = true;
-            // else next selection
-            // check it
-            let is_clique = true;
-            let selected_indices = new Set<number>();
-            for (const [key,is_selected] of selection.entries()){
-                 if (is_selected){
-                    const index = reverse_indices.get(key);
-                    if (typeof index !== "undefined"){
-                        for (const index2 of selected_indices.values()){
-                            if (!this.has_link(index, index2, ORIENTATION.UNDIRECTED)){
-                                is_clique = false;
-                            }
-                        }
-                        selected_indices.add(index);
-                    } else {
-                        console.log("bug");
-                    }
-                 }
-            }
-            
-            if (is_clique){
-                let count = 0;
-                for (const v of selection){
-                    if (v) {
-                        count ++;
-                    }
-                }
-                if (count > record){
-                    record = count;
-                }
-            }
-        }
-
-        return record;
-    }
-
+    
 
 
 
