@@ -2555,6 +2555,40 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     }
 
     /**
+     * The radius of the graph is the minimum `d` such that there exists a vertex v such that for every vertex w, d(v,w) <= d.
+     * Such a v is called a center.
+     * @returns [radius, centerIndex] 
+     */
+    radius(weighted: boolean): [number, number] {
+        const {distances, next} = this.Floyd_Warhall(weighted);
+        let currentMinRadius = Infinity;
+        let currentCenter = 0;
+        for (const v of this.vertices.values()){
+            const distancesToV = distances.get(v.index);
+            if (typeof distancesToV != "undefined"){
+                let maxDist = 0;
+                for (const w of this.vertices.values()){
+                    const distVW = distancesToV.get(w.index);
+                    if (typeof distVW != "undefined"){
+                        if ( distVW > maxDist){
+                            maxDist = distVW;
+                        }
+                        if (maxDist > currentMinRadius){
+                            break;
+                        }
+                    }
+                }
+                if (maxDist < currentMinRadius){
+                    currentMinRadius = maxDist;
+                    currentCenter = v.index;
+                }
+            }
+        }
+        return [currentMinRadius, currentCenter];
+    }
+
+
+    /**
      * Returns the distances between each pair of vertices using only edges (undirected links).
      * It uses the algorithm of Floyd-Warshall.
      * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.

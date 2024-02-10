@@ -13,8 +13,9 @@
 
 <https://en.wikipedia.org/wiki/List_of_graphs_by_edges_and_vertices>
 
-- [X] has cycle
-- [X] distance and diameter
+- [X] distance
+- [X] radius
+- [ ] diameter
 - [X] degree (min, max, mean)
 - [X] is connected
 - [X] number connected components
@@ -22,7 +23,7 @@
 - [ ] is planar
 - [X] is bipartite
 - [X] is coloring proper, chromatric number, chromatic index
-- [ ] radius
+- [X] has cycle
 - [ ] girth
 - [ ] degree sequence
 - [ ] tree width
