@@ -2401,15 +2401,28 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     // If both have cps, then ???
     // If only one has a cp then ???
     is_drawing_planar(): boolean{
-        for (const [link_index, link1] of this.links) {
+        return this.crossings(true).length == 0;
+    }
+
+    /**
+     * A crossing is pair of links whose curves intersect.
+     * @param stopAtFirst if a crossing is detected then it is immediately returned
+     * @returns a list of the indices of the crossings
+     * @todo improve bezier curve intersection
+     */
+    crossings(stopAtFirst?: boolean): Array<[number, number]>{
+        const stop = typeof stopAtFirst == "undefined" ? false : stopAtFirst; 
+        const crossings = new Array();
+
+        for (const [linkId1, link1] of this.links) {
             const v1 = link1.startVertex as BasicVertex<V>;
             const w1 = link1.endVertex as BasicVertex<V>;
             let z1 = v1.getPos().middle(w1.getPos());
             if (typeof link1.data.cp != "undefined"){
                 z1 = link1.data.cp;
             }
-            for (const [link_index2, link2] of this.links) {
-                if ( link_index2 < link_index){
+            for (const [linkId2, link2] of this.links) {
+                if ( linkId2 < linkId1){
                     const v2 = link2.startVertex as BasicVertex<V>;
                     const w2 = link2.endVertex as BasicVertex<V>;
                     let is_intersecting = false;
@@ -2428,12 +2441,15 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                     }
     
                     if (is_intersecting){
-                        return false;
+                        crossings.push([linkId1, linkId2]);
+                        if (stop){
+                            return crossings;
+                        }
                     }
                 }
             }
         }
-        return true;
+        return crossings;
     }
 
     /**

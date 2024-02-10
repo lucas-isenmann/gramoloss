@@ -1,36 +1,35 @@
 # TODO
 
-- [X] test structure
+- [ ] set stict=true in tsconfig.json
 - [ ] complete tests
+- [X] test structure
 - [X] create Board
 - [X] move areas and strokes from Graph to Board
 - [X] move modifications out of Graph -> to Board
 - [X] move modifications to Gracofeu
-- [ ] set stict=true in tsconfig.json
 - [X] refacto Stroke, Rectangle and Area with Data (so they have index)
 
 ## Parameters
 
 <https://en.wikipedia.org/wiki/List_of_graphs_by_edges_and_vertices>
 
-- [X] has_loop
-- [X] distance (diametre)
-- [X] degree (min, max, moyen)
-- [X] is_connected
+- [X] has cycle
+- [X] distance and diameter
+- [X] degree (min, max, mean)
+- [X] is connected
 - [X] number connected components
-- [X] is_drawing_planar
-- [ ] is_planar
-- [ ] is_bipartite
-- [X] is_coloring_proper
+- [X] is drawing planar
+- [ ] is planar
+- [X] is bipartite
+- [X] is coloring proper, chromatric number, chromatic index
 - [ ] radius
 - [ ] girth
-- [X] chromatic number
-- [X] chromatic index
-- [ ] degree_sequence
-- [ ] tree_width
-- [X] clique_number
-- [X] vertex_cover
+- [ ] degree sequence
+- [ ] tree width
+- [X] clique number
+- [X] vertex cover
 - [X] stretch
+- [ ] dominating set
 
 ## Generators
 
@@ -41,3 +40,5 @@
 - [ ] Petersen
 - [X] Paley
 - [ ] Paley prime power
+- [ ] hypercube
+- [ ] k trees
