@@ -1,6 +1,6 @@
 import { Coord } from "./coord";
 import { BasicLinkData, Geometric, Weighted } from "./traits";
-import { eqSet, is_quadratic_bezier_curves_intersection, is_segments_intersection } from "./utils";
+import { eqSet, is_quadratic_bezier_curves_intersection, is_segments_intersection, segmentsInteriorIntersection } from "./utils";
 import { BasicVertex, Vertex } from "./vertex";
 import { Option } from "./option";
 
@@ -107,7 +107,8 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
         const v2 = link.startVertex.getPos();
         const w2 = link.endVertex.getPos();
         if (typeof this.data.cp == "undefined" && typeof link.data.cp == "undefined"){
-            return is_segments_intersection(v1, w1, v2, w2);
+            return typeof segmentsInteriorIntersection(v1, w1, v2, w2) == "undefined";
+            // return is_segments_intersection(v1, w1, v2, w2);
         }
         let cp1 = v1.middle(w1);
         let cp2 = v2.middle(w2);

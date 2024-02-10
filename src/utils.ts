@@ -97,6 +97,26 @@ export function segmentsIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Op
 
 /**
  * UNTESTED
+ * Search for an intersection between the segments ]a,b[ and ]c,d[.
+ * Returns an Option with the coord of the intersection if it exists.
+ */
+export function segmentsInteriorIntersection(a: Coord, b: Coord, c: Coord, d: Coord): Option<Coord>{
+    const det = (a.x-b.x)*(d.y-c.y) - (a.y-b.y)*(d.x-c.x);
+    if ( det == 0) {
+        return undefined;
+    }
+    const t1 = ((d.x-b.x)*(d.y-c.y) + (d.y-b.y)*(-(d.x-c.x))) / det;
+    const t2 = ((d.x-b.x)*(-(a.y-b.y))+(d.y-b.y)*(a.x-b.x)) / det;
+    const condition = 0 < t1 && t1 < 1 && 0 < t2 && t2 < 1;
+    if (condition){
+        return new Coord(b.x + t1*(a.x-b.x), b.y + t1*(a.y-b.y));
+    } else {
+        return undefined;
+    }
+}
+
+/**
+ * UNTESTED
  * Search for an intersection between the lines (AB) and (CD).
  * Returns an Option with the coord of the intersection if it exists.
  */

@@ -2,7 +2,7 @@ import { BasicLink, Link, ORIENTATION } from './link';
 import { BasicVertex, Vertex } from './vertex';
 import { Coord, Vect } from './coord';
 import { Area } from './area';
-import { bezier_curve_point, det, is_quadratic_bezier_curves_intersection, is_segments_intersection } from './utils';
+import { bezier_curve_point, det, is_quadratic_bezier_curves_intersection, is_segments_intersection, segmentsInteriorIntersection } from './utils';
 import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 
@@ -2174,19 +2174,31 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     links: Map<number, BasicLink<V,L>>;
 
 
-    static from<V extends BasicVertexData, L extends BasicLinkData>(rawVerticesList: Array<[number,number,string]>, rawEdgesList: Array<[number, number, string]> ): BasicGraph<V,L>{
-        const verticesList = new Array<BasicVertexData>();
-        for (const [x,y,w] of rawVerticesList){
-            verticesList.push(new BasicVertexData(new Coord(x,y), w, "black"));
+    /**
+     * @param rawVerticesList list of [x,y,w] where (x,y) is the position and w is the weight
+     * @param rawEdgesList list of [sId, eId, w] where sId is the startVertexId, eId is the endVertexId
+     * @returns a BasicGraph
+     */
+    static from(rawVerticesList: Array<[number,number,string]>, rawEdgesList: Array<[number, number, string]> ): BasicGraph<BasicVertexData, BasicLinkData>{
+        const g = new BasicGraph<BasicVertexData, BasicLinkData>();
+
+        for (let i = 0; i < rawVerticesList.length; i ++){
+            const [x,y,w] = rawVerticesList[i];
+            const v = new BasicVertex(i, new BasicVertexData(new Coord(x,y), w, "black"));
+            g.vertices.set(i, v);
         }
 
-        const edgesList = new Array<[number,number,BasicLinkData]>();
-        for (const [x,y,w] of rawEdgesList){
-            edgesList.push([x,y,  new BasicLinkData(undefined, w, "black")]);
+        for (const [startId,endId,w] of rawEdgesList){
+            const lId = g.get_next_available_index_links();
+            const startVertex = g.vertices.get(startId);
+            const endVertex = g.vertices.get(endId);
+            if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
+                const link = new BasicLink(lId, startVertex, endVertex, ORIENTATION.UNDIRECTED, new BasicLinkData(undefined, w, "black") )
+                g.links.set(lId, link);
+            }
         }
 
-        const g = Graph.fromList(verticesList, edgesList, ORIENTATION.UNDIRECTED);
-        return g as BasicGraph<V,L>;
+        return g;
     }
 
     static fromBasicEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number]>): BasicGraph<BasicVertexData,BasicLinkData>{
@@ -2434,7 +2446,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                     }
                     else {
                         if (typeof link1.data.cp == "undefined"){
-                            is_intersecting = is_segments_intersection(v1.getPos(), w1.getPos(), v2.getPos(), w2.getPos());
+                            is_intersecting = typeof segmentsInteriorIntersection(v1.getPos(), w1.getPos(), v2.getPos(), w2.getPos()) != "undefined"
                         } else {
                             is_intersecting = is_quadratic_bezier_curves_intersection(v1.getPos(), z1, w1.getPos(), v2.getPos(), z2, w2.getPos());
                         }
@@ -2451,6 +2463,15 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         }
         return crossings;
     }
+
+
+    /**
+     * @returns the number of crossings of the graph.
+     */
+    crossingNumber(): number {
+        return this.crossings().length;
+    }
+
 
     /**
      * Subdivide links from linksIndices into k+1 links (rectilinear, with the same color, weight = "").
