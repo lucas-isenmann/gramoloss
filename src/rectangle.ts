@@ -13,6 +13,13 @@ export class Rectangle {
         this.index = index;
     }
 
+    getValue(param: string): any{
+        if (param == "color"){
+            return this.color;
+        }
+        return undefined;
+    }
+
 
     top_right_corner(): Coord{
         return new Coord(Math.max(this.c1.x, this.c2.x), Math.min(this.c1.y, this.c2.y))

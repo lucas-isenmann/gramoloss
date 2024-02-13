@@ -970,37 +970,43 @@ export class Graph<V,L> {
     }
 
     
-    // Kosaraju's algorithm: https://en.wikipedia.org/wiki/Kosaraju's_algorithm
+    /**
+     * A strongly connected component is a subset of vertices ot the graph such that for any pair (v,w) of vertices in this subset, there is a directed path from v to w.
+     * @returns the strongly connected components. By denoting `r` the returned array, then r[i] is an array containing all the vertices indices in the i-th strongly connected component.
+     * @algorithm Kosaraju's algorithm: https://en.wikipedia.org/wiki/Kosaraju's_algorithm
+     */
     strongly_connected_components(): Array<Array<number>> {
 	    const graph = this;
 	    let scc: Array<Array<number>> = Array(); // Strongly Connected Components
 	    var stack = Array();
 	    var visited = new Set();
 
-	    const visit_fn = function (cur: number) {
-		if (visited.has(cur)) return;
-		visited.add(cur);
-		for (const neigh of graph.get_out_neighbors_list(cur)) {
-			visit_fn(neigh);
-		}
-		stack.push(cur);
+	    const visit = function (cur: number) {
+            if (visited.has(cur)) return;
+            visited.add(cur);
+            for (const neigh of graph.get_out_neighbors_list(cur)) {
+                visit(neigh);
+            }
+            stack.push(cur);
 	    }
 
 	    for (const key of this.vertices.keys()) {
-		    visit_fn(key);
+		    visit(key);
 	    } // O(n) due to caching
 
-            let assigned = new Set();
+        let assigned = new Set();
 	    
 	    const assign_fn = function (cur: number) {
 		if (!assigned.has(cur)) {
 		    assigned.add(cur);
-		    let root_stack = scc.pop();
-		    root_stack.push(cur);
-		    scc.push(root_stack);
-		    for (const neigh of graph.get_in_neighbors_list(cur)) {
-		        assign_fn(neigh);
-		    }
+		    const rootStack = scc.pop();
+            if (typeof rootStack != "undefined"){
+                rootStack.push(cur);
+                scc.push(rootStack);
+                for (const neigh of graph.get_in_neighbors_list(cur)) {
+                    assign_fn(neigh);
+                }
+            }
 		}
 
 	    }
@@ -1251,8 +1257,7 @@ export class Graph<V,L> {
             for (const vId of clique){
                 coloring.set(vId, i);
                 for (const neighbor of this.getNeighborsFromIndex(vId)){
-                    const set = possibleColors.get(neighbor.index);
-                    set.delete(i);
+                    possibleColors.get(neighbor.index)?.delete(i);
                 }
                 i ++;
             }

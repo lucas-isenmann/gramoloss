@@ -1,7 +1,8 @@
 # TODO
 
-- [ ] set stict=true in tsconfig.json
 - [ ] complete tests
+- [ ] better tests structure
+- [X] set stict=true in tsconfig.json
 - [X] test structure
 - [X] create Board
 - [X] move areas and strokes from Graph to Board

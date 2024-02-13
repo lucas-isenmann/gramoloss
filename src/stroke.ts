@@ -30,6 +30,16 @@ export class Stroke {
         }
     }
 
+    getValue(param: string): any{
+        if (param == "color"){
+            return this.color;
+        }
+        if (param == "width"){
+            return this.width;
+        }
+        return undefined;
+    }
+
     translate(shift: Vect) {
         this.top_left.translate(shift);
         this.bot_right.translate(shift);

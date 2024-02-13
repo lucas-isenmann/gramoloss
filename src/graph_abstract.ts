@@ -2,6 +2,7 @@ import { generatePaleyGraph } from "./generators";
 import { BasicGraph, Graph } from "./graph";
 import { ORIENTATION } from "./link";
 import { BasicLinkData, BasicVertexData } from "./traits";
+import { Vertex } from "./vertex";
 
 export class AbstractGraph extends Graph<void,void> {
 
@@ -10,21 +11,35 @@ export class AbstractGraph extends Graph<void,void> {
     }
 
     static fromEdgesListDefault(edgesList: Array<[number,number]>): AbstractGraph{
-        const fmtEdgesList = new Array<[number,number,void]>();
-        for (const [x,y] of edgesList){
-            fmtEdgesList.push([x,y,null]);
+        const g = new AbstractGraph();
+        for ( const [x,y] of edgesList){
+            if (g.vertices.has(x) == false){
+                g.set_vertex(x);
+            }
+            if (g.vertices.has(y) == false){
+                g.set_vertex(y);
+            }
         }
-        const g = Graph.fromEdgesList(fmtEdgesList, () => {return});
-        return g as AbstractGraph; // TODO marche pas ça faut tout reécrire
+        for ( const [indexV1,indexV2] of edgesList){
+            g.addLink(indexV1, indexV2, ORIENTATION.UNDIRECTED);
+        }
+        return g;
     }
 
     static fromArcsListDefault(arcsList: Array<[number,number]>): AbstractGraph{
-        const fmtArcsList = new Array<[number,number,void]>();
-        for (const [x,y] of arcsList){
-            fmtArcsList.push([x,y,null]);
+        const g = new AbstractGraph();
+        for ( const [x,y] of arcsList){
+            if (g.vertices.has(x) == false){
+                g.set_vertex(x);
+            }
+            if (g.vertices.has(y) == false){
+                g.set_vertex(y);
+            }
         }
-        const g = Graph.fromArcsList(fmtArcsList, () => {return});
-        return g as AbstractGraph; // TODO marche pas ça faut tout reécrire
+        for ( const [indexV1,indexV2] of arcsList){
+            g.addLink(indexV1, indexV2, ORIENTATION.DIRECTED);
+        }
+        return g;
     }
 
     /**

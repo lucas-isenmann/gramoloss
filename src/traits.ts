@@ -24,6 +24,16 @@ export class BasicVertexData {
         this.color = color;
     }
 
+    getValue(param: string): any{
+        if (param == "color"){
+            return this.color;
+        }
+        if (param == "weight"){
+            return this.weight;
+        }
+        return undefined;
+    }
+
     getPos(){
         return this.pos;
     }
@@ -49,6 +59,18 @@ export class BasicLinkData {
         this.color = color;
     }
 
+    getValue(param: string): any{
+        if (param == "cp"){
+            return this.cp;
+        }
+        if (param == "color"){
+            return this.color;
+        }
+        if (param == "weight"){
+            return this.weight;
+        }
+        return undefined;
+    }
 
     getWeight(){
         return this.weight;

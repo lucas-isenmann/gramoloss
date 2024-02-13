@@ -184,7 +184,7 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
         if (typeof elt == "undefined"){
             return undefined;
         } else {
-            return elt[param];
+            return elt.getValue(param);
         }
     }
 

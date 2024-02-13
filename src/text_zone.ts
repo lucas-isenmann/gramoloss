@@ -12,4 +12,14 @@ export class TextZone {
         this.text = text;
         this.index = index;
     }
+
+    getValue(param: string): any{
+        if (param == "width"){
+            return this.width;
+        }
+        if (param == "text"){
+            return this.text;
+        }
+        return undefined;
+    }
 }

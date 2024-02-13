@@ -19,6 +19,13 @@ export class Area {
         this.index = index;
     }
 
+    getValue(param: string): any{
+        if (param == "color"){
+            return this.color;
+        }
+        return undefined;
+    }
+
     translate(shift: Vect) {
         this.c1.translate(shift);
         this.c2.translate(shift);
