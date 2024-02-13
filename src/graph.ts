@@ -1435,6 +1435,8 @@ export class Graph<V,L> {
                 // console.log(booleanArrayToString(selection));
             }
         }
+
+        return -1; // Should not happen
     }
 
 
@@ -1874,7 +1876,7 @@ export class Graph<V,L> {
             const deletedCommonNeighbors = [neighbor];
             for (const a of commonNeighbors){
                 const na = neighbors.get(a);
-                if (na.has(neighbor) == false){
+                if (typeof na != "undefined" && na.has(neighbor) == false){
                     commonNeighbors.delete(a);
                     deletedCommonNeighbors.push(a);
                 }
@@ -2178,6 +2180,11 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     vertices: Map<number, BasicVertex<V>>;
     links: Map<number, BasicLink<V,L>>;
 
+    constructor() {
+        super();
+        this.vertices = new Map<number, BasicVertex<V>>();
+        this.links = new Map<number, BasicLink<V,L>>();
+    }
 
     /**
      * @param rawVerticesList list of [x,y,w] where (x,y) is the position and w is the weight
@@ -2564,8 +2571,8 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * Such a v is called a center.
      * @returns [radius, centerIndex] 
      */
-    radius(weighted: boolean): [number, number] {
-        const {distances, next} = this.Floyd_Warhall(weighted);
+    radius(weights: undefined | Map<number, number>): [number, number] {
+        const {distances, next} = this.Floyd_Warhall(weights);
         let currentMinRadius = Infinity;
         let currentCenter = 0;
         for (const v of this.vertices.values()){
@@ -2594,12 +2601,12 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
     /**
-     * Returns the distances between each pair of vertices using only edges (undirected links).
+     * @returns the distances between each pair of vertices using only edges (undirected links).
      * It uses the algorithm of Floyd-Warshall.
-     * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.
+     * @param weights if undefined, the weigth of an edge `e` is 1 if `e.weight == ""` or `parseFloat(e.weight)`. Otherwise use the values of the map `weights` for the weights.
      * @todo oriented case 
      */
-    Floyd_Warhall( weighted: boolean) {
+    Floyd_Warhall( weights: undefined | Map<number, number>) {
         // TODO try to implement it with a matrix
         const dist = new Map<number, Map<number, number>>();
         const next = new Map<number, Map<number, number>>();
@@ -2624,8 +2631,17 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         for (const [e_index,e] of this.links) {
             // TODO: Oriented Case
             let weight = 1;
-            if (weighted) {
-                weight = parseFloat(e.getWeight());
+            if (typeof weights == "undefined") {
+                if (e.getWeight() == ""){
+                    weight = 1;
+                } else {
+                    weight = parseFloat(e.getWeight());
+                }
+            } else {
+                const w = weights.get(e_index);
+                if (typeof w != "undefined"){
+                    weight = w;
+                }
             }
             dist.get(e.startVertex.index)?.set(e.endVertex.index, weight);
             dist.get(e.endVertex.index)?.set(e.startVertex.index, weight);
@@ -2733,11 +2749,15 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * Returns the stretch of the graph.
      * The stretch is defined as the maximal stretch between pairs of vertices.
      * The stretch of a pair of vertices is defined as the ratio between the euclidian distance in the graph between them and the euclidian distance between them.
-     * Returns undefined if there is 1 vertex or less.
+     * @returns undefined if there is 1 vertex or less.
      */
     stretch(): number | undefined{
-        this.setEuclidianLinkWeights();
-        const data = this.Floyd_Warhall(true);
+        const euclidianDist = new Map<number, number>();
+        for (const link of this.links.values()){
+            euclidianDist.set(link.index, link.startVertex.distTo(link.endVertex));
+        }
+
+        const data = this.Floyd_Warhall(euclidianDist);
         const distances = data.distances;
         let maxStretch: number | undefined = undefined;
         for (const [indexV1, v1] of this.vertices){

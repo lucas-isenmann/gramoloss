@@ -8,7 +8,7 @@
     "esModuleInterop": true,        /* Enables intero between CommonJS and ES */
     "skipLibCheck": true,           /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true, /* Disallow inconsistently */
-    "strict": false
+    "strict": true
   },
   "include": [
     "src"
