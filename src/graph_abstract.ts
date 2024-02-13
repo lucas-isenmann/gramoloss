@@ -15,7 +15,7 @@ export class AbstractGraph extends Graph<void,void> {
             fmtEdgesList.push([x,y,null]);
         }
         const g = Graph.fromEdgesList(fmtEdgesList, () => {return});
-        return g as AbstractGraph;
+        return g as AbstractGraph; // TODO marche pas ça faut tout reécrire
     }
 
     static fromArcsListDefault(arcsList: Array<[number,number]>): AbstractGraph{
@@ -24,7 +24,7 @@ export class AbstractGraph extends Graph<void,void> {
             fmtArcsList.push([x,y,null]);
         }
         const g = Graph.fromArcsList(fmtArcsList, () => {return});
-        return g as AbstractGraph;
+        return g as AbstractGraph; // TODO marche pas ça faut tout reécrire
     }
 
     /**
@@ -41,7 +41,7 @@ export class AbstractGraph extends Graph<void,void> {
             g.addVertex();
             for (let j = 0; j < i ; j ++){
                 if (Math.random() < p){
-                    g.addLink(i,j, ORIENTATION.UNDIRECTED, null);
+                    g.addLink(i,j, ORIENTATION.UNDIRECTED);
                 }
             }
         }
@@ -53,7 +53,7 @@ export class AbstractGraph extends Graph<void,void> {
         for (let i = 0 ; i < n ; i ++){
             g.addVertex();
             for (let j = 0 ; j < i ; j ++){
-                g.addLink(j,i, ORIENTATION.UNDIRECTED, null);
+                g.addLink(j,i, ORIENTATION.UNDIRECTED);
             }
         }
         return g;
@@ -66,7 +66,7 @@ export class AbstractGraph extends Graph<void,void> {
         const g = new AbstractGraph();
         for (let i = 0 ; i < n ; i ++){
             g.addVertex();
-            if (i > 0) g.addLink(i-1,i, ORIENTATION.UNDIRECTED, null);
+            if (i > 0) g.addLink(i-1,i, ORIENTATION.UNDIRECTED);
         }
         return g;
     }
@@ -81,7 +81,7 @@ export class AbstractGraph extends Graph<void,void> {
             g.addVertex();
         }
         for (const link of ge.links.values()){
-            g.addLink(link.startVertex.index, link.endVertex.index, link.orientation, null);
+            g.addLink(link.startVertex.index, link.endVertex.index, link.orientation);
         }
         return g;
 
@@ -95,13 +95,13 @@ export class AbstractGraph extends Graph<void,void> {
     static lineGraph<V,L>(graph: Graph<V,L>): AbstractGraph{
         const g = new AbstractGraph();
         for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId, null);
+            g.set_vertex(linkId);
         }
         for (const link1 of graph.links.values()){
             for (const link2 of graph.links.values()){
                 if (link1.index <= link2.index) continue;
                 if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED);
                 }
             }
         }
@@ -133,15 +133,15 @@ export class AbstractGraph extends Graph<void,void> {
     static geometricLineGraph<V extends BasicVertexData,L extends BasicLinkData>(graph: BasicGraph<V,L>): AbstractGraph{
         const g = new AbstractGraph();
         for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId, null);
+            g.set_vertex(linkId);
         }
         for (const link1 of graph.links.values()){
             for (const link2 of graph.links.values()){
                 if (link1.index <= link2.index) continue;
                 if (link1.startVertex.index == link2.startVertex.index || link1.startVertex.index == link2.endVertex.index || link1.endVertex.index == link2.startVertex.index || link1.endVertex.index == link2.endVertex.index){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED);
                 } else if (link1.intersectsLink(link2)){
-                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED, null);
+                    g.addLink(link1.index, link2.index, ORIENTATION.UNDIRECTED);
                 }
             }
         }

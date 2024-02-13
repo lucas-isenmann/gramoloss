@@ -1136,7 +1136,9 @@ export class Graph<V,L> {
                 for (const vId of clique){
                     if (coloring.has(vId) == false){
                         s ++;
-                        for( const color of possibleColors.get(vId)){
+                        const possibleColorsV = possibleColors.get(vId);
+                        if (typeof possibleColorsV == "undefined") continue;
+                        for( const color of possibleColorsV){
                             pColors.add(color);
                         }
                     }
@@ -1166,11 +1168,15 @@ export class Graph<V,L> {
             return true;
         } else {
             const possib = possibleColors.get(minId);
+            if (typeof possib == "undefined") return false;
             for (const color of possib){
                 coloring.set(minId, color);
                 const modified = new Array();
-                for (const neighbor of neighbors.get(minId)){
+                const neighborsMinId = neighbors.get(minId);
+                if (typeof neighborsMinId == "undefined") continue;
+                for (const neighbor of neighborsMinId){
                     const set = possibleColors.get(neighbor.index);
+                    if (typeof set == "undefined") continue;
                     if (set.has(color) && coloring.has(neighbor.index) == false){
                         set.delete(color);
                         modified.push(neighbor.index);                        
@@ -1182,8 +1188,7 @@ export class Graph<V,L> {
                 // If cannot extend: backtrack
                 coloring.delete(minId);
                 for (const modifiedNeigborId of modified){
-                    const set = possibleColors.get(modifiedNeigborId);
-                    set.add(color);
+                    possibleColors.get(modifiedNeigborId)?.add(color);
                 }
 
                 
@@ -2592,26 +2597,28 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * Returns the distances between each pair of vertices using only edges (undirected links).
      * It uses the algorithm of Floyd-Warshall.
      * @param weighted: if true then the distance between a pair of adjacent vertices is not 1 but e.weight.
-     * TODO: oriented case 
+     * @todo oriented case 
      */
     Floyd_Warhall( weighted: boolean) {
+        // TODO try to implement it with a matrix
         const dist = new Map<number, Map<number, number>>();
         const next = new Map<number, Map<number, number>>();
 
-        for (const v_index of this.vertices.keys()) {
-            dist.set(v_index, new Map<number, number>());
-            next.set(v_index, new Map<number, number>());
-
-            for (const u_index of this.vertices.keys()) {
-                if (v_index === u_index) {
-                    dist.get(v_index).set(v_index, 0);
-                    next.get(v_index).set(v_index, v_index);
+        for (const vIndex of this.vertices.keys()) {
+            const distFromV = new Map<number, number>();
+            const nextFromV = new Map<number, number>();
+            for (const uIndex of this.vertices.keys()) {
+                if (vIndex === uIndex) {
+                    distFromV.set(vIndex, 0);
+                    nextFromV.set(vIndex, vIndex);
                 }
                 else {
-                    dist.get(v_index).set(u_index, Infinity);
-                    next.get(v_index).set(u_index, Infinity);
+                    distFromV.set(uIndex, Infinity);
+                    nextFromV.set(uIndex, Infinity);
                 }
             }
+            dist.set(vIndex, distFromV);
+            next.set(vIndex, nextFromV);
         }
 
         for (const [e_index,e] of this.links) {
@@ -2620,23 +2627,35 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             if (weighted) {
                 weight = parseFloat(e.getWeight());
             }
-            dist.get(e.startVertex.index).set(e.endVertex.index, weight);
-            dist.get(e.endVertex.index).set(e.startVertex.index, weight);
+            dist.get(e.startVertex.index)?.set(e.endVertex.index, weight);
+            dist.get(e.endVertex.index)?.set(e.startVertex.index, weight);
 
-            next.get(e.startVertex.index).set(e.endVertex.index, e.startVertex.index);
-            next.get(e.endVertex.index).set(e.startVertex.index, e.endVertex.index);
+            next.get(e.startVertex.index)?.set(e.endVertex.index, e.endVertex.index);
+            next.get(e.endVertex.index)?.set(e.startVertex.index, e.startVertex.index);
         }
 
-        for (const k_index of this.vertices.keys()) {
-            for (const i_index of this.vertices.keys()) {
-                for (const j_index of this.vertices.keys()) {
-                    const direct = dist.get(i_index).get(j_index);
-                    const shortcut_part_1 = dist.get(i_index).get(k_index);
-                    const shortcut_part_2 = dist.get(k_index).get(j_index);
+        for (const kIndex of this.vertices.keys()) {
+            const distFromK = dist.get(kIndex);
+            if (typeof distFromK == "undefined") continue;
+            for (const iIndex of this.vertices.keys()) {
+                const distFromI = dist.get(iIndex);
+                if (typeof distFromI == "undefined") continue;
+                for (const jIndex of this.vertices.keys()) {
+                    const dij = distFromI.get(jIndex);
+                    const dik = distFromI.get(kIndex);
+                    const dkj = distFromK.get(jIndex);
+                    if (typeof dij == "undefined" || typeof dik == "undefined" || typeof dkj == "undefined" ) continue;
 
-                    if (direct > shortcut_part_1 + shortcut_part_2) {
-                        dist.get(i_index).set(j_index, shortcut_part_1 + shortcut_part_2);
-                        next.get(i_index).set(j_index, next.get(i_index).get(k_index));
+                    if (dij > dik + dkj) {
+                        // console.log(`shortcut from ${iIndex} to ${jIndex} via ${kIndex}`, dij, dik, dkj);
+                        distFromI.set(jIndex, dik + dkj);
+                        const nextFromI = next.get(iIndex);
+                        if (typeof nextFromI != "undefined"){
+                            const nextFromItoK = nextFromI.get(kIndex);
+                            if (typeof nextFromItoK != "undefined"){
+                                nextFromI.set(jIndex, nextFromItoK);
+                            }
+                        }
                     }
                 }
             }
@@ -2678,6 +2697,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         for (const edge of edges){
             const c1 = component.get(edge[0].startVertex.index);
             const c2 = component.get(edge[0].endVertex.index);
+            if (typeof c1 == "undefined" || typeof c2 == "undefined") continue;
             if ( c1 != c2 ){
                 treeEdges.push(edge[0]);
                 treeWeight += edge[1];
