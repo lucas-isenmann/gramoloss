@@ -2754,9 +2754,11 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * Returns the stretch of the graph.
      * The stretch is defined as the maximal stretch between pairs of vertices.
      * The stretch of a pair of vertices is defined as the ratio between the euclidian distance in the graph between them and the euclidian distance between them.
-     * @returns undefined if there is 1 vertex or less.
+     * @returns 1 if there is 1 vertex or less and the shortestPath maximizing the stretch.
      */
-    stretch(): number | undefined{
+    stretch(): [number, Array<number>]{
+        if (this.vertices.size <= 1) return [1, new Array()];
+
         const euclidianDist = new Map<number, number>();
         for (const link of this.links.values()){
             euclidianDist.set(link.index, link.startVertex.distTo(link.endVertex));
@@ -2764,7 +2766,9 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
         const data = this.Floyd_Warhall(euclidianDist);
         const distances = data.distances;
-        let maxStretch: number | undefined = undefined;
+
+        let shortestPath = new Array();
+        let maxStretch: number = 1;
         for (const [indexV1, v1] of this.vertices){
             for (const [indexV2, v2] of this.vertices){
                 if (indexV1 != indexV2){
@@ -2773,9 +2777,24 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                         const graphDist = v1distances.get(indexV2);
                         if (graphDist){
                             const stretch = graphDist / v1.distTo(v2);
-                            if (typeof maxStretch === "undefined" ){
-                                maxStretch = stretch;
-                            } else if (stretch > maxStretch){
+                            if ( stretch >= maxStretch ){
+                                shortestPath.splice(0, shortestPath.length);
+                                if (stretch == Infinity){
+                                    shortestPath.push(indexV1, indexV2);
+                                } else {
+                                    let currentId = indexV1;
+                                    while (currentId != indexV2){
+                                        shortestPath.push(currentId);
+                                        const r = data.next.get(currentId)?.get(indexV2);
+                                        if (typeof r != "undefined"){
+                                            currentId = r;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    shortestPath.push(indexV2);
+                                }
+
                                 maxStretch = stretch;
                             }
                         }
@@ -2783,7 +2802,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                 }
             }
         }
-        return maxStretch;
+        return [maxStretch, shortestPath];
     }
 
 
