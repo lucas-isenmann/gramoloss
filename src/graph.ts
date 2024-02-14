@@ -1992,6 +1992,83 @@ export class Graph<V,L> {
 
     
 
+    /**
+     * @param subset the subset that we try to extend to a dominating set
+     * @param toDominate the vertices that remain to dominate and which can be added to subset
+     * @param excluded the vertices that remain to dominate but which cannot be added to subset
+     * @param currentMin the current min dominating set
+     * @returns a better dominating set than currentMin
+     */
+    private auxMinDominatingSet(subset: Set<number>, toDominate: Array<number>, excluded: Array<number>, currentMin: Set<number>): Set<number>{
+        /*
+        Algorithm: branch on a vertex of toDominate
+        - either add the vertex to the subset (and update toDominate and excluded)
+        - either do not add it (update excluded)
+        */
+        const v = toDominate.pop();
+        if (typeof v == "undefined"){
+            if (excluded.length > 0){
+                return currentMin;
+            } else {
+                if (subset.size < currentMin.size){
+                    const subsetCopy = new Set(subset);
+                    return subsetCopy;
+                } else {
+                    return currentMin;
+                }
+            }
+        }
+        else {
+            const vNeighbors = this.get_neighbors_list(v);
+            if (typeof vNeighbors != "undefined"){
+                const newToDominate = new Array();
+                for (const x of toDominate){
+                    if ( vNeighbors.indexOf(x) == -1){
+                        newToDominate.push(x);
+                    }
+                }
+                const newExcluded = new Array();
+                for (const x of excluded){
+                    if ( vNeighbors.indexOf(x) == -1){
+                        newExcluded.push(x);
+                    }
+                }
+                subset.add(v);
+                currentMin = this.auxMinDominatingSet(subset, newToDominate, newExcluded, currentMin);
+                subset.delete(v);
+
+                excluded.push(v);
+                currentMin = this.auxMinDominatingSet(subset, toDominate, excluded, currentMin);
+                excluded.pop();
+
+                return currentMin;
+            } else {
+                return currentMin;
+            }
+        }
+    }
+
+
+    /**
+     * @returns a minimum dominating set: it is a subset X of the vertices such that all vertices of the graph are in X or adjacent to a vertex of X.
+     */
+    minDominatingSet(): Set<number>{
+        const toDominate = new Array<number>();
+        const allVertices = new Set<number>();
+        for (const vId of this.vertices.keys()){
+            allVertices.add(vId);
+            toDominate.push(vId);
+        }
+        return this.auxMinDominatingSet(new Set(), toDominate, new Array(), allVertices);
+    }
+
+
+    /**
+     * @returns the size of a minimum dominating set
+     */
+    dominationNumber(): number {
+        return this.minDominatingSet().size;
+    }
 
 
 
