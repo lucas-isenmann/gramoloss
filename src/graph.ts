@@ -743,7 +743,6 @@ export class Graph<V,L> {
     }
 
     /**
-     * 
      * @returns [b, cycle] where b is a boolean which is true iff there exists a cycle.
      * If b is true, a cycle is returned.
      * @remark Iterative version
@@ -767,29 +766,21 @@ export class Graph<V,L> {
                     visited.add(u_index);
                     
                     const neighbors = this.get_neighbors_list(u_index);
-                    // console.log("neighbors of", u_index)
                     for (const n_index of neighbors) {
-                        // console.log(`neighbor ${n_index}, last ${last}`)
                         if ( n_index != last ){
                             if (visited.has(n_index) == false){
-                                // console.log(`set ${n_index} from ${u_index}`)
                                 previous.set(n_index, u_index);
                                 stack.push([n_index, u_index]);
                             }
                             else {
-                                // console.log([...previous]);
-                                // console.log(n_index, u_index);
                                 const cycle = new Array<number>();
                                 cycle.push(n_index);
                                 cycle.push(u_index);
                                 let j = previous.get(u_index);
-                                // console.log(j);
                                 while ( typeof j != "undefined" && j != n_index){
                                     cycle.push(j);
                                     j = previous.get(j);
                                 }
-                                // console.log(cycle)
-                                // console.log(cycle);
                                 return [true, cycle];
                             }
                         }
@@ -803,7 +794,66 @@ export class Graph<V,L> {
         return [false, []];
     }
 
-    has_directed_cycle():boolean {
+
+
+    /**
+     * @returns [b, cycle] where b is a boolean which is true iff there exists a directed cycle.
+     * If b is true, a directed cycle is returned.
+     * @remark Iterative version
+     */
+    getDirectedCycle(): undefined | Array<number> {
+        const state = new Map<number, number>();
+        // if a vertexIndex is a key of state, then the value is either 1 for DISCOVERED
+        // either 2 for TREATED, which means that no cycle start from this vertex
+        // if a vertexIndex is not a key, then is is considered as UNDISCOVERED
+
+        for (const v of this.vertices.keys()) {
+            if ( state.has(v) == false){
+                const stack = new Array<number>();
+                const previous = new Map<number,number>();
+                stack.push(v);
+                while (stack.length > 0){
+                    const u = stack[stack.length-1]; 
+
+                    if (state.has(u) == false){
+                        state.set(u, 1); // 1 is DISCOVERED
+                        const neighbors = this.get_out_neighbors_list(u);
+                        for (const uNeighbor of neighbors) {
+                            if ( state.has(uNeighbor) == false){
+                                previous.set(uNeighbor, u);
+                                stack.push(uNeighbor);
+                            } else if (state.get(uNeighbor) == 1) {
+
+                                const cycle = new Array<number>();
+                                cycle.push(uNeighbor);
+                                cycle.push(u);
+                                let j = previous.get(u);
+                                while ( typeof j != "undefined" && j != uNeighbor){
+                                    cycle.push(j);
+                                    j = previous.get(j);
+                                }
+                                return cycle;
+                            }
+                        }
+                    }
+                    else {
+                        stack.pop();
+                        state.set(u, 2); // TREATED, no cycle starts from u
+                    }
+                    
+                }
+            }
+        }
+        return undefined;
+    }
+
+
+    /**
+     * @returns [b, cycle] where b is a boolean which is true iff there exists a directed cycle.
+     * If b is true, a directed cycle is returned.
+     * @remark Recursive version
+     */
+    hasDirectedCycleRecursive(): boolean {
         let ok_list = new Set();
         let g = this;
         

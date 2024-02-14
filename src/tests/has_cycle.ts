@@ -51,3 +51,19 @@ console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,0],[0,4]]).
 // }
 // console.timeEnd("has_cycle2");
 
+console.log("getDirectedCycle");
+console.log(AbstractGraph.fromArcsListDefault([]).getDirectedCycle() === undefined);
+console.log(AbstractGraph.fromArcsListDefault([[2,3]]).getDirectedCycle() === undefined);
+console.log(AbstractGraph.fromArcsListDefault([[0,1],[1,2],[0,2]]).getDirectedCycle() === undefined);
+console.log(AbstractGraph.fromArcsListDefault([[0,1],[2,1],[0,2]]).getDirectedCycle() === undefined);
+
+console.log(AbstractGraph.fromArcsListDefault([[0,1],[0,2],[1,2],[1,3],[2,3],[3,4],[3,5],[5,4]]).getDirectedCycle() === undefined);
+
+const c1 = AbstractGraph.fromArcsListDefault([[1,3],[3,0],[0,1]]).getDirectedCycle();
+console.log(typeof c1 != "undefined" && c1.length == 3);
+
+const c2 = AbstractGraph.fromArcsListDefault([[3,1],[0,3],[1,0]]).getDirectedCycle();
+console.log(typeof c2 != "undefined" && c2.length == 3);
+
+const c3 = AbstractGraph.fromArcsListDefault([[0,1],[1,2],[2,3],[3,0],[3,1]]).getDirectedCycle();
+console.log(typeof c3 != "undefined");
