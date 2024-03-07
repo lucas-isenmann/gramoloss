@@ -2345,6 +2345,66 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return g;
     }
 
+
+    /**
+     * @returns an undirected cycle of length `n`.
+     * 
+     * This graph has n vertices and n edges.
+     */
+    static cycle(n: number){
+        const rawVertices = new Array<[number, number, string]>();
+        const rawLinks = new Array<[number, number, string]>();
+        for (let i = 0 ; i < n ; i ++){
+            rawVertices.push([Math.cos( (2*Math.PI*i) /n), Math.sin( (2*Math.PI*i) /n), ""]);
+            rawLinks.push([i,(i+1)%n, ""]);
+        }
+        return BasicGraph.from(rawVertices, rawLinks);
+    }
+
+    /**
+     * @returns an undirected cycle of length `n`.
+     * 
+     * This graph has n vertices and n(n-1)/2 edges.
+     */
+    static clique(n: number){
+        const rawVertices = new Array<[number, number, string]>();
+        const rawLinks = new Array<[number, number, string]>();
+        for (let i = 0 ; i < n ; i ++){
+            rawVertices.push([Math.cos( (2*Math.PI*i) /n), Math.sin( (2*Math.PI*i) /n), ""]);
+            for (let j = 0; j < i; j ++){
+                rawLinks.push([i,j, ""]);
+            }
+        }
+        return BasicGraph.from(rawVertices, rawLinks);
+    }
+
+    /**
+     * @param rawVerticesList list of [x,y,w] where (x,y) is the position and w is the weight
+     * @param rawArcsList list of [sId, eId, w] where sId is the startVertexId, eId is the endVertexId
+     * @returns a BasicGraph
+     */
+    static fromArcs(rawVerticesList: Array<[number,number,string]>, rawArcsList: Array<[number, number, string]> ): BasicGraph<BasicVertexData, BasicLinkData>{
+        const g = new BasicGraph<BasicVertexData, BasicLinkData>();
+
+        for (let i = 0; i < rawVerticesList.length; i ++){
+            const [x,y,w] = rawVerticesList[i];
+            const v = new BasicVertex(i, new BasicVertexData(new Coord(x,y), w, "black"));
+            g.vertices.set(i, v);
+        }
+
+        for (const [startId,endId,w] of rawArcsList){
+            const lId = g.get_next_available_index_links();
+            const startVertex = g.vertices.get(startId);
+            const endVertex = g.vertices.get(endId);
+            if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
+                const link = new BasicLink(lId, startVertex, endVertex, ORIENTATION.DIRECTED, new BasicLinkData(undefined, w, "black") )
+                g.links.set(lId, link);
+            }
+        }
+
+        return g;
+    }
+
     static fromBasicEdgesList<V extends BasicVertexData, L extends BasicLinkData>(edgesList: Array<[number,number]>): BasicGraph<BasicVertexData,BasicLinkData>{
         const fmtEdgesList = new Array<[number,number,BasicLinkData]>();
         for (const [x,y] of edgesList){
@@ -2733,10 +2793,10 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
     /**
-     * @returns the distances between each pair of vertices using only edges (undirected links).
+     * @returns the distances between each pair of vertices. 
+     * @next next.get(u).get(v) is the adjacent vertex of u to go to v.
      * It uses the algorithm of Floyd-Warshall.
      * @param weights if undefined, the weigth of an edge `e` is 1 if `e.weight == ""` or `parseFloat(e.weight)`. Otherwise use the values of the map `weights` for the weights.
-     * @todo oriented case 
      */
     Floyd_Warhall( weights: undefined | Map<number, number>) {
         // TODO try to implement it with a matrix
@@ -2760,26 +2820,31 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             next.set(vIndex, nextFromV);
         }
 
-        for (const [e_index,e] of this.links) {
-            // TODO: Oriented Case
+        for (const [linkIndex, link] of this.links) {
             let weight = 1;
             if (typeof weights == "undefined") {
-                if (e.getWeight() == ""){
+                if (link.getWeight() == ""){
                     weight = 1;
                 } else {
-                    weight = parseFloat(e.getWeight());
+                    weight = parseFloat(link.getWeight());
                 }
             } else {
-                const w = weights.get(e_index);
+                const w = weights.get(linkIndex);
                 if (typeof w != "undefined"){
                     weight = w;
                 }
             }
-            dist.get(e.startVertex.index)?.set(e.endVertex.index, weight);
-            dist.get(e.endVertex.index)?.set(e.startVertex.index, weight);
-
-            next.get(e.startVertex.index)?.set(e.endVertex.index, e.endVertex.index);
-            next.get(e.endVertex.index)?.set(e.startVertex.index, e.startVertex.index);
+            if (link.orientation == ORIENTATION.UNDIRECTED){
+                dist.get(link.startVertex.index)?.set(link.endVertex.index, weight);
+                dist.get(link.endVertex.index)?.set(link.startVertex.index, weight);
+    
+                next.get(link.startVertex.index)?.set(link.endVertex.index, link.endVertex.index);
+                next.get(link.endVertex.index)?.set(link.startVertex.index, link.startVertex.index);
+            } else {
+                dist.get(link.startVertex.index)?.set(link.endVertex.index, weight);
+                next.get(link.startVertex.index)?.set(link.endVertex.index, link.endVertex.index);
+            }
+            
         }
 
         for (const kIndex of this.vertices.keys()) {
@@ -2811,6 +2876,54 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
         return { distances: dist, next: next };
 
+    }
+
+
+    /**
+     * @returns a geodesic (or shortest path) of maximal weight and its weight
+     * @param weights if provided, it tells the shortest path computer to use the given weights. Otherwise it will use the weights of the links or 1 if a link has no weight.
+     * @example BasicGraph.cycle(5).longestGeodesic(undefined)[1]; // == 2
+     */
+    longestGeodesic(weights: undefined | Map<number, number>): [Array<number>, number]{
+        const f = this.Floyd_Warhall(weights);
+        let maxDist = 0;
+        const longestPath = new Array();
+
+        for (const [vIndex, distFromV] of f.distances.entries()){
+            for (const [uIndex, d] of distFromV.entries()){
+                if (d > maxDist){
+                    maxDist = d;
+
+                    longestPath.splice(0, longestPath.length);
+                    let currentId = vIndex;
+                    if (d == Infinity) {
+                        return [[uIndex, vIndex],d];
+                    }
+                    while (currentId != uIndex){
+                        longestPath.push(currentId);
+                        const r = f.next.get(currentId)?.get(uIndex);
+                        if (typeof r != "undefined"){
+                            currentId = r;
+                        } else {
+                            break;
+                        }
+                    }
+                    longestPath.push(uIndex);
+                }
+            }
+        }
+        return [longestPath, maxDist];
+    }
+
+    /**
+     * 
+     * @returns the diameter of the graph which is the maximal length (or the maximal weight if weights are considered) of a shortest path in the graph.
+     * @param weights if provided, it tells the shortest path computer to use the given weights. Otherwise it will use the weights of the links or 1 if a link has no weight.
+     * @example BasicGraph.cycle(5).diameter(); // == 2
+     * @example BasicGraph.clique(4).diameter(); // == 1
+     */
+    diameter(weights: undefined | Map<number, number>): number{
+        return this.longestGeodesic(weights)[1];
     }
 
 

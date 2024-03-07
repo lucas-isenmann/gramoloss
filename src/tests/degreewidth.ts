@@ -4,8 +4,8 @@ import { AbstractGraph } from "../graph_abstract";
 
 // console.time("test")
 // let sum = 0;
-// const m = 1000;
-// for (let n = 4; n < 19 ; n ++){
+// const m = 100;
+// for (let n = 3; n < 29 ; n ++){
 //     sum = 0;
 //     for (let i = 0 ; i < m ; i ++){
 //         // console.time("test")

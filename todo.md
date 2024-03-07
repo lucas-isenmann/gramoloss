@@ -1,6 +1,6 @@
 # TODO
 
-- [ ] complete tests
+- [ ] complete tests for the current params
 - [ ] better tests structure
 - [X] set stict=true in tsconfig.json
 - [X] test structure
@@ -16,7 +16,7 @@
 
 - [X] distance
 - [X] radius
-- [ ] diameter
+- [X] diameter
 - [X] degree (min, max, mean)
 - [X] is connected
 - [X] number connected components
@@ -31,7 +31,8 @@
 - [X] clique number
 - [X] vertex cover
 - [X] stretch
-- [ ] dominating set
+- [X] dominating set
+- [ ] minCDS, minIDS, minTDS, minEDS
 
 ## Generators
 
