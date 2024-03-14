@@ -43,6 +43,17 @@ export class AbstractGraph extends Graph<void,void> {
     }
 
     /**
+     * 
+     * @returns Petersen graph (10 vertices, 15 edges)
+     * @see https://en.wikipedia.org/wiki/Petersen_graph
+     */
+    static petersen(){
+        return AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0],
+        [5,6],[6,7],[7,8],[8,9],[9,5],
+        [0,5],[1,7],[2,9],[3,6],[4,8]]);
+    }
+
+    /**
      * Returns a random graph with n vertices.
      * @param n number of vertices. Should be >= 0. Return empty graph if n < 1.
      * @param p probabilty of appearance of an edge. Should be between 0 and 1.

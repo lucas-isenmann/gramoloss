@@ -14,6 +14,12 @@ export enum ELEMENT_TYPE {
 }
 
 
+// For the Dominating Set Algo
+// These are the 3 variants
+// TODO should be removed by implementing a method for IDS
+enum DominationVariant {
+    Independent,
+}
 
 
 
@@ -1990,84 +1996,219 @@ export class Graph<V,L> {
         return currentMaximumClique;
     }
 
-    
+
 
     /**
      * @param subset the subset that we try to extend to a dominating set
-     * @param toDominate the vertices that remain to dominate and which can be added to subset
-     * @param excluded the vertices that remain to dominate but which cannot be added to subset
+     * @param toDominate the vertices that remain to dominate
+     * @param choosable the vertices that can be added to the subset
      * @param currentMin the current min dominating set
+     * @param variant depending on this variant, the final check of a branch leads to a solution or not. Better algorithms exist for these variants.
+     * @param lowerBound a lower bound on any minimum dominating set
      * @returns a better dominating set than currentMin
      */
-    private auxMinDominatingSet(subset: Set<number>, toDominate: Array<number>, excluded: Array<number>, currentMin: Set<number>): Set<number>{
-        /*
-        Algorithm: branch on a vertex of toDominate
-        - either add the vertex to the subset (and update toDominate and excluded)
-        - either do not add it (update excluded)
-        */
-        const v = toDominate.pop();
-        if (typeof v == "undefined"){
-            if (excluded.length > 0){
-                return currentMin;
+    private auxMinDominatingSet(subset: Set<number>, toDominate: Array<number>, choosable: Array<number>, currentMin: Set<number>, variant: undefined | DominationVariant, neighbors: Map<number, Array<number>>, lowerBound: number): Set<number>{
+        if (toDominate.length == 0){
+            if (subset.size < currentMin.size){
+                if (variant == DominationVariant.Independent){
+                    // Check that subset is Indep
+                    // If there is an edge between the subset, then return the curretMin (and therefore do not update it)
+                    // This branch could have cut above.
+                    for (const x of subset){
+                        for (const y of subset){
+                            if (x != y){
+                                const nx = neighbors.get(x);
+                                if (typeof nx != "undefined"){
+                                    if (nx.indexOf(y) >= 0){
+                                        return currentMin;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const subsetCopy = new Set(subset);
+                return subsetCopy;
             } else {
-                if (subset.size < currentMin.size){
-                    const subsetCopy = new Set(subset);
-                    return subsetCopy;
-                } else {
-                    return currentMin;
+                return currentMin;
+            }
+        }
+        /*
+        Algorithm: branch on a vertex of choosable
+        - either add the vertex to the subset
+        - either not
+        */
+
+        if (choosable.length == 0){
+            return currentMin;
+        }
+
+        if (subset.size +1 >= currentMin.size){
+            return currentMin;
+        }
+
+        if (currentMin.size == lowerBound){
+            return currentMin;
+        }
+
+        // Search for the choosable vertex which maximizes the number of newly dominated vertices
+        let best: undefined | number = undefined;
+        let bestCounter = -1;
+        for (let i = 0; i < choosable.length; i++){
+            const v = choosable[i];
+            const vNeighbors = neighbors.get(v);
+            if (typeof vNeighbors != "undefined"){
+                let counter = 0;
+                for (const x of toDominate){
+                    if (vNeighbors.indexOf(x) >= 0 || x == v){
+                        counter ++;
+                    }
+                }
+                if (counter > bestCounter){
+                    bestCounter = counter;
+                    best = i;
                 }
             }
         }
-        else {
-            const vNeighbors = this.get_neighbors_list(v);
+        // let best = Math.floor(Math.random()*choosable.length);
+        if (typeof best == "undefined"){
+            return currentMin;
+        } else {
+            const v = choosable[best]
+            const vNeighbors = neighbors.get(v);
             if (typeof vNeighbors != "undefined"){
                 const newToDominate = new Array();
                 for (const x of toDominate){
-                    if ( vNeighbors.indexOf(x) == -1){
+                    if ( vNeighbors.indexOf(x) == -1 && x != v){
                         newToDominate.push(x);
                     }
                 }
-                const newExcluded = new Array();
-                for (const x of excluded){
-                    if ( vNeighbors.indexOf(x) == -1){
-                        newExcluded.push(x);
-                    }
-                }
-                subset.add(v);
-                currentMin = this.auxMinDominatingSet(subset, newToDominate, newExcluded, currentMin);
-                subset.delete(v);
 
-                excluded.push(v);
-                currentMin = this.auxMinDominatingSet(subset, toDominate, excluded, currentMin);
-                excluded.pop();
+                choosable.splice(best, 1);
+                
+                if (newToDominate.length < toDominate.length){
+                    subset.add(v);
+                    currentMin = this.auxMinDominatingSet(subset, newToDominate, choosable, currentMin, variant, neighbors, lowerBound);
+                    subset.delete(v);
+                }
+                currentMin = this.auxMinDominatingSet(subset, toDominate, choosable, currentMin, variant, neighbors, lowerBound);
+                
+                choosable.push(v);
 
                 return currentMin;
             } else {
                 return currentMin;
             }
         }
+
     }
 
+    /**
+     * @returns a distance-2 independent set
+     * @algorithm random
+     * @example
+     * AbstractGraph.path(5).greedyLowerBoundDS().size; // = 2
+     * @todo make it greedy by taking vertices that have the lowest degrees
+     */
+    private greedyLowerBoundDS(): Set<number>{
+        let choosable = new Array();
+        const subset = new Set<number>();
+        for (const vId of this.vertices.keys()){
+            choosable.push(vId);
+        }
+
+        while (choosable.length > 0){
+            const vId = choosable.pop();
+            if (typeof vId != "undefined"){
+                subset.add(vId);
+                const newChoosable = new Array();
+
+                const vNeighbors = this.get_neighbors_list(vId);
+                for (const wId of choosable){
+                    if (vNeighbors.indexOf(wId) == -1 && wId != vId){
+                        const wNeighbors = this.get_neighbors_list(wId);
+                        let dist2 = false;
+                        for (const wNeighbor of wNeighbors){
+                            if (vNeighbors.indexOf(wNeighbor) >= 0){
+                                dist2 = true;
+                                break;
+                            }
+                        }
+                        if (dist2 == false){
+                            newChoosable.push(wId);
+                        }
+                    }
+                }
+                choosable = newChoosable;
+            }
+        }
+
+        return subset;
+    }
 
     /**
      * @returns a minimum dominating set: it is a subset X of the vertices such that all vertices of the graph are in X or adjacent to a vertex of X.
-     */
-    minDominatingSet(): Set<number>{
+     * @example 
+     * AbstractGraph.generatePath(5).minDominatingSet().size; // = 2
+    */
+    minDominatingSet(variant: undefined | DominationVariant): Set<number>{
+
+        // Compute in polynomial time a dist2 independent set
+        // The size of this set gives a lower bound on the minDS
+        // If it is a DS, then we have found a minDS
+        const dist2independentSet = this.greedyLowerBoundDS();
+        let isDominating = true;
+        for (const vId of this.vertices.keys()){
+            let dominated = false;
+            if (dist2independentSet.has(vId)){
+                dominated = true;
+                continue;
+            }
+            for (const vNeighbor of this.get_neighbors_list(vId)){
+                if (dist2independentSet.has(vNeighbor)){
+                    dominated = true;
+                    break;
+                }
+            }
+            if (dominated == false){
+                isDominating = false;
+                break;
+            }
+        }
+        if (isDominating){
+            return dist2independentSet;
+        }
+
+        // Prepare for the algorithm
         const toDominate = new Array<number>();
         const allVertices = new Set<number>();
+        const choosable = new Array<number>();
+        const neighbors = new Map<number, Array<number>>();
         for (const vId of this.vertices.keys()){
             allVertices.add(vId);
             toDominate.push(vId);
+            choosable.push(vId);
+            neighbors.set(vId, this.get_neighbors_list(vId));
         }
-        return this.auxMinDominatingSet(new Set(), toDominate, new Array(), allVertices);
+        return this.auxMinDominatingSet(new Set(), toDominate, choosable, allVertices, variant, neighbors, dist2independentSet.size);
     }
 
 
     /**
      * @returns the size of a minimum dominating set
+     * @example AbstractGraph.petersen().dominationNumber(); // = 3
      */
     dominationNumber(): number {
-        return this.minDominatingSet().size;
+        return this.minDominatingSet(undefined).size;
+    }
+
+    /**
+     * @returns the size of a minimum independent dominating set
+     * @example AbstractGraph.petersen().independentDominationNumber(); // = 3
+     */
+    independentDominationNumber(): number {
+        return this.minDominatingSet(DominationVariant.Independent).size;
     }
 
 
@@ -2359,6 +2500,21 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             rawLinks.push([i,(i+1)%n, ""]);
         }
         return BasicGraph.from(rawVertices, rawLinks);
+    }
+
+    /**
+     * 
+     * @returns Petersen graph
+     * @see https://en.wikipedia.org/wiki/Petersen_graph
+     */
+    static petersen(){
+        return BasicGraph.from(
+            [[0,0,""], [0,0,""],[0,0,""] ,[0,0,""],[0,0,""],
+            [0,0,""],[0,0,""],[0,0,""],[0,0,""],[0,0,""]],
+            [[0,1,""],[1,2,""],[2,3,""],[3,4,""],[4,0,""],
+            [5,6,""],[6,7,""],[7,8,""],[8,9,""],[9,5,""],
+            [0,5,""],[1,7,""],[2,9,""],[3,6,""],[4,8,""]]
+        );
     }
 
     /**
