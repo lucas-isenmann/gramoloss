@@ -526,6 +526,65 @@ export class Graph<V,L> {
         return neighbors;
     }
 
+
+    /**
+     * 
+     * @param vId vertex index
+     * @param d distance >= 0 (when d = 1, then it returns the closed in-neighborhood)
+     * @returns the closed in-neighborhood of `vId` at dist at most `d`. That is the vertices at distance at most d to `vId`.
+     * @example 
+     * AbstractGraph.orientedPath(3).getClosedDistInNeighborhood(2, 2); // = [0,1,2]
+     * AbstractGraph.orientedPath(3).getClosedDistInNeighborhood(2, 1); // = [1,2]
+     */
+    getClosedDistInNeighborhood(vId: number, d: number): Array<number> {
+        if (d <= 0){
+            return [vId];
+        } else {
+            const neighborsPrec = this.getClosedDistInNeighborhood(vId, d-1);
+            const neighborsD = new Array();
+            for (const neighbor of neighborsPrec){
+                if (neighborsD.indexOf(neighbor) == -1){
+                    neighborsD.push(neighbor);
+                }
+                for (const nId of this.get_in_neighbors_list(neighbor)){
+                    if (neighborsD.indexOf(nId) == -1){
+                        neighborsD.push(nId);
+                    }
+                }
+            }
+            return neighborsD;
+        }
+    }
+
+    /**
+     * 
+     * @param vId vertex index
+     * @param d distance >= 0 (when d = 1, then it returns the closed in-neighborhood)
+     * @returns the closed in-neighborhood of `vId` at dist at most `d`. That is the vertices at distance at most d from `vId`.
+     * @example 
+     * AbstractGraph.orientedPath(3).getClosedDistOutNeighborhood(0, 2); // = [0,1,2]
+     * AbstractGraph.orientedPath(3).getClosedDistOutNeighborhood(0, 1); // = [0,1]
+     */
+    getClosedDistOutNeighborhood(vId: number, d: number): Array<number> {
+        if (d <= 0){
+            return [vId];
+        } else {
+            const neighborsPrec = this.getClosedDistOutNeighborhood(vId, d-1);
+            const neighborsD = new Array();
+            for (const neighbor of neighborsPrec){
+                if (neighborsD.indexOf(neighbor) == -1){
+                    neighborsD.push(neighbor);
+                }
+                for (const nId of this.get_out_neighbors_list(neighbor)){
+                    if (neighborsD.indexOf(nId) == -1){
+                        neighborsD.push(nId);
+                    }
+                }
+            }
+            return neighborsD;
+        }
+    }
+
     delete_vertex(vertex_index: number) {
         this.vertices.delete(vertex_index);
 
@@ -2209,6 +2268,104 @@ export class Graph<V,L> {
      */
     independentDominationNumber(): number {
         return this.minDominatingSet(DominationVariant.Independent).size;
+    }
+
+
+    /**
+     * @returns an oriented distance-2 independent set
+     * @algorithm random
+     * @example
+     * AbstractGraph.path(5).greedyLowerBoundDS().size; // = 2
+     * @todo make it greedy by taking vertices that have the lowest degrees
+     */
+    greedyOrientedDist2IndepSet(): Set<number>{
+        let choosable = new Array();
+        const subset = new Set<number>();
+        for (const vId of this.vertices.keys()){
+            choosable.push(vId);
+        }
+
+        while (choosable.length > 0){
+            const vId = choosable.pop();
+            if (typeof vId != "undefined"){
+                subset.add(vId);
+                const newChoosable = new Array();
+
+                const vNeighbors = this.getClosedDistInNeighborhood(vId, 2);
+                for (const wId of choosable){
+                    if (vNeighbors.indexOf(wId) == -1){
+                        const wNeighbors = this.getClosedDistInNeighborhood(wId, 2);
+                        let dist2 = false;
+                        for (const wNeighbor of wNeighbors){
+                            if (vNeighbors.indexOf(wNeighbor) >= 0){
+                                dist2 = true;
+                                break;
+                            }
+                        }
+                        if (dist2 == false){
+                            newChoosable.push(wId);
+                        }
+                    }
+                }
+                choosable = newChoosable;
+            }
+        }
+
+        return subset;
+    }
+
+    /**
+     * @returns a minimum quasi kernel: it is a subset X of the vertices such that all vertices of the digraph are at distance at most 2 to a vertex of X.
+     * @remark the edges are not considered
+     * @example 
+    */
+    minQuasiKernel(): Set<number>{
+
+        // Compute in polynomial time a dist2 independent set
+        const dist2independentSet = this.greedyOrientedDist2IndepSet();
+        // Check if it is a quasi kernel
+        let isDominating = true;
+        for (const vId of this.vertices.keys()){
+            let dominated = false;
+            for (const vNeighbor of this.getClosedDistOutNeighborhood(vId,2)){
+                if (dist2independentSet.has(vNeighbor)){
+                    dominated = true;
+                    break;
+                }
+            }
+            if (dominated == false){
+                isDominating = false;
+                break;
+            }
+        }
+        if (isDominating){
+            return dist2independentSet;
+        }
+
+        // Prepare for the algorithm
+        const toDominate = new Array<number>();
+        const allVertices = new Set<number>();
+        const choosable = new Array<number>();
+        const neighborsDistAtMost2 = new Map<number, Array<number>>();
+        for (const vId of this.vertices.keys()){
+            allVertices.add(vId);
+            toDominate.push(vId);
+            choosable.push(vId);
+            const vNeighborsDist2 = new Array<number>();
+            const neighbors = this.get_in_neighbors_list(vId);
+            for (const neighbor of neighbors){
+                if (vNeighborsDist2.indexOf(neighbor) == -1){
+                    vNeighborsDist2.push(neighbor);
+                }
+                for (const n2 of this.get_in_neighbors_list(neighbor)){
+                    if (vNeighborsDist2.indexOf(n2) == -1){
+                        vNeighborsDist2.push(n2);
+                    }
+                }
+            }
+            neighborsDistAtMost2.set(vId, vNeighborsDist2);
+        }
+        return this.auxMinDominatingSet(new Set(), toDominate, choosable, allVertices, undefined, neighborsDistAtMost2, dist2independentSet.size);
     }
 
 

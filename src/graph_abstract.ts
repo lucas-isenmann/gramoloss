@@ -2,7 +2,6 @@ import { generatePaleyGraph } from "./generators";
 import { BasicGraph, Graph } from "./graph";
 import { ORIENTATION } from "./link";
 import { BasicLinkData, BasicVertexData } from "./traits";
-import { Vertex } from "./vertex";
 
 export class AbstractGraph extends Graph<void,void> {
 
@@ -43,7 +42,6 @@ export class AbstractGraph extends Graph<void,void> {
     }
 
     /**
-     * 
      * @returns Petersen graph (10 vertices, 15 edges)
      * @see https://en.wikipedia.org/wiki/Petersen_graph
      */
@@ -94,6 +92,33 @@ export class AbstractGraph extends Graph<void,void> {
             g.addVertex();
             if (i > 0) g.addLink(i-1,i, ORIENTATION.UNDIRECTED);
         }
+        return g;
+    }
+
+    /**
+     * @param n is the number of vertices
+     * @returns an oriented path (`n` vertices and `n-1` edges)
+     */
+    static orientedPath(n: number): AbstractGraph{
+        const g = new AbstractGraph();
+        for (let i = 0 ; i < n ; i ++){
+            g.addVertex();
+            if (i > 0) g.addLink(i-1,i, ORIENTATION.DIRECTED);
+        }
+        return g;
+    }
+
+    /**
+     * @param n is the number of vertices
+     * @returns an oriented cycle (`n` vertices and `n` edges)
+     */
+    static orientedCycle(n: number): AbstractGraph{
+        const g = new AbstractGraph();
+        for (let i = 0 ; i < n ; i ++){
+            g.addVertex();
+            if (i > 0) g.addLink(i-1,i, ORIENTATION.DIRECTED);
+        }
+        g.addLink(n-1, 0, ORIENTATION.DIRECTED);
         return g;
     }
 
