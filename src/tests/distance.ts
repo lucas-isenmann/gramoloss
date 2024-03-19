@@ -8,7 +8,7 @@ const g1 = BasicGraph.from([[0,0,""], [0,0,""], [0,0,""], [0,0,""]],
     [2,3,""],
     [3,1,""]]);
 
-const f1 = g1.Floyd_Warhall(undefined);
+const f1 = g1.FloydWarshall(undefined);
 // console.log([...distances])
 // console.log([...next])
 console.log(f1.distances.get(0)?.get(2) == 2)
@@ -25,7 +25,7 @@ const g2 = BasicGraph.from([[0,0,""], [0,0,""], [0,0,""], [0,0,""], [0,0,""], [0
     [1,4,""],
     [4,0,""]]);
 
-const f2 = g2.Floyd_Warhall(undefined);
+const f2 = g2.FloydWarshall(undefined);
 console.log(f2.distances.get(3)?.get(2) == 2)
 console.log(f2.next.get(3)?.get(2) == 1)
 console.log(f2.distances.get(0)?.get(5) == 3)
@@ -37,7 +37,7 @@ const g3 = BasicGraph.fromArcs([[0,0,""], [0,0,""], [0,0,""]],
     [1,0,""],
     [1,2,""]]);
 
-const f3 = g3.Floyd_Warhall(undefined);
+const f3 = g3.FloydWarshall(undefined);
 console.log(f3.distances.get(0));
 console.log(f3.distances.get(1));
 console.log(f3.distances.get(2));

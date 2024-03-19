@@ -9,27 +9,27 @@ import { BasicLinkData, BasicVertexData } from "../traits";
 // chi(Kn) = n
 
 console.log("chi(P2) = 2")
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2]]).chromatic_number() == 2);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2]]).chromaticNumber() == 2);
 
 console.log("chi(P3) = 2")
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3]]).chromatic_number() == 2);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3]]).chromaticNumber() == 2);
 
 console.log("chi(K3) = 3")
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).chromatic_number() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).chromaticNumber() == 3);
 
 console.log("chi(K4) = 4")
-console.log(AbstractGraph.generateClique(4).chromatic_number() == 4);
+console.log(AbstractGraph.generateClique(4).chromaticNumber() == 4);
 
 console.log("chi(K5) = 5")
-console.log(AbstractGraph.generateClique(5).chromatic_number() == 5);
+console.log(AbstractGraph.generateClique(5).chromaticNumber() == 5);
 
 
 
 console.log("chi(C5) = 3")
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).chromatic_number() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).chromaticNumber() == 3);
 
 console.log("chi(Petersen) = 3")
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0],[0,5],[1,6],[2,7],[3,8],[4,9],[5,7],[7,9],[9,6],[6,8],[8,5]]).chromatic_number() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0],[0,5],[1,6],[2,7],[3,8],[4,9],[5,7],[7,9],[9,6],[6,8],[8,5]]).chromaticNumber() == 3);
 
 
 
@@ -39,12 +39,12 @@ const petersenGraph = AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4
 const lgp = AbstractGraph.lineGraph(petersenGraph);
 
 console.time('chromaticNumber');
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2]]).chromatic_number() == 2);
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3]]).chromatic_number() == 2);
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).chromatic_number() == 3);
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]).chromatic_number() == 4);
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).chromatic_number() == 3);
-console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0],[0,5],[1,6],[2,7],[3,8],[4,9],[5,7],[7,9],[9,6],[6,8],[8,5]]).chromatic_number() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2]]).chromaticNumber() == 2);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3]]).chromaticNumber() == 2);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,0]]).chromaticNumber() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]).chromaticNumber() == 4);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0]]).chromaticNumber() == 3);
+console.log(AbstractGraph.fromEdgesListDefault([[0,1],[1,2],[2,3],[3,4],[4,0],[0,5],[1,6],[2,7],[3,8],[4,9],[5,7],[7,9],[9,6],[6,8],[8,5]]).chromaticNumber() == 3);
 console.timeEnd('chromaticNumber');
 
 
@@ -63,7 +63,7 @@ for (let i = 0 ; i < n ; i ++){
     cliques.add(clique);
 }
 
-console.log(lgp2.chromatic_number(cliques));
+console.log(lgp2.chromaticNumber(cliques));
 console.timeEnd('vPetersen');
 
 
@@ -101,7 +101,7 @@ function checkGeomChromaticClique(n: number){
         cliques.add(clique);
     }
 
-    console.log(glg2.chromatic_number(cliques));
+    console.log(glg2.chromaticNumber(cliques));
     // console.log(glg2.minimalProperColoring(cliques));
     
 }

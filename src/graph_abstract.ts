@@ -13,10 +13,10 @@ export class AbstractGraph extends Graph<void,void> {
         const g = new AbstractGraph();
         for ( const [x,y] of edgesList){
             if (g.vertices.has(x) == false){
-                g.set_vertex(x);
+                g.setVertex(x);
             }
             if (g.vertices.has(y) == false){
-                g.set_vertex(y);
+                g.setVertex(y);
             }
         }
         for ( const [indexV1,indexV2] of edgesList){
@@ -29,10 +29,10 @@ export class AbstractGraph extends Graph<void,void> {
         const g = new AbstractGraph();
         for ( const [x,y] of arcsList){
             if (g.vertices.has(x) == false){
-                g.set_vertex(x);
+                g.setVertex(x);
             }
             if (g.vertices.has(y) == false){
-                g.set_vertex(y);
+                g.setVertex(y);
             }
         }
         for ( const [indexV1,indexV2] of arcsList){
@@ -146,7 +146,7 @@ export class AbstractGraph extends Graph<void,void> {
     static lineGraph<V,L>(graph: Graph<V,L>): AbstractGraph{
         const g = new AbstractGraph();
         for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId);
+            g.setVertex(linkId);
         }
         for (const link1 of graph.links.values()){
             for (const link2 of graph.links.values()){
@@ -184,7 +184,7 @@ export class AbstractGraph extends Graph<void,void> {
     static geometricLineGraph<V extends BasicVertexData,L extends BasicLinkData>(graph: BasicGraph<V,L>): AbstractGraph{
         const g = new AbstractGraph();
         for (const linkId of graph.links.keys()){
-            g.set_vertex(linkId);
+            g.setVertex(linkId);
         }
         for (const link1 of graph.links.values()){
             for (const link2 of graph.links.values()){

@@ -64,10 +64,10 @@ export class Graph<V,L> {
 
         for ( const [x,y,_] of linksList){
             if (g.vertices.has(x) == false){
-                g.set_vertex(x, vertexConstructor());
+                g.setVertex(x, vertexConstructor());
             }
             if (g.vertices.has(y) == false){
-                g.set_vertex(y, vertexConstructor());
+                g.setVertex(y, vertexConstructor());
             }
         }
         for ( const [indexV1,indexV2, data] of linksList.values()){
@@ -89,7 +89,7 @@ export class Graph<V,L> {
         const verticesIndices = new Set();
 
         for ( const [index, data] of verticesData.entries()){
-            g.set_vertex(index, data);
+            g.setVertex(index, data);
         }
         for ( const [indexV1,indexV2, data] of linksList.values()){
             g.addLink(indexV1, indexV2, orientation, data);
@@ -118,11 +118,11 @@ export class Graph<V,L> {
     //     for ( const [x,y,w] of l.values()){
     //         if (indices.has(x) == false){
     //             indices.add(x);
-    //             g.set_vertex(x,vertex_default(x));
+    //             g.setVertex(x,vertex_default(x));
     //         }
     //         if (indices.has(y) == false){
     //             indices.add(y);
-    //             g.set_vertex(y,vertex_default(y));
+    //             g.setVertex(y,vertex_default(y));
     //         }
     //         const link = edge_default(x,y,w);
     //         g.addLink(link);
@@ -160,11 +160,11 @@ export class Graph<V,L> {
     //     for ( const [x,y] of l.values()){
     //         if (indices.has(x) == false){
     //             indices.add(x);
-    //             g.set_vertex(x,vertex_default(x));
+    //             g.setVertex(x,vertex_default(x));
     //         }
     //         if (indices.has(y) == false){
     //             indices.add(y);
-    //             g.set_vertex(y,vertex_default(y));
+    //             g.setVertex(y,vertex_default(y));
     //         }
     //         const link = arc_default(x,y,"");
     //         g.addLink(link);
@@ -231,7 +231,7 @@ export class Graph<V,L> {
 
 
 
-    get_next_n_available_vertex_indices(n: number): Array<number> {
+    getNextNAvailableVertexIndices(n: number): Array<number> {
         let index = 0;
         const indices = new Array<number>();
         while (indices.length < n) {
@@ -243,7 +243,7 @@ export class Graph<V,L> {
         return indices;
     }
 
-    get_next_available_index_links() {
+    getNextAvailableIndexLinks() {
         let index = 0;
         while (this.links.has(index)) {
             index += 1;
@@ -251,7 +251,7 @@ export class Graph<V,L> {
         return index;
     }
 
-    get_next_n_available_link_indices(n: number): Array<number> {
+    getNextNavailableLinkIndices(n: number): Array<number> {
         let index = 0;
         const indices = new Array<number>();
         while (indices.length < n) {
@@ -292,20 +292,9 @@ export class Graph<V,L> {
         return neighbors;
     }
 
-    /**
-     * SHOULD BE REMOVED
-     * index should be in the vertex
-     */
-    get_index(v: Vertex<V>) {
-        for (let [index, vertex] of this.vertices.entries()) {
-            if (vertex === v) {
-                return index;
-            }
-        }
-        return;
-    }
+    
 
-    get_next_available_index_vertex() {
+    getNextAvailableIndexVertex() {
         let index = 0;
         while (this.vertices.has(index)) {
             index += 1;
@@ -318,19 +307,19 @@ export class Graph<V,L> {
      * Returns the index of the added vertex.
      */ 
     addVertex(vertexData: V): Vertex<V> {
-        const index = this.get_next_available_index_vertex();
+        const index = this.getNextAvailableIndexVertex();
         const newVertex = new Vertex(index, vertexData);
         this.vertices.set(index, newVertex);
         return newVertex;
     }
 
-    set_vertex(index: number, vertexData: V): Vertex<V> {
+    setVertex(index: number, vertexData: V): Vertex<V> {
         const newVertex = new Vertex(index, vertexData);
         this.vertices.set(index, newVertex);
         return newVertex;
     }
 
-    has_link(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
+    hasLink(index_start: number,index_end: number, orientation: ORIENTATION): boolean{
         for (const link of this.links.values()){
             if (link.signatureEquals(index_start, index_end, orientation)){
                 return true;
@@ -339,11 +328,18 @@ export class Graph<V,L> {
         return false;
     }
 
-    has_arc(index_start: number, index_end: number): boolean {
-        return this.has_link(index_start, index_end, ORIENTATION.DIRECTED);
+    hasArc(index_start: number, index_end: number): boolean {
+        return this.hasLink(index_start, index_end, ORIENTATION.DIRECTED);
     }
 
-    check_link(link: Link<V,L>): boolean {
+    /**
+     * 
+     * @param link 
+     * @returns false if
+     * - link is a loop
+     * - there is already a link with the same signature (same orientation and start and end)
+     */
+    chekLink(link: Link<V,L>): boolean {
         const i = link.startVertex.index;
         const j = link.endVertex.index;
         const orientation = link.orientation;
@@ -377,7 +373,7 @@ export class Graph<V,L> {
      * Returns the index otherwise.
      */
     addLink(startIndex: number, endIndex: number, orientation: ORIENTATION, data: L): Option<Link<V,L>> {
-        const index = this.get_next_available_index_links();
+        const index = this.getNextAvailableIndexLinks();
         const newLink = this.setLink(index, startIndex, endIndex, orientation, data);
         return newLink;
     }
@@ -396,7 +392,7 @@ export class Graph<V,L> {
             return undefined;
         }
         const newLink = new Link(linkIndex, startVertex, endVertex, orientation, data);
-        if (this.check_link(newLink) == false) {
+        if (this.chekLink(newLink) == false) {
             return undefined;
         }
         this.links.set(linkIndex, newLink);
@@ -411,7 +407,7 @@ export class Graph<V,L> {
     /**
      * Returns the list of the neighbors indices of a vertex.
      */
-    get_neighbors_list(vertexIndex: number): Array<number> {
+    getNeighborsList(vertexIndex: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.UNDIRECTED) {
@@ -427,7 +423,7 @@ export class Graph<V,L> {
 
 
 
-    get_neighbors_list_excluding_links(i: number, excluded: Set<number>): Array<number> {
+    getNeighborsListExcludingLinks(i: number, excluded: Set<number>): Array<number> {
         const neighbors = new Array<number>();
         for (const [link_index, link] of this.links.entries()) {
             if (excluded.has(link_index) == false && link.orientation == ORIENTATION.UNDIRECTED) {
@@ -441,7 +437,7 @@ export class Graph<V,L> {
         return neighbors;
     }
 
-    get_out_neighbors_list(i: number): Array<number> {
+    getOutNeighborsList(i: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
@@ -515,7 +511,7 @@ export class Graph<V,L> {
 
 
 
-    get_in_neighbors_list(i: number): Array<number> {
+    getInNeighborsList(i: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
@@ -547,7 +543,7 @@ export class Graph<V,L> {
                 if (neighborsD.indexOf(neighbor) == -1){
                     neighborsD.push(neighbor);
                 }
-                for (const nId of this.get_in_neighbors_list(neighbor)){
+                for (const nId of this.getInNeighborsList(neighbor)){
                     if (neighborsD.indexOf(nId) == -1){
                         neighborsD.push(nId);
                     }
@@ -576,7 +572,7 @@ export class Graph<V,L> {
                 if (neighborsD.indexOf(neighbor) == -1){
                     neighborsD.push(neighbor);
                 }
-                for (const nId of this.get_out_neighbors_list(neighbor)){
+                for (const nId of this.getOutNeighborsList(neighbor)){
                     if (neighborsD.indexOf(nId) == -1){
                         neighborsD.push(nId);
                     }
@@ -586,7 +582,7 @@ export class Graph<V,L> {
         }
     }
 
-    delete_vertex(vertex_index: number) {
+    deleteVertex(vertex_index: number) {
         this.vertices.delete(vertex_index);
 
         this.links.forEach((link, link_index) => {
@@ -596,7 +592,7 @@ export class Graph<V,L> {
         })
     }
 
-    delete_link(link_index: number) {
+    deleteLink(link_index: number) {
         this.links.delete(link_index);
     }
 
@@ -616,20 +612,20 @@ export class Graph<V,L> {
 
 
 
-    get_degrees_data() {
+    getDegreesData() {
         if (this.vertices.size == 0) {
             return { min_value: 0, min_vertices: null, max_value: 0, max_vertices: null, avg: 0 };
         }
 
         const index_first = this.vertices.keys().next().value;
         let min_indices = new Set([index_first]);
-        let min_degree = this.get_neighbors_list(index_first).length;
+        let min_degree = this.getNeighborsList(index_first).length;
         let max_indices = new Set([index_first]);
-        let max_degree = this.get_neighbors_list(index_first).length;
+        let maxDegree = this.getNeighborsList(index_first).length;
         let average = 0.0;
 
         for (const v_index of this.vertices.keys()) {
-            const neighbors = this.get_neighbors_list(v_index);
+            const neighbors = this.getNeighborsList(v_index);
             if (min_degree > neighbors.length) {
                 min_degree = neighbors.length;
                 min_indices = new Set([v_index]);
@@ -638,11 +634,11 @@ export class Graph<V,L> {
                 min_indices.add(v_index);
             }
 
-            if (max_degree < neighbors.length) {
-                max_degree = neighbors.length;
+            if (maxDegree < neighbors.length) {
+                maxDegree = neighbors.length;
                 max_indices = new Set([v_index]);
             }
-            if (max_degree === neighbors.length) {
+            if (maxDegree === neighbors.length) {
                 max_indices.add(v_index);
             }
 
@@ -651,7 +647,7 @@ export class Graph<V,L> {
 
         average = average / this.vertices.size;
 
-        return { min_value: min_degree, min_vertices: min_indices, max_value: max_degree, max_vertices: max_indices, avg: average };
+        return { min_value: min_degree, min_vertices: min_indices, max_value: maxDegree, max_vertices: max_indices, avg: average };
     }
 
     /**
@@ -660,10 +656,10 @@ export class Graph<V,L> {
      * @returns -1 if there is no vertex
      * @TODO should return undefined if no vertex
      */
-    max_degree(): number{
+    maxDegree(): number{
         let record = -1;
         for ( const v_index of this.vertices.keys()){
-            let degree = this.get_neighbors_list(v_index).length;
+            let degree = this.getNeighborsList(v_index).length;
             if ( degree > record ){
                 record = degree;
             }
@@ -676,10 +672,10 @@ export class Graph<V,L> {
      * @returns `""` if there is no vertex
      * @TODO replace string return by undefined
      */
-    min_indegree(): number | string{
+    minIndegree(): number | string{
         let record: number | string = "";
         for ( const v_index of this.vertices.keys()){
-            let indegree = this.get_in_neighbors_list(v_index).length;
+            let indegree = this.getInNeighborsList(v_index).length;
             if (typeof record == "string"){
                 record = indegree;
             } else if ( indegree < record ){
@@ -696,7 +692,7 @@ export class Graph<V,L> {
     maxIndegree(): number | undefined{
         let record: number | undefined = undefined;
         for ( const vIndex of this.vertices.keys()){
-            let indegree = this.get_in_neighbors_list(vIndex).length;
+            let indegree = this.getInNeighborsList(vIndex).length;
             if (typeof record == "undefined"){
                 record = indegree;
             } else if ( indegree > record ){
@@ -713,7 +709,7 @@ export class Graph<V,L> {
     maxOutdegree(): number | undefined{
         let record: number | undefined = undefined;
         for ( const vIndex of this.vertices.keys()){
-            let d = this.get_out_neighbors_list(vIndex).length;
+            let d = this.getOutNeighborsList(vIndex).length;
             if (typeof record == "undefined"){
                 record = d;
             } else if ( d > record ){
@@ -727,10 +723,10 @@ export class Graph<V,L> {
 
     // return minimum outdegree of the graph
     // return "" if there is no vertex
-    min_outdegree(): number | string{
+    minOutdegree(): number | string{
         let record: number | string = "";
         for ( const v_index of this.vertices.keys()){
-            let indegree = this.get_out_neighbors_list(v_index).length;
+            let indegree = this.getOutNeighborsList(v_index).length;
             if (typeof record == "string"){
                 record = indegree;
             } else if ( indegree < record ){
@@ -741,18 +737,18 @@ export class Graph<V,L> {
     }
 
 
-     DFS_recursive( v_index: number, visited: Map<number, boolean>) {
+     DFSrecursive( v_index: number, visited: Map<number, boolean>) {
         visited.set(v_index, true);
-        const neighbors = this.get_neighbors_list(v_index);
+        const neighbors = this.getNeighborsList(v_index);
 
         for (const u_index of neighbors) {
             if (visited.has(u_index) && !visited.get(u_index)) {
-                this.DFS_recursive( u_index, visited);
+                this.DFSrecursive( u_index, visited);
             }
         }
     }
 
-    DFS_iterative( v_index: number) {
+    DFSiterative( v_index: number) {
         const visited = new Map();
         for (const index of this.vertices.keys()) {
             visited.set(index, false);
@@ -766,7 +762,7 @@ export class Graph<V,L> {
             const u_index = S.pop();
             if (!visited.get(u_index)) {
                 visited.set(u_index, true);
-                const neighbors = this.get_neighbors_list(u_index);
+                const neighbors = this.getNeighborsList(u_index);
                 for (const n_index of neighbors) {
                     S.push(n_index);
                 }
@@ -777,12 +773,12 @@ export class Graph<V,L> {
     }
 
 
-    has_cycle(): boolean {
+    hasCycle(): boolean {
         let ok_list = new Set();
         let g = this;
 
-        function _has_cycle(d: number, origin: number, s: Array<number>): boolean {
-            for (const v of g.get_neighbors_list(d)) {
+        function _hasCycle(d: number, origin: number, s: Array<number>): boolean {
+            for (const v of g.getNeighborsList(d)) {
                 if (v == origin || ok_list.has(v)) {
                     continue;
                 }
@@ -790,7 +786,7 @@ export class Graph<V,L> {
                     return true;
                 }
                 s.push(v);
-                let b = _has_cycle(v,d, s)
+                let b = _hasCycle(v,d, s)
                 if (b) {return true}
                 ok_list.add(v);
                 s.pop();
@@ -801,7 +797,7 @@ export class Graph<V,L> {
             if (ok_list.has(v)) {
                 continue;
             }
-            if (_has_cycle(v,-1, [v])) {
+            if (_hasCycle(v,-1, [v])) {
                 return true;
             }
         }
@@ -813,7 +809,7 @@ export class Graph<V,L> {
      * If b is true, a cycle is returned.
      * @remark Iterative version
      */
-    has_cycle2(): [boolean, Array<number>] {
+    hasCycle2(): [boolean, Array<number>] {
         const visited = new Set();
         for (const v of this.vertices.keys()) {
             // console.log("start", v);
@@ -831,7 +827,7 @@ export class Graph<V,L> {
                     }
                     visited.add(u_index);
                     
-                    const neighbors = this.get_neighbors_list(u_index);
+                    const neighbors = this.getNeighborsList(u_index);
                     for (const n_index of neighbors) {
                         if ( n_index != last ){
                             if (visited.has(n_index) == false){
@@ -883,7 +879,7 @@ export class Graph<V,L> {
 
                     if (state.has(u) == false){
                         state.set(u, 1); // 1 is DISCOVERED
-                        const neighbors = this.get_out_neighbors_list(u);
+                        const neighbors = this.getOutNeighborsList(u);
                         for (const uNeighbor of neighbors) {
                             if ( state.has(uNeighbor) == false){
                                 previous.set(uNeighbor, u);
@@ -924,7 +920,7 @@ export class Graph<V,L> {
         let g = this;
         
         function _has_directed_cycle(d: number, s: Array<number>): boolean {
-            for (const v of g.get_out_neighbors_list(d)) {
+            for (const v of g.getOutNeighborsList(d)) {
                 if (s.indexOf(v) > -1) {
                     return true;
                 }
@@ -950,7 +946,7 @@ export class Graph<V,L> {
 
     // compute the size of the connected component of vertex of index "vindex"
     // return 0 if vindex is not a vertex index
-    size_connected_component_of(vindex: number): number {
+    sizeConnectedComponentOf(vindex: number): number {
         if (this.vertices.has(vindex) == false){
             return 0;
         }
@@ -964,7 +960,7 @@ export class Graph<V,L> {
             if (!visited.has(u_index)) {
                 counter += 1;
                 visited.add(u_index);
-                const neighbors = this.get_neighbors_list(u_index);
+                const neighbors = this.getNeighborsList(u_index);
                 for (const n_index of neighbors) {
                     
                     stack.push(n_index);
@@ -976,7 +972,7 @@ export class Graph<V,L> {
     }
 
 
-    size_connected_component_excluding_links(vindex: number, excluded: Set<number>): number {
+    sizeConnectedComponentExcludingLinks(vindex: number, excluded: Set<number>): number {
         if (this.vertices.has(vindex) == false){
             return 0;
         }
@@ -990,7 +986,7 @@ export class Graph<V,L> {
             if (!visited.has(u_index)) {
                 counter += 1;
                 visited.add(u_index);
-                const neighbors = this.get_neighbors_list_excluding_links(u_index, excluded);
+                const neighbors = this.getNeighborsListExcludingLinks(u_index, excluded);
                 for (const n_index of neighbors) {
                     stack.push(n_index);
                 }
@@ -1002,7 +998,7 @@ export class Graph<V,L> {
 
     // compute the size of the connected component of vertex of index "vindex"
     // return 0 if vindex is not a vertex index
-    get_connected_component_of(vindex: number): Graph<V,L> {
+    getConnectedComponentOf(vindex: number): Graph<V,L> {
         const g = new Graph<V,L>();
         const initVertex = this.vertices.get(vindex);
         if ( typeof initVertex == "undefined"){
@@ -1016,7 +1012,7 @@ export class Graph<V,L> {
         while (stack.length > 0) {
             const u = stack.pop();
             if (typeof u == "undefined") break;
-            g.set_vertex(u.index, u.data);
+            g.setVertex(u.index, u.data);
             if (!visited.has(u.index)) {
                 visited.add(u.index);
                 for (const [link_index, link] of this.links.entries()){
@@ -1040,15 +1036,15 @@ export class Graph<V,L> {
      * Return a cut edge which maximizes the minimum of the size of the connected components of its endvertices.
      * Return -1 if there is no cut edge 
      */
-    max_cut_edge(): number{
+    maxCutEdge(): number{
         const n = this.vertices.size;
         let record = 0;
         let record_link_index = -1;
         for ( const [link_index, link] of this.links.entries()){
 
-            const n1 = this.size_connected_component_excluding_links(link.startVertex.index, new Set([link_index]));
+            const n1 = this.sizeConnectedComponentExcludingLinks(link.startVertex.index, new Set([link_index]));
             if (n1 < n ){
-                const n2 = this.size_connected_component_excluding_links(link.endVertex.index, new Set([link_index]));
+                const n2 = this.sizeConnectedComponentExcludingLinks(link.endVertex.index, new Set([link_index]));
                 const m = Math.min(n1,n2);
                 if ( m > record){
                     record = m;
@@ -1064,7 +1060,7 @@ export class Graph<V,L> {
      * An undirected graph is said to be connected if there is a path between any pair of vertices.
      * @returns true iff the graph is connected
      */
-    is_connected(): boolean {
+    isConnected(): boolean {
         if (this.vertices.size < 2) {
             return true;
         }
@@ -1075,7 +1071,7 @@ export class Graph<V,L> {
             visited.set(index, false);
         }
     
-        this.DFS_recursive( indices[0], visited);
+        this.DFSrecursive( indices[0], visited);
     
         for (const is_visited of visited.values()) {
             if (!is_visited) {
@@ -1091,7 +1087,7 @@ export class Graph<V,L> {
      * @returns the strongly connected components. By denoting `r` the returned array, then r[i] is an array containing all the vertices indices in the i-th strongly connected component.
      * @algorithm Kosaraju's algorithm: https://en.wikipedia.org/wiki/Kosaraju's_algorithm
      */
-    strongly_connected_components(): Array<Array<number>> {
+    stronglyConnectedComponents(): Array<Array<number>> {
 	    const graph = this;
 	    let scc: Array<Array<number>> = Array(); // Strongly Connected Components
 	    var stack = Array();
@@ -1100,7 +1096,7 @@ export class Graph<V,L> {
 	    const visit = function (cur: number) {
             if (visited.has(cur)) return;
             visited.add(cur);
-            for (const neigh of graph.get_out_neighbors_list(cur)) {
+            for (const neigh of graph.getOutNeighborsList(cur)) {
                 visit(neigh);
             }
             stack.push(cur);
@@ -1119,7 +1115,7 @@ export class Graph<V,L> {
             if (typeof rootStack != "undefined"){
                 rootStack.push(cur);
                 scc.push(rootStack);
-                for (const neigh of graph.get_in_neighbors_list(cur)) {
+                for (const neigh of graph.getInNeighborsList(cur)) {
                     assign_fn(neigh);
                 }
             }
@@ -1170,7 +1166,7 @@ export class Graph<V,L> {
     // clone(): Graph<V,L> {
     //     const newGraph = new Graph<V,L>();
     //     for(const [index, vertex] of this.vertices){
-    //         newGraph.set_vertex(index, vertex.data.clone());
+    //         newGraph.setVertex(index, vertex.data.clone());
     //     }
     //     for(const [index, link] of this.links){
     //         newGraph.setLink(index, link.data.clone());
@@ -1326,7 +1322,7 @@ export class Graph<V,L> {
      * Algorithm: Backtrack
      * @param cliques is a set of cliques (sets of vIndices) of the graph. There are used to cut the search. The best would be to give the set of maximal cliques but it is NP-hard to compute. So if your graph has known cliques it is better.
      */
-    chromatic_number(cliques?: Set<Set<number>>): number {
+    chromaticNumber(cliques?: Set<Set<number>>): number {
         const coloring = this.minimalProperColoring(cliques);
         let colors = new Set();
         for (const color of coloring.values()){
@@ -2022,7 +2018,7 @@ export class Graph<V,L> {
      * It is the maximum size of a clique of the graph.
      * @param cliqueSample is a clique known before computation
      */
-    clique_number(cliqueSample?: Set<number>): number {
+    cliqueNumber(cliqueSample?: Set<number>): number {
         return this.maximumClique(cliqueSample).size;
     }
 
@@ -2095,13 +2091,13 @@ export class Graph<V,L> {
                     for (const x of subset){
                         for (const y of subset){
                             if (x != y){
-                                const nx = this.get_in_neighbors_list(x);
+                                const nx = this.getInNeighborsList(x);
                                 if (typeof nx != "undefined"){
                                     if (nx.indexOf(y) >= 0){
                                         return currentMin;
                                     }
                                 }
-                                const nx2 = this.get_out_neighbors_list(x);
+                                const nx2 = this.getOutNeighborsList(x);
                                 if (typeof nx2 != "undefined"){
                                     if (nx2.indexOf(y) >= 0){
                                         return currentMin;
@@ -2208,10 +2204,10 @@ export class Graph<V,L> {
                 subset.add(vId);
                 const newChoosable = new Array();
 
-                const vNeighbors = this.get_neighbors_list(vId);
+                const vNeighbors = this.getNeighborsList(vId);
                 for (const wId of choosable){
                     if (vNeighbors.indexOf(wId) == -1 && wId != vId){
-                        const wNeighbors = this.get_neighbors_list(wId);
+                        const wNeighbors = this.getNeighborsList(wId);
                         let dist2 = false;
                         for (const wNeighbor of wNeighbors){
                             if (vNeighbors.indexOf(wNeighbor) >= 0){
@@ -2249,7 +2245,7 @@ export class Graph<V,L> {
                 dominated = true;
                 continue;
             }
-            for (const vNeighbor of this.get_neighbors_list(vId)){
+            for (const vNeighbor of this.getNeighborsList(vId)){
                 if (dist2independentSet.has(vNeighbor)){
                     dominated = true;
                     break;
@@ -2273,7 +2269,7 @@ export class Graph<V,L> {
             allVertices.add(vId);
             toDominate.push(vId);
             choosable.push(vId);
-            neighbors.set(vId, this.get_neighbors_list(vId));
+            neighbors.set(vId, this.getNeighborsList(vId));
         }
         return this.auxMinDominatingSet(new Set(), toDominate, choosable, allVertices, variant, neighbors, dist2independentSet.size);
     }
@@ -2379,12 +2375,12 @@ export class Graph<V,L> {
             toDominate.push(vId);
             choosable.push(vId);
             const vNeighborsDist2 = new Array<number>();
-            const neighbors = this.get_in_neighbors_list(vId);
+            const neighbors = this.getInNeighborsList(vId);
             for (const neighbor of neighbors){
                 if (vNeighborsDist2.indexOf(neighbor) == -1){
                     vNeighborsDist2.push(neighbor);
                 }
-                for (const n2 of this.get_in_neighbors_list(neighbor)){
+                for (const n2 of this.getInNeighborsList(neighbor)){
                     if (vNeighborsDist2.indexOf(n2) == -1){
                         vNeighborsDist2.push(n2);
                     }
@@ -2403,7 +2399,7 @@ export class Graph<V,L> {
      * TODO: optimize
      */
     isBipartite(): boolean {
-        return this.chromatic_number() <= 2;
+        return this.chromaticNumber() <= 2;
     }
 
 
@@ -2658,7 +2654,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         }
 
         for (const [startId,endId,w] of rawEdgesList){
-            const lId = g.get_next_available_index_links();
+            const lId = g.getNextAvailableIndexLinks();
             const startVertex = g.vertices.get(startId);
             const endVertex = g.vertices.get(endId);
             if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
@@ -2733,7 +2729,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         }
 
         for (const [startId,endId,w] of rawArcsList){
-            const lId = g.get_next_available_index_links();
+            const lId = g.getNextAvailableIndexLinks();
             const startVertex = g.vertices.get(startId);
             const endVertex = g.vertices.get(endId);
             if (typeof startVertex != "undefined" && typeof endVertex != "undefined"){
@@ -2762,7 +2758,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             }
         }
         for ( const [indexV1,indexV2, data] of fmtEdgesList.values()){
-            const newLinkIndex = g.get_next_available_index_links();
+            const newLinkIndex = g.getNextAvailableIndexLinks();
             const startVertex = g.vertices.get(indexV1);
             const endVertex = g.vertices.get(indexV2);
             if (typeof startVertex == "undefined" || typeof endVertex == "undefined") continue;
@@ -2790,7 +2786,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             }
         }
         for ( const [indexV1,indexV2, data] of fmtEdgesList.values()){
-            const newLinkIndex = g.get_next_available_index_links();
+            const newLinkIndex = g.getNextAvailableIndexLinks();
             const startVertex = g.vertices.get(indexV1);
             const endVertex = g.vertices.get(indexV2);
             if (typeof startVertex == "undefined" || typeof endVertex == "undefined") continue;
@@ -2802,7 +2798,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
     override addVertex(vertexData: V): BasicVertex<V> {
-        const index = this.get_next_available_index_vertex();
+        const index = this.getNextAvailableIndexVertex();
         const newVertex = new BasicVertex(index, vertexData);
         this.vertices.set(index, newVertex);
         return newVertex;
@@ -2834,7 +2830,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
 
 
 
-    vertices_contained_by_area<A extends Area>(area: A): Set<number>{
+    verticesContaintedByArea<A extends Area>(area: A): Set<number>{
         const set = new Set<number>();
         this.vertices.forEach((vertex,vertex_index)=> {
             if (area.is_containing(vertex)){
@@ -2844,7 +2840,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
         return set;
     }
 
-    translate_vertices(indices: Iterable<number>, shift: Vect) {
+    translateVertices(indices: Iterable<number>, shift: Vect) {
         for (const index of indices) {
             const vertex = this.vertices.get(index);
             if (typeof vertex !== "undefined") {
@@ -2888,7 +2884,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     
         for (const [index,vertex] of this.vertices.entries()){
             if (vertex.isInRectangle(c1,c2)){
-                newGraph.set_vertex(index,vertex.data);
+                newGraph.setVertex(index,vertex.data);
             }
         }
         for (const [index,link] of this.links.entries()){
@@ -2956,7 +2952,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
     // Considering two links, if both have no control points, then we check if the straight segments between the endpoints have an intersection with the is_segments_intersection
     // If both have cps, then ???
     // If only one has a cp then ???
-    is_drawing_planar(): boolean{
+    isDrawingPlanar(): boolean{
         return this.crossings(true).length == 0;
     }
 
@@ -3040,18 +3036,18 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                     [link.startVertex.getPos(), link.endVertex.getPos()] :
                     [link.startVertex.getPos(), link.data.cp, link.endVertex.getPos()];
                     const vertexPos = bezier_curve_point(i/k, bezierPoints);
-                    const newVertexId = this.get_next_available_index_vertex();
+                    const newVertexId = this.getNextAvailableIndexVertex();
                     const v = vertexDefault(newVertexId, vertexPos);
                     this.vertices.set(newVertexId, v);
 
-                    const newLinkId = this.get_next_available_index_links();
+                    const newLinkId = this.getNextAvailableIndexLinks();
                     const newLink = linkDefault(newLinkId, link.orientation, link.data.color, previousVertex, v);
                     this.links.set(newLinkId, newLink);
                     
                     previousVertex = v;
                 }
 
-                const newLinkId = this.get_next_available_index_links();
+                const newLinkId = this.getNextAvailableIndexLinks();
                 const newLink = linkDefault(newLinkId, link.orientation, link.data.color, previousVertex, link.endVertex);
                 this.links.set(newLinkId, newLink);
 
@@ -3080,14 +3076,14 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
                 }
                 if (index1 < index2 ){
                     if ( v1.getPos().x < v2.getPos().x ){
-                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const arcIndex = this.get_next_available_index_links();
+                        if( this.hasArc(index1, index2) == false && this.hasArc(index2, index1) == false){
+                            const arcIndex = this.getNextAvailableIndexLinks();
                             const newArc = arcDefault(arcIndex, v1, v2);
                             this.links.set(arcIndex, newArc);
                         }
                     } else {
-                        if( this.has_arc(index1, index2) == false && this.has_arc(index2, index1) == false){
-                            const arcIndex = this.get_next_available_index_links();
+                        if( this.hasArc(index1, index2) == false && this.hasArc(index2, index1) == false){
+                            const arcIndex = this.getNextAvailableIndexLinks();
                             const newArc = arcDefault(arcIndex, v2, v1);
                             this.links.set(arcIndex, newArc);
                         }
@@ -3104,7 +3100,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * @returns [radius, centerIndex] 
      */
     radius(weights: undefined | Map<number, number>): [number, number] {
-        const {distances, next} = this.Floyd_Warhall(weights);
+        const {distances, next} = this.FloydWarshall(weights);
         let currentMinRadius = Infinity;
         let currentCenter = 0;
         for (const v of this.vertices.values()){
@@ -3138,7 +3134,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * It uses the algorithm of Floyd-Warshall.
      * @param weights if undefined, the weigth of an edge `e` is 1 if `e.weight == ""` or `parseFloat(e.weight)`. Otherwise use the values of the map `weights` for the weights.
      */
-    Floyd_Warhall( weights: undefined | Map<number, number>) {
+    FloydWarshall( weights: undefined | Map<number, number>) {
         // TODO try to implement it with a matrix
         const dist = new Map<number, Map<number, number>>();
         const next = new Map<number, Map<number, number>>();
@@ -3225,7 +3221,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * @example BasicGraph.cycle(5).longestGeodesic(undefined)[1]; // == 2
      */
     longestGeodesic(weights: undefined | Map<number, number>): [Array<number>, number]{
-        const f = this.Floyd_Warhall(weights);
+        const f = this.FloydWarshall(weights);
         let maxDist = 0;
         const longestPath = new Array();
 
@@ -3277,7 +3273,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
      * @note if weight of edge is "" or cannot be parsed into a float, then weight is set to 1
      * @note it only considers edges
      */
-    minimum_spanning_tree(): [number, Array<Link<V,L>>] {
+    minimumSpanningTree(): [number, Array<Link<V,L>>] {
         const edges = new Array<[Link<V,L>,number]>();
         for (const link of this.links.values()){
             if (link.orientation == ORIENTATION.UNDIRECTED){
@@ -3344,7 +3340,7 @@ export class BasicGraph<V extends BasicVertexData, L extends BasicLinkData> exte
             euclidianDist.set(link.index, link.startVertex.distTo(link.endVertex));
         }
 
-        const data = this.Floyd_Warhall(euclidianDist);
+        const data = this.FloydWarshall(euclidianDist);
         const distances = data.distances;
 
         let shortestPath = new Array();

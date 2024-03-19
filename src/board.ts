@@ -210,7 +210,7 @@ export class Board<V extends BasicVertexData, L extends BasicLinkData, S extends
                 area.translate(shift);
             }
         }
-        this.graph.translate_vertices(contained_vertices, shift);
+        this.graph.translateVertices(contained_vertices, shift);
     }
 
     get_subgraph_from_area(area_index: number): Graph<V,L>{
