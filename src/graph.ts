@@ -19,6 +19,7 @@ export enum ELEMENT_TYPE {
 // TODO should be removed by implementing a method for IDS
 enum DominationVariant {
     Independent,
+    OrientedIndependent
 }
 
 
@@ -2087,6 +2088,30 @@ export class Graph<V,L> {
                     }
                 }
 
+                if (variant == DominationVariant.OrientedIndependent){
+                    // Check that subset is Indep
+                    // If there is an edge between the subset, then return the curretMin (and therefore do not update it)
+                    // This branch could have cut above.
+                    for (const x of subset){
+                        for (const y of subset){
+                            if (x != y){
+                                const nx = this.get_in_neighbors_list(x);
+                                if (typeof nx != "undefined"){
+                                    if (nx.indexOf(y) >= 0){
+                                        return currentMin;
+                                    }
+                                }
+                                const nx2 = this.get_out_neighbors_list(x);
+                                if (typeof nx2 != "undefined"){
+                                    if (nx2.indexOf(y) >= 0){
+                                        return currentMin;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 const subsetCopy = new Set(subset);
                 return subsetCopy;
             } else {
@@ -2315,9 +2340,11 @@ export class Graph<V,L> {
     }
 
     /**
-     * @returns a minimum quasi kernel: it is a subset X of the vertices such that all vertices of the digraph are at distance at most 2 to a vertex of X.
+     * @returns a minimum quasi kernel: it is an independent subset X of the vertices such that all vertices of the digraph are at distance at most 2 to a vertex of X.
      * @remark the edges are not considered
      * @example 
+     * AbstractGraph.orientedCycle(4).minQuasiKernel().size == 2;
+     * @todo specific algo for the independent. Should cut branching when to adjacent vertices are taken.
     */
     minQuasiKernel(): Set<number>{
 
@@ -2365,7 +2392,7 @@ export class Graph<V,L> {
             }
             neighborsDistAtMost2.set(vId, vNeighborsDist2);
         }
-        return this.auxMinDominatingSet(new Set(), toDominate, choosable, allVertices, undefined, neighborsDistAtMost2, dist2independentSet.size);
+        return this.auxMinDominatingSet(new Set(), toDominate, choosable, allVertices, DominationVariant.OrientedIndependent, neighborsDistAtMost2, dist2independentSet.size);
     }
 
 
