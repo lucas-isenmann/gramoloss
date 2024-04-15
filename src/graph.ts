@@ -668,6 +668,22 @@ export class Graph<V,L> {
     }
 
     /**
+     * Return the minimum (undirected) degree of the graph.
+     * Out-neighbors and In-neighbors are not considered.
+     * @returns Infinity if there is no vertex
+     */
+    minDegree(): number{
+        let record = Infinity;
+        for ( const vId of this.vertices.keys()){
+            let degree = this.getNeighborsList(vId).length;
+            if ( degree < record ){
+                record = degree;
+            }
+        }
+        return record;
+    }
+
+    /**
      * Return minimum in-degree of the graph
      * @returns `""` if there is no vertex
      * @TODO replace string return by undefined
@@ -819,27 +835,27 @@ export class Graph<V,L> {
                 stack.push([v,-1]);
                 let r = stack.pop();
                 while (typeof r != "undefined"){
-                    const [u_index, last] = r;
-                    // console.log("stack", u_index);
-                    if (visited.has(u_index)){
+                    const [uIndex, last] = r;
+                    // console.log("stack", uIndex);
+                    if (visited.has(uIndex)){
                         console.log("bug")
                         return [true, []];
                     }
-                    visited.add(u_index);
+                    visited.add(uIndex);
                     
-                    const neighbors = this.getNeighborsList(u_index);
-                    for (const n_index of neighbors) {
-                        if ( n_index != last ){
-                            if (visited.has(n_index) == false){
-                                previous.set(n_index, u_index);
-                                stack.push([n_index, u_index]);
+                    const neighbors = this.getNeighborsList(uIndex);
+                    for (const nIndex of neighbors) {
+                        if ( nIndex != last ){
+                            if (visited.has(nIndex) == false){
+                                previous.set(nIndex, uIndex);
+                                stack.push([nIndex, uIndex]);
                             }
                             else {
                                 const cycle = new Array<number>();
-                                cycle.push(n_index);
-                                cycle.push(u_index);
-                                let j = previous.get(u_index);
-                                while ( typeof j != "undefined" && j != n_index){
+                                cycle.push(nIndex);
+                                cycle.push(uIndex);
+                                let j = previous.get(uIndex);
+                                while ( typeof j != "undefined" && j != nIndex){
                                     cycle.push(j);
                                     j = previous.get(j);
                                 }
@@ -854,6 +870,118 @@ export class Graph<V,L> {
             }
         }
         return [false, []];
+    }
+
+     /**
+     * 
+     * @returns girth of the graph. It is the minimum length of a cycle.
+     * If there is no cycle then `Infinity` is returned.
+     * If there is a cycle, a list of its consecutive vertices is returned.
+     * 
+     * @example
+    * AbstractGraph.generateClique(4).girth() == 3
+    * AbstractGraph.generatePaley(13).girth() == 3
+    * AbstractGraph.petersen().girth() == 5
+    * AbstractGraph.star(3).girth() == 0
+     */
+    girth(): number{
+        const cycle = this.shortestCycle();
+        if (cycle.length == 0){
+            return Infinity;
+        } else {
+            return cycle.length;
+        }
+    }
+
+
+
+    /**
+    * @returns a shortest cycle. It is a cycle of minimum length.
+    * Returns an empty array if there is no cycle.
+    * 
+    * @example
+    * AbstractGraph.generateClique(4).shortestCycle().length == 3
+    * AbstractGraph.generatePaley(13).shortestCycle().length == 3
+    * AbstractGraph.petersen.shortestCycle().length == 5
+    * AbstractGraph.star(3).shortestCycle().length == 0
+    */
+    shortestCycle(): Array<number> {
+        let girth = Infinity;
+        const shortestCycle = new Array<number>();
+    
+        for (const v of this.vertices.keys()) {
+            const visited = new Set();
+            const distances = new Map<number, number>();
+            const predecessors = new Map<number, number>();
+            // console.log("starting vertex", v);
+
+            if (!visited.has(v)) {
+                const queue = new Array<[number, number, number]>();
+                queue.push([v,0, Infinity]); // Queue for BFS, each element is [vertex, distance, predecessor]
+                // console.log("init push ", [v,0, Infinity]);
+                while (queue.length > 0) {
+                    const elt = queue.shift();
+                    if (typeof elt != "undefined"){
+                        const [current, distance, prede] = elt;
+                        if (visited.has(current)) {
+                            // Cycle detected because current was already visited
+                            // It means that it has a shortest path to v of length distances[current]
+                            // We have also reached current from prede
+
+                            // console.log("cycle ", current,  "dist", distance, "from ", prede, "and", predecessors.get(current))
+                            const d = distances.get(current);
+                            if (typeof d != "undefined"){
+                                const cycleLength = distance + d;
+                                // console.log("cycle length", cycleLength);
+                                if (cycleLength < girth) {
+                                    girth = cycleLength;
+                                    // Reconstruct the shortest cycle by computing the path from current to v
+                                    // and from prede to v
+                                    let cycleStart = current;
+                                    shortestCycle.splice(0, shortestCycle.length);
+                                    shortestCycle.push(cycleStart);
+                                    while (cycleStart !== v) {
+                                        const pred = predecessors.get(cycleStart);
+                                        if (typeof pred != "undefined"){
+                                            cycleStart = pred;
+                                            shortestCycle.push(cycleStart);
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    
+                                    cycleStart = prede;
+                                    while (cycleStart !== v) {
+                                        shortestCycle.unshift(cycleStart);
+                                        const pred = predecessors.get(cycleStart);
+                                        if (typeof pred != "undefined"){
+                                            cycleStart = pred;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    // console.log("final cycle", shortestCycle)
+                                }
+                            }
+                        } else {
+                            // console.log("visit ", current, "dist ",  distance, "pred ", prede);
+                            visited.add(current);
+                            distances.set(current, distance);
+                            predecessors.set(current, prede); // Set the predecessor to the last vertex in the queue
+                            for (const neighbor of this.getNeighborsList(current)) {
+                                if (!visited.has(neighbor)) {
+                                    // console.log("push" , neighbor, distance+1)
+                                    queue.push([neighbor, distance + 1, current]);
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+    
+        return shortestCycle; 
     }
 
 

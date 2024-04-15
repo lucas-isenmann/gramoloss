@@ -67,3 +67,11 @@ console.log(typeof c2 != "undefined" && c2.length == 3);
 
 const c3 = AbstractGraph.fromArcsListDefault([[0,1],[1,2],[2,3],[3,0],[3,1]]).getDirectedCycle();
 console.log(typeof c3 != "undefined");
+
+
+console.log(AbstractGraph.petersen().girth() == 5);
+console.log(AbstractGraph.generateClique(4).girth() == 3);
+console.log(AbstractGraph.generateClique(5).girth() == 3);
+console.log(AbstractGraph.generatePaley(13).girth() == 3);
+console.log(AbstractGraph.generatePath(4).girth() == Infinity);
+

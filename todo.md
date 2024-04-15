@@ -25,7 +25,7 @@
 - [X] is bipartite
 - [X] is coloring proper, chromatric number, chromatic index
 - [X] has cycle
-- [ ] girth
+- [X] girth
 - [ ] degree sequence
 - [ ] tree width
 - [X] clique number
@@ -33,6 +33,8 @@
 - [X] stretch
 - [X] dominating set
 - [ ] minCDS, minIDS, minTDS, minEDS
+- [ ] FVS
+- [ ] FAS
 
 ## Generators
 
