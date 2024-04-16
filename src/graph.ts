@@ -2312,6 +2312,110 @@ export class Graph<V,L> {
 
     }
 
+
+    private auxMinConnectedDominatingSet(subset: Set<number>, toDominate: Array<number>, choosable: Array<number>, currentMin: Set<number>, neighbors: Map<number, Array<number>>, lowerBound: number): Set<number>{
+        // console.log("-------");
+        // console.log("subset", subset);
+        // console.log("toDom", toDominate);
+        // console.log("choosable", choosable);
+        // console.log("currentMin", currentMin);
+        if (toDominate.length == 0){
+            if (subset.size < currentMin.size){
+                const subsetCopy = new Set(subset);
+                return subsetCopy;
+            } else {
+                return currentMin;
+            }
+        }
+        /*
+        Algorithm: branch on a vertex of choosable
+        - either add the vertex to the subset (and then change choosable)
+        - either not
+        */
+
+        if (choosable.length == 0){
+            return currentMin;
+        }
+
+        if (subset.size +1 >= currentMin.size){
+            return currentMin;
+        }
+
+        if (currentMin.size == lowerBound){
+            return currentMin;
+        }
+
+        // Search for the choosable vertex which maximizes the number of newly dominated vertices
+        let best: undefined | number = undefined;
+        let bestCounter = -1;
+        for (let i = 0; i < choosable.length; i++){
+            const v = choosable[i];
+            const vNeighbors = neighbors.get(v);
+            if (typeof vNeighbors != "undefined"){
+                let counter = 0;
+                for (const x of toDominate){
+                    if (vNeighbors.indexOf(x) >= 0 || x == v){
+                        counter ++;
+                    }
+                }
+                if (counter > bestCounter){
+                    bestCounter = counter;
+                    best = i;
+                }
+            }
+        }
+        // let best = Math.floor(Math.random()*choosable.length);
+        if (typeof best == "undefined"){
+            return currentMin;
+        } else {
+            const v = choosable[best]
+            const vNeighbors = neighbors.get(v);
+            // console.log("branch ", v, vNeighbors);
+
+            if (typeof vNeighbors != "undefined"){
+                const newToDominate = new Array();
+                for (const x of toDominate){
+                    if ( vNeighbors.indexOf(x) == -1 && x != v){
+                        newToDominate.push(x);
+                    }
+                }
+
+                // Update choosable
+                // choosable.splice(best, 1);
+                const updatedChoosable = new Array();
+                for (const u of choosable){
+                    if (u != v){
+                        updatedChoosable.push(u);
+                    }
+                }
+                // Insert unselected neighbors of v into updatedChoosable
+                for (const neighbor of vNeighbors){
+                    if (subset.has(neighbor) == false){
+                        updatedChoosable.push(neighbor);
+                    }
+                }
+
+                // console.log(updatedChoosable);
+                // Case: take v
+                // if (newToDominate.length < toDominate.length){
+                    subset.add(v);
+                    currentMin = this.auxMinConnectedDominatingSet(subset, newToDominate, updatedChoosable, currentMin, neighbors, lowerBound);
+                    subset.delete(v);
+                // }
+                // Case: do not take v
+
+                choosable.splice(best, 1);
+                currentMin = this.auxMinConnectedDominatingSet(subset, toDominate, choosable, currentMin, neighbors, lowerBound);
+                choosable.push(v);
+
+                return currentMin;
+            } else {
+                return currentMin;
+            }
+        }
+
+    }
+
     /**
      * @returns a distance-2 independent set
      * @algorithm random
@@ -2353,6 +2457,52 @@ export class Graph<V,L> {
         }
 
         return subset;
+    }
+
+    /**
+     * @returns a minimum connected dominating set if the graph is connected: it is a connected subset X of the vertices such that all vertices of the graph are in X or adjacent to a vertex of X.
+     * @returns undefined if the graph is not connected
+     * @example 
+     * AbstractGraph.generatePath(5).minConnectedDominatingSet().size; // = 3
+     * AbstractGraph.generateClique(3).minConnectedDominatingSet().size; // = 1
+    */
+    minConnectedDominatingSet(): Set<number> | undefined{
+
+        // If the graph is not connected, then there is no connected dominating set
+        if (this.isConnected() == false){
+            return undefined;
+        }
+
+        // Compute in polynomial time a dist2 independent set
+        // The size of this set gives a lower bound on the minCDS
+        const dist2independentSet = this.greedyLowerBoundDS();
+
+        // Prepare for the algorithm
+        let currentMin = new Set<number>();
+        const neighbors = new Map<number, Array<number>>();
+        for (const vId of this.vertices.keys()){
+            currentMin.add(vId);
+            neighbors.set(vId, this.getNeighborsList(vId));
+        }
+
+
+        // Start with every vertex
+        for (const startVertexId of this.vertices.keys()){
+            // console.log("start vertex", startVertexId);
+            const choosable = new Array<number>();
+            choosable.push(startVertexId);
+
+            const toDominate = new Array<number>();
+            for (const vId of this.vertices.keys()){
+                toDominate.push(vId);
+            }
+            // console.log(choosable);
+            // console.log(currentMin);
+
+            currentMin = this.auxMinConnectedDominatingSet(new Set(), toDominate, choosable, currentMin, neighbors, dist2independentSet.size);
+        }
+        console.log(currentMin);
+        return currentMin;
     }
 
     /**
@@ -2417,6 +2567,22 @@ export class Graph<V,L> {
      */
     independentDominationNumber(): number {
         return this.minDominatingSet(DominationVariant.Independent).size;
+    }
+
+    /**
+     * @returns the size of a minimum connected dominating set if the graph is connected
+     * @returns undefined if the graph is not connected
+     * @example 
+     * AbstractGraph.generatePath(5).connectedDominationNumber(); // = 3
+     * AbstractGraph.petersen().connectedDominationNumber(); // = 4
+     */
+    connectedDominationNumber(): number | undefined {
+        const cds = this.minConnectedDominatingSet();
+        if (typeof cds == "undefined"){
+            return undefined;
+        } else {
+            return cds.size;
+        }
     }
 
 

@@ -32,7 +32,10 @@
 - [X] vertex cover
 - [X] stretch
 - [X] dominating set
-- [ ] minCDS, minIDS, minTDS, minEDS
+- [X] minCDS
+- [X] minIDS
+- [ ] minTDS
+- [ ] minEDS
 - [ ] FVS
 - [ ] FAS
 
