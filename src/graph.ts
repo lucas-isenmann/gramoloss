@@ -14,10 +14,12 @@ export enum ELEMENT_TYPE {
 }
 
 
-// For the Dominating Set Algo
-// These are the 3 variants
-// TODO should be removed by implementing a method for IDS
-enum DominationVariant {
+
+/**
+ * For the Dominating Set Algo
+ * @todo should be removed by implementing a method for IDS
+ */
+export enum DominationVariant {
     Independent,
     OrientedIndependent
 }
