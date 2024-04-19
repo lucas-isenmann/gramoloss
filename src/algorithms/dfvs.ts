@@ -96,7 +96,7 @@ function aux(
     ){
         // console.log("_".repeat(depth) + "aux");
         // There is no more vertices
-        if (vertices.length <= 2){
+        if (vertices.length <= 1){
             if (current.size < best.size){
                 best.clear();
                 for (const vId of current){
@@ -111,11 +111,11 @@ function aux(
 
         const components = scc(vertices, outNeighbors, inNeighbors);
         if (components.length >= 2){
-            // console.log("decomposable");
+            // console.log("decomposable into ", components.length, "components");
             
             const agregateMinSol = new Set<number>();
             for (const compo of components){
-
+                // console.log(compo);
                 const compoVertices = Array.from(compo);
 
                 // Compute out-neighbors restricted to compo
@@ -162,7 +162,7 @@ function aux(
                     }
                 }
 
-                aux(compoVertices, choosable, new Set(), compoBest, compoOutNeighbors, compoInNeighbors, depth+1);
+                aux(compoVertices, compoChoosable, new Set(), compoBest, compoOutNeighbors, compoInNeighbors, depth+1);
 
                 for (const vId of compoBest){
                     agregateMinSol.add(vId);
