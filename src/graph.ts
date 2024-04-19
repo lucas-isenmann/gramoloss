@@ -5,6 +5,7 @@ import { Area } from './area';
 import { bezier_curve_point, det, is_quadratic_bezier_curves_intersection, is_segments_intersection, segmentsInteriorIntersection } from './utils';
 import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
+import { minDFVS } from './algorithms/dfvs';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -439,11 +440,16 @@ export class Graph<V,L> {
         return neighbors;
     }
 
-    getOutNeighborsList(i: number): Array<number> {
+    /**
+     * 
+     * @param vertexId 
+     * @returns an Array of the out-neighbors ids
+     */
+    getOutNeighborsList(vertexId: number): Array<number> {
         let neighbors = new Array<number>();
         for (let e of this.links.values()) {
             if (e.orientation == ORIENTATION.DIRECTED) {
-                if (e.startVertex.index == i) {
+                if (e.startVertex.index == vertexId) {
                     neighbors.push(e.endVertex.index);
                 }
             }
@@ -2629,6 +2635,27 @@ export class Graph<V,L> {
         }
 
         return subset;
+    }
+
+    /**
+     * DFVS: a subset X of the vertices such that all cycles contain a vertex of this subset.
+     * Equivalently: G-X has no cycle
+     * Equivalently: G-X is a DAG
+     */
+    minDirectedFeedbackVertexSet(): Set<number>{
+        return minDFVS(this);
+    }
+
+    /**
+     * 
+     * @returns the minimum size of a DFVS
+     * @example
+     * AbstractGraph.orientedPath(5).directedFeedbackVertexSetNumber() == 0;
+     * AbstractGraph.orientedCycle(3).directedFeedbackVertexSetNumber() == 1;
+     * AbstractGraph.paley(7).directedFeedbackVertexSetNumber() == 4;
+     */
+    directedFeedbackVertexSetNumber(): number {
+        return minDFVS(this).size;
     }
 
     /**
