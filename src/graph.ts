@@ -6,6 +6,7 @@ import { bezier_curve_point, det, is_quadratic_bezier_curves_intersection, is_se
 import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
+import { getDirectedCycle } from './algorithms/cycle';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -1000,49 +1001,60 @@ export class Graph<V,L> {
      * @remark Iterative version
      */
     getDirectedCycle(): undefined | Array<number> {
-        const state = new Map<number, number>();
-        // if a vertexIndex is a key of state, then the value is either 1 for DISCOVERED
-        // either 2 for TREATED, which means that no cycle start from this vertex
-        // if a vertexIndex is not a key, then is is considered as UNDISCOVERED
-
-        for (const v of this.vertices.keys()) {
-            if ( state.has(v) == false){
-                const stack = new Array<number>();
-                const previous = new Map<number,number>();
-                stack.push(v);
-                while (stack.length > 0){
-                    const u = stack[stack.length-1]; 
-
-                    if (state.has(u) == false){
-                        state.set(u, 1); // 1 is DISCOVERED
-                        const neighbors = this.getOutNeighborsList(u);
-                        for (const uNeighbor of neighbors) {
-                            if ( state.has(uNeighbor) == false){
-                                previous.set(uNeighbor, u);
-                                stack.push(uNeighbor);
-                            } else if (state.get(uNeighbor) == 1) {
-
-                                const cycle = new Array<number>();
-                                cycle.push(uNeighbor);
-                                cycle.push(u);
-                                let j = previous.get(u);
-                                while ( typeof j != "undefined" && j != uNeighbor){
-                                    cycle.push(j);
-                                    j = previous.get(j);
-                                }
-                                return cycle;
-                            }
-                        }
-                    }
-                    else {
-                        stack.pop();
-                        state.set(u, 2); // TREATED, no cycle starts from u
-                    }
-                    
-                }
+        const outNeighbors = new Map<number, Set<number>>();
+        for (const v of this.vertices.values()){
+            const vOutNeighbors = new Set<number>();
+            for (const neigh of this.getOutNeighborsList(v.index)){
+                vOutNeighbors.add(neigh);
             }
+            outNeighbors.set(v.index, vOutNeighbors);
         }
-        return undefined;
+
+        return getDirectedCycle(outNeighbors.keys(), outNeighbors);
+
+        // const state = new Map<number, number>();
+        // // if a vertexIndex is a key of state, then the value is either 1 for DISCOVERED
+        // // either 2 for TREATED, which means that no cycle start from this vertex
+        // // if a vertexIndex is not a key, then is is considered as UNDISCOVERED
+
+        // for (const v of this.vertices.keys()) {
+        //     if ( state.has(v) == false){
+        //         const stack = new Array<number>();
+        //         const previous = new Map<number,number>();
+        //         stack.push(v);
+        //         while (stack.length > 0){
+        //             const u = stack[stack.length-1]; 
+
+        //             if (state.has(u) == false){
+        //                 state.set(u, 1); // 1 is DISCOVERED
+        //                 const neighbors = this.getOutNeighborsList(u);
+        //                 for (const uNeighbor of neighbors) {
+        //                     if ( state.has(uNeighbor) == false){
+        //                         previous.set(uNeighbor, u);
+        //                         stack.push(uNeighbor);
+        //                     } else if (state.get(uNeighbor) == 1) {
+
+        //                         const cycle = new Array<number>();
+        //                         cycle.push(uNeighbor);
+        //                         cycle.push(u);
+        //                         let j = previous.get(u);
+        //                         while ( typeof j != "undefined" && j != uNeighbor){
+        //                             cycle.push(j);
+        //                             j = previous.get(j);
+        //                         }
+        //                         return cycle;
+        //                     }
+        //                 }
+        //             }
+        //             else {
+        //                 stack.pop();
+        //                 state.set(u, 2); // TREATED, no cycle starts from u
+        //             }
+                    
+        //         }
+        //     }
+        // }
+        // return undefined;
     }
 
 

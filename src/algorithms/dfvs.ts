@@ -1,6 +1,8 @@
 // DFVS: Directed Feedback Vertex Set
 
 import { Graph } from "../graph";
+import { getDirectedCycle } from "./cycle";
+import { getInducedSubgraph } from "./inducedSubgraph";
 
 
 function visit (cur: number, 
@@ -94,9 +96,11 @@ function aux(
     inNeighbors: Map<number, Set<number>>,
     depth: number
     ){
-        // console.log("_".repeat(depth) + "aux");
-        // There is no more vertices
-        if (vertices.length <= 1){
+        // const predebug = "_".repeat(depth)
+        // console.log(predebug, "aux");
+
+        // There is no cycle
+        if (vertices.length <= 1 ) { //  || typeof getDirectedCycle(vertices, outNeighbors) == "undefined"){
             if (current.size < best.size){
                 best.clear();
                 for (const vId of current){
@@ -111,11 +115,11 @@ function aux(
 
         const components = scc(vertices, outNeighbors, inNeighbors);
         if (components.length >= 2){
-            // console.log("decomposable into ", components.length, "components");
+            // console.log(predebug, "decomposable into ", components.length, "components");
             
             const agregateMinSol = new Set<number>();
             for (const compo of components){
-                // console.log(compo);
+                // console.log(predebug, compo);
                 const compoVertices = Array.from(compo);
 
                 // Compute out-neighbors restricted to compo
@@ -169,12 +173,14 @@ function aux(
                 }
 
             }
-            best.clear();
-            for (const vId of agregateMinSol){
-                best.add(vId);
-            }
-            for (const vId of current){
-                best.add(vId);
+            if (agregateMinSol.size + current.size < best.size){
+                best.clear();
+                for (const vId of agregateMinSol){
+                    best.add(vId);
+                }
+                for (const vId of current){
+                    best.add(vId);
+                }
             }
             return;
         }
@@ -185,17 +191,20 @@ function aux(
 
         // There is exactly 1 strongly connected component
         // Branch on every vertex
+        if (current.size >= best.size) return;
 
         const v = choosable.pop();
-        // console.log("branch on choosable.back()", v);
+        // console.log(predebug, "branch on choosable.back()", v);
         if (typeof v == "undefined") return;
 
-        if (current.size >= best.size) return;
 
         // Case: v is not used
         aux(vertices, choosable, current, best, outNeighbors, inNeighbors, depth+1);
 
-        if (current.size + 1 >= best.size) return;
+        if (current.size + 1 >= best.size) {
+            choosable.push(v);
+            return;
+        }
 
         // Case: v is used: remove it from the graph
         // Update structure after selecting v
@@ -272,4 +281,21 @@ export function minDFVS<V,L>(g: Graph<V,L>): Set<number>{
         inNeighbors, 0);
 
     return best;
+}
+
+
+
+
+
+
+
+export function DFVSproperty<V,L>(g: Graph<V,L>, subset: Set<number>): boolean{
+    const complementary = new Set<number>();
+    for (const vId of g.vertices.keys()){
+        if (subset.has(vId) == false){
+            complementary.add(vId);
+        }
+    }
+    const sub = getInducedSubgraph(g, complementary);
+    return (typeof getDirectedCycle(complementary, sub.outNeighbors) == "undefined");
 }

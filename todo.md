@@ -38,6 +38,7 @@
 - [ ] minEDS
 - [ ] FVS
 - [ ] FAS
+- [X] DFVS: Directed Feedback Vertex Set
 
 ## Generators
 
@@ -50,3 +51,12 @@
 - [ ] Paley prime power
 - [ ] hypercube
 - [ ] k trees
+
+## Structure
+
+Reorganization of the algorithms which are using subgraph (like DFVS).
+
+- just a method?
+- different files
+- use interface?
+- 

@@ -2,11 +2,11 @@
 
 Graph (or network) theory tools.
 
-This package contains a graph structure based on a map of edges and arcs (called links). Matrix graph structure is on the road map but not implemented for the moment. Several graph parameters are implemented (like degree statistics, chromatic number, vertex cover number, clique number, ...).
+This package contains a graph structure based on a map of edges and arcs (called links). Matrix graph structure is on the road map but not implemented for the moment. Several graph parameters are implemented (degree statistics, chromatic number, vertex cover number, clique number, domination number, ...).
 
 It is still in developpement.
 
-This package is mainly devoted to the online collaborative graph editor [gracoon.com](http://gracoon.com) :rocket:
+This package is mainly devoted to the online collaborative graph editor [gracoon.com](https://www.gracoon.com) :rocket:
 
 ## Install
 
