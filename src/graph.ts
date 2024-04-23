@@ -483,7 +483,7 @@ export class Graph<V,L> {
         for (const link of this.links.values()) {
             if (link.orientation == ORIENTATION.DIRECTED) {
                 if (link.endVertex.index == v.index) {
-                    neighbors.push(link.endVertex);
+                    neighbors.push(link.startVertex);
                 }
             }
         }
