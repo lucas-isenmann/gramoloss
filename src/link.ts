@@ -26,6 +26,14 @@ export class Link<V,L> {
         this.data = data;
     }
 
+    flip() {
+        if (this.orientation == ORIENTATION.DIRECTED){
+            const v = this.startVertex;
+            this.startVertex = this.endVertex;
+            this.endVertex = v;
+        }
+    }
+
    
     /**
      * Return true iff at least one extremity of the link is in the set `s`.

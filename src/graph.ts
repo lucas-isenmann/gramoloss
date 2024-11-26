@@ -7,6 +7,7 @@ import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
+import { isTournamentLight } from './algorithms/isTournamentLight';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -180,6 +181,36 @@ export class Graph<V,L> {
 
 
     /**
+     * 
+     * @returns the adjacency matrix of size nxn of the undirected links
+     */
+    getMatrix(): Array<Array<boolean>> {
+        const n = this.vertices.size;
+        const m = new Array(n);
+        const indices = new Map<number, number>();
+        let k = 0;
+        for (const [id, v] of this.vertices){
+            indices.set(id, k);
+            k ++;
+        }
+
+        for (const [id, v] of this.vertices){
+            const i = indices.get(id);
+            if (typeof i != "undefined"){
+                m[i] = new Array(n);
+                for (const w of this.getNeighbors(v)) {
+                    const j = indices.get(w.index);
+                    if (typeof j != "undefined"){
+                        m[j] = true;
+                    }
+                }
+            }
+        }
+        return m;
+    }
+
+
+    /**
      * Return the list of the extremeties of the arcs.
      */
     arcsList(): Array<[number, number]>{
@@ -230,8 +261,28 @@ export class Graph<V,L> {
     //     }
     // }
 
-    
 
+    /**
+     * A tournament is light if and only there does not exist different vertices u,v,a,b,c such that
+     * u -> v
+     * and a -> b -> c -> a is an oriented triangle
+     * and v -> a,b,c
+     * and a,b,c -> u
+     * @returns 
+     */
+    isTournamentLight(): boolean {
+        return isTournamentLight(this);
+    }
+
+    flipArc(u: number, v: number) {
+        if ( this.hasArc(u, v) && this.hasArc(v,u) == false){
+            for (const [linkId, link] of this.links){
+                if (link.signatureEquals(u,v, ORIENTATION.DIRECTED)) {
+                    link.flip();
+                }
+            }
+        }
+    }
 
 
 

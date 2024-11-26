@@ -158,6 +158,18 @@ export function generateUTournament(n: number): EmbeddedGraph {
 
 
 /**
+ * An acyclic tournament is a tournament which contains no directed cycle.
+ * Such a graph is a Directed Acyclic Graph (DAG).
+ * @param n number of vertices
+ */
+export function generateAcyclicTournament(n: number): EmbeddedGraph {
+    return generateUGTournament(n, 0);
+}
+
+
+
+
+/**
  * v(i) -> v(i-j) for all j in [1,k]
  * @param n number of vertices
  * @param k order
