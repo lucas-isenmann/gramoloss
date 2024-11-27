@@ -8,6 +8,7 @@ import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
 import { isTournamentLight } from './algorithms/isTournamentLight';
+import { acyclicColoring, dichromatic } from './algorithms/dichromatic';
 
 export enum ELEMENT_TYPE {
     VERTEX = "VERTEX",
@@ -1576,6 +1577,35 @@ export class Graph<V,L> {
             if (this.auxChroma(k, coloring, possibleColors, neighbors, cliques)) return coloring;
             k += 1;
         }
+    }
+
+
+    /**
+     * The dichromatic number is the minimum k such that if the vertices are colored with k colors, then the subgraph induced by each color is acyclic (there is no directed cycle)
+     * @returns 
+     * 
+     * What happens if a graph has a directed loop?
+     * 
+     */
+    minimumProperDicoloring(): Array<number> {
+        for (let i = 1; i < this.vertices.size; i ++){
+            const coloring = acyclicColoring(this, i);
+            if (coloring.length > 0){
+                return coloring;
+            }
+        }
+        return [];
+    }
+
+    /**
+     * The dichromatic number is the minimum k such that if the vertices are colored with k colors, then the subgraph induced by each color is acyclic (there is no directed cycle)
+     * @returns 
+     * 
+     * What happens if a graph has a directed loop?
+     * 
+     */
+    dichromaticNumber(): number {
+        return dichromatic(this);
     }
     
 
