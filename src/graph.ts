@@ -210,6 +210,29 @@ export class Graph<V,L> {
         return m;
     }
 
+    getDirectedMatrix(): Array<Array<boolean>> {
+        const n = this.vertices.size;
+        const m = new Array(n);
+        const indices = new Map<number, number>();
+        let k = 0;
+        for (const [id, v] of this.vertices){
+            m[k] = new Array<boolean>(n).fill(false);
+            indices.set(id, k);
+            k ++;
+        }
+
+        for (const [_, link] of this.links){
+            if (link.orientation == ORIENTATION.DIRECTED) {
+                const i = indices.get(link.startVertex.index);
+                const j = indices.get(link.endVertex.index);
+                if (typeof i != "undefined" && typeof j != "undefined"){
+                    m[j][i] = true;
+                }
+            }
+        }
+        return m;
+    }
+
 
     /**
      * Return the list of the extremeties of the arcs.

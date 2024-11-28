@@ -12,15 +12,67 @@ import { Vertex } from "../vertex";
  * @param g 
  * @returns 
  */
-export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex<V>>> {
+export function tournamentLightConflict2(m: Array<Array<boolean>>): Option<Array<number>> {
 
+    let n = m.length;
+
+    const order = new Array<number>();
+    for (let u = 0; u < n; u ++){
+        for (let v = 0; v < n; v ++){
+            if ( m[v][u] == false) { continue };
+            order.splice(0, order.length);
+
+            for (let b = 0; b < n ; b ++){
+                if ( m[b][v] ){ // v -> b
+                    if (m[u][b] == false){
+                        continue;
+                    }
+                    let i = 0;
+                    while (i < order.length){
+                        const a = order[i];
+                        if ( m[a][b] ){
+                            break;
+                        }
+                        i ++;
+                    }
+                    let isCycle = false;
+                    let j = i+1;
+                    while (j < order.length){
+                        const c = order[j];
+                        if ( m[c][b] ){
+                        } else {
+                            isCycle = true;
+                            break;
+                        }
+                        j ++;
+                    }
+                    if (isCycle){
+                        return [u,v,order[j],b,order[i]];
+                    } else {
+                        order.splice( i, 0, b);
+                    }
+                }
+                
+            }
+        }
+            
+    }
+    
+
+    return undefined;
+}
+
+
+export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex<V>>> {
     for (const [_, u] of g.vertices){
         for (const v of g.getOutNeighbors(u)){
             const order = new Array<Vertex<V>>();
 
 
             for (const b of g.getOutNeighbors(v)){
-                
+                if (g.hasArc(b.index,u.index) == false){
+                    continue;
+                }
                 let i = 0;
                 while (i < order.length){
                     const a = order[i];
@@ -41,18 +93,16 @@ export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex
                     j ++;
                 }
                 if (isCycle){
-                    return [u,v,order[i],b,order[j]];
+                    return [u,v,order[j],b,order[i]];
                 } else {
                     order.splice( i, 0, b);
                 }
             }
         }
-            
     }
-    
-
     return undefined;
 }
+
 
 
 /**
