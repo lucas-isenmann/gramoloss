@@ -7,7 +7,7 @@ import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
-import { isTournamentLight, tournamentLightConflict2 } from './algorithms/isTournamentLight';
+import { isTournamentLight, searchHeavyArc } from './algorithms/isTournamentLight';
 import { acyclicColoring, dichromatic } from './algorithms/dichromatic';
 
 export enum ELEMENT_TYPE {
@@ -210,15 +210,50 @@ export class Graph<V,L> {
         return m;
     }
 
+    /**
+     * To every vertex id we associate an integer in {0,...,n-1}.
+     * indices[vertexId] = packedId in [0,n-1]
+     */
+    getStackedIndices(): [Map<number, number>, Array<number>] {
+        const n = this.vertices.size;
+        const indices = new Map<number, number>();
+        const reverse = new Array(n);
+        let k = 0;
+        for (const [id, v] of this.vertices){
+            indices.set(id, k);
+            reverse[k] = id;
+            k ++;
+        }
+        return [indices, reverse];
+    }
+
+
+    /**
+     * @todo TRANSPOSED
+     * Only print arcs
+     */
+    printDirectedAdjacencyMatrix() {
+        const m = this.getDirectedMatrix();
+
+        function boolToNum(b: boolean): number {
+            return b ? 1 : 0;
+        }
+        const matrix01 = m.map(row => row.map(boolToNum));
+        const matrixFormatted = matrix01.map(row => row.join(' ')).join('\n');
+
+        console.log(matrixFormatted)
+    }
+
+    /**
+     * Transposed Adjacency Matrix
+     */
     getDirectedMatrix(): Array<Array<boolean>> {
         const n = this.vertices.size;
         const m = new Array(n);
-        const indices = new Map<number, number>();
-        let k = 0;
-        for (const [id, v] of this.vertices){
-            m[k] = new Array<boolean>(n).fill(false);
-            indices.set(id, k);
-            k ++;
+        const [indices, _] = this.getStackedIndices();
+
+        for (let i = 0; i < n ; i ++){
+            m[i] = new Array<boolean>(n).fill(false);
         }
 
         for (const [_, link] of this.links){
@@ -285,6 +320,15 @@ export class Graph<V,L> {
     //     }
     // }
 
+    forceArc(u: number, v: number) {
+        if (this.hasArc(v, u)){
+            for (const [_, link] of this.links){
+                if (link.signatureEquals(v, u, ORIENTATION.DIRECTED)) {
+                    link.flip();
+                }
+            }
+        }
+    }
 
     /**
      * A tournament is light if and only there does not exist different vertices u,v,a,b,c such that
@@ -295,7 +339,16 @@ export class Graph<V,L> {
      * @returns undefined or a conflict [u,v,a,b,c]
      */
     lightnessConflict(): Option<Array<number>> {
-        return tournamentLightConflict2(this.getDirectedMatrix())
+        const m = this.getDirectedMatrix();
+        const [_, r] = this.getStackedIndices();
+        const heavyArc =  searchHeavyArc(m);
+
+        if (typeof heavyArc == "undefined"){
+            return undefined
+        } else {
+            const [u,v,a,b,c] = heavyArc;
+            return [r[u], r[v], r[a], r[b], r[c] ];
+        }
     }
 
     /**

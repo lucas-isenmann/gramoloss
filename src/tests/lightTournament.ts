@@ -1,5 +1,7 @@
-import { tournamentLightConflict, tournamentLightConflict2 } from "../algorithms/isTournamentLight";
+import { searchHeavyArc, tournamentLightConflict } from "../algorithms/isTournamentLight";
 import { generateAcyclicTournament, generateUTournament } from "../generators";
+import { AbstractGraph } from "../graph_abstract";
+import { ORIENTATION } from "../link";
 
 
 
@@ -7,6 +9,31 @@ import { generateAcyclicTournament, generateUTournament } from "../generators";
 // console.log(generateUTournament(3).isTournamentLight())
 // console.log(generateUTournament(4).isTournamentLight())
 // console.log(generateUTournament(5).isTournamentLight())
+
+
+{
+    const g = new AbstractGraph();
+
+    for (let i = 0; i < 6; i ++){
+        g.addVertex();
+    }
+
+    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
+    g.addLink(0,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(0,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,5, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,1, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(5,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(5,1, ORIENTATION.DIRECTED, undefined)
+
+    const m = g.getDirectedMatrix();
+    console.log(g.isTournamentLight() == true)
+}
+
 
 
 
@@ -31,7 +58,7 @@ let record = 0;
 
 let i = 1;
 do {
-    if (typeof tournamentLightConflict2(g.getDirectedMatrix()) == "undefined" ){
+    if (typeof searchHeavyArc(g.getDirectedMatrix()) == "undefined" ){
         c2 += 1
         const dchr = g.dichromaticNumber();
         if (dchr > record){

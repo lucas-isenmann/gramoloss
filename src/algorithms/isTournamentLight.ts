@@ -4,33 +4,41 @@ import { Vertex } from "../vertex";
 
 
 /**
- * A conflict is a list of 5 vertices u, v, a, b, c such that
- * u -> v
- * a -> b -> c -> a is a cycle
- * a,b,c -> u
- * v -> a,b,c
- * @param g 
- * @returns 
+ * @param m is the TRANSPOSED adjacency matrix of a directed graph
+ * @todo CHECK for loops
+ * 
+ * An arc u->v is said to be heavy if there exists vertices a, b, c such that
+ * - a -> b -> c -> a is a cycle
+ * - a,b,c -> u
+ * - v -> a,b,c
+ * 
+ * @returns undefined if there is no heavy arc (in that case the matrix is light)
+ * @returns [u,v,a,b,c] where u->v is an heavy arc
  */
-export function tournamentLightConflict2(m: Array<Array<boolean>>): Option<Array<number>> {
+export function searchHeavyArc(m: Array<Array<boolean>>): Option<Array<number>> {
 
     let n = m.length;
 
     const order = new Array<number>();
     for (let u = 0; u < n; u ++){
         for (let v = 0; v < n; v ++){
-            if ( m[v][u] == false) { continue };
+            if ( m[v][u] == false) { continue }; // Suppose m[v][u] = true so v <- u
+
+            // If u->v is not heavy then the vertices x such that v -> x -> u should be acyclic
+            // So there should be a partial order for them
+            // So we reconstruct the partial order incrementally
+            // If there is a vertex that cannot be inserted without conflicting with the current partial order then there is a triangle
             order.splice(0, order.length);
 
             for (let b = 0; b < n ; b ++){
-                if ( m[b][v] ){ // v -> b
-                    if (m[u][b] == false){
+                if ( m[b][v] ){ // b <- v
+                    if (m[u][b] == false){ // u <- b
                         continue;
                     }
                     let i = 0;
                     while (i < order.length){
                         const a = order[i];
-                        if ( m[a][b] ){
+                        if ( m[a][b] ){ // if a <- b break, it is the first in order, so order[k] -> b for every k<i
                             break;
                         }
                         i ++;
@@ -39,8 +47,7 @@ export function tournamentLightConflict2(m: Array<Array<boolean>>): Option<Array
                     let j = i+1;
                     while (j < order.length){
                         const c = order[j];
-                        if ( m[c][b] ){
-                        } else {
+                        if ( m[b][c] ){ //  b <- order[j]
                             isCycle = true;
                             break;
                         }
@@ -112,7 +119,8 @@ export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex
  * @returns 
  */
 export function isTournamentLight<V,L>(g: Graph<V,L>): boolean {
-    if (typeof tournamentLightConflict(g) == "undefined"){
+    const m = g.getDirectedMatrix();
+    if (typeof searchHeavyArc(m) == "undefined"){
         return true;
     } else {
         return false;
