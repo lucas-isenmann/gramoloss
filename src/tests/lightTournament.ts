@@ -1,14 +1,14 @@
 import { searchHeavyArc, tournamentLightConflict } from "../algorithms/isTournamentLight";
-import { generateAcyclicTournament, generateUTournament } from "../generators";
+import { generateAcyclicTournament, generateCirculantTournament, generateUTournament } from "../generators";
 import { AbstractGraph } from "../graph_abstract";
 import { ORIENTATION } from "../link";
 
 
 
 // const g = generateAcyclicTournament(3);
-// console.log(generateUTournament(3).isTournamentLight())
-// console.log(generateUTournament(4).isTournamentLight())
-// console.log(generateUTournament(5).isTournamentLight())
+ console.log(generateUTournament(3).isTournamentLight())
+ console.log(generateUTournament(4).isTournamentLight())
+ console.log(generateUTournament(5).isTournamentLight())
 
 
 {
@@ -30,8 +30,56 @@ import { ORIENTATION } from "../link";
     g.addLink(5,0, ORIENTATION.DIRECTED, undefined)
     g.addLink(5,1, ORIENTATION.DIRECTED, undefined)
 
-    const m = g.getDirectedMatrix();
     console.log(g.isTournamentLight() == true)
+}
+
+{
+    // Tri(C3,1,1)
+    const g = new AbstractGraph();
+    for (let i = 0; i < 5; i ++){
+        g.addVertex();
+    }
+
+    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(3,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(3,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,2, ORIENTATION.DIRECTED, undefined)
+
+    console.log(g.isTournamentLight() == false)
+}
+
+{
+    // Tri(C3,1,1) with one more vertex (so it is not a tournament)
+    const g = new AbstractGraph();
+    for (let i = 0; i < 6; i ++){
+        g.addVertex();
+    }
+
+    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(1,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(3,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,0, ORIENTATION.DIRECTED, undefined)
+    g.addLink(2,3, ORIENTATION.DIRECTED, undefined)
+    g.addLink(3,4, ORIENTATION.DIRECTED, undefined)
+    g.addLink(4,2, ORIENTATION.DIRECTED, undefined)
+    g.addLink(0,5, ORIENTATION.DIRECTED, undefined);
+
+    console.log(g.isTournamentLight() == false)
+}
+
+{
+    const g = generateCirculantTournament(4,[1,2,3,5])
+
+    console.log(g.isTournamentLight() == false)
 }
 
 
@@ -41,6 +89,7 @@ import { ORIENTATION } from "../link";
 // Speed test
 // -----------------
 
+/*
 const n = 7;
 const g = generateAcyclicTournament(n);
 let arcs = new Array<[number, number]>();
@@ -99,4 +148,4 @@ function log2(x: number): number{
         return 1 + log2(x / 2);
     }
 }
-
+*/

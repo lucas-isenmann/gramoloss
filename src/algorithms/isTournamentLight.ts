@@ -90,14 +90,14 @@ export function searchHeavyArcDigraph<V,L>(g: Graph<V,L>): Array<number>{
         for (const vId of g.getOutNeighborsList(reverse[u])){
             const v = indices.get(vId);
             if (typeof v != "undefined"){
-                outNeighbors[u].push();
+                outNeighbors[u].push(v);
             }
         }
         inNeighbors[u] = new Array<number>();
         for (const vId of g.getInNeighborsList(reverse[u])){
             const v = indices.get(vId);
             if (typeof v != "undefined"){
-                inNeighbors[u].push();
+                inNeighbors[u].push(v);
             }
         }
     }
