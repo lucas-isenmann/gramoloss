@@ -128,6 +128,17 @@ export function acyclicColoring<V,L>(g: Graph<V,L>, colorMax: number): Array<num
     
 }
 
+
+export function minAcyclicColoring<V,L>(g: Graph<V,L>): Array<number> {
+    for (let i = 1; i < g.vertices.size; i ++){
+        const coloring = acyclicColoring(g, i)
+        if (coloring.length > 0){
+            return coloring;
+        }
+    }
+    return [];
+}
+
 export function dichromatic<V,L>(g: Graph<V,L>): number {
     for (let i = 1; i < g.vertices.size; i ++){
         if (acyclicColoring(g, i).length > 0){

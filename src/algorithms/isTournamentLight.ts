@@ -35,6 +35,9 @@ export function searchHeavyArc(m: Array<Array<boolean>>): Option<Array<number>> 
                     if (m[u][b] == false){ // u <- b
                         continue;
                     }
+                    if( u== 4 && v == 1){
+                        console.log("---", b)
+                    }
                     let i = 0;
                     while (i < order.length){
                         const a = order[i];
@@ -53,6 +56,9 @@ export function searchHeavyArc(m: Array<Array<boolean>>): Option<Array<number>> 
                         }
                         j ++;
                     }
+                    if( u== 4 && v == 1){
+                        console.log(i, j, order, isCycle)
+                    }
                     if (isCycle){
                         return [u,v,order[j],b,order[i]];
                     } else {
@@ -67,6 +73,62 @@ export function searchHeavyArc(m: Array<Array<boolean>>): Option<Array<number>> 
     
 
     return undefined;
+}
+
+
+
+
+export function searchHeavyArcDigraph<V,L>(g: Graph<V,L>): Array<number>{
+
+    let [indices, reverse] = g.getStackedIndices();
+    const n = g.vertices.size;
+    let outNeighbors = new Array<Array<number>>(n);
+    let inNeighbors = new Array<Array<number>>(n);
+    
+    for (let u = 0; u < n; u ++){
+        outNeighbors[u] = new Array<number>();
+        for (const vId of g.getOutNeighborsList(reverse[u])){
+            const v = indices.get(vId);
+            if (typeof v != "undefined"){
+                outNeighbors[u].push();
+            }
+        }
+        inNeighbors[u] = new Array<number>();
+        for (const vId of g.getInNeighborsList(reverse[u])){
+            const v = indices.get(vId);
+            if (typeof v != "undefined"){
+                inNeighbors[u].push();
+            }
+        }
+    }
+
+
+    for (let u = 0; u < n ; u ++){
+        for (const v of outNeighbors[u]){
+            const vertices = new Array<number>();
+            for (const x of inNeighbors[u]){
+                if (outNeighbors[v].includes(x)){
+                    vertices.push(x);
+                }
+            }
+
+            for (const a of vertices){
+                for (const b of vertices){
+                    if (outNeighbors[a].includes(b)){
+                        for (const c of vertices){
+                            if (outNeighbors[b].includes(c) && inNeighbors[a].includes(c)){
+                                return [u,v,a,b,c]
+                            }
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+    
+
+    return []
 }
 
 
@@ -119,8 +181,9 @@ export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex
  * @returns 
  */
 export function isTournamentLight<V,L>(g: Graph<V,L>): boolean {
-    const m = g.getDirectedMatrix();
-    if (typeof searchHeavyArc(m) == "undefined"){
+    // const m = g.getDirectedMatrix();
+    return searchHeavyArcDigraph(g).length == 0;
+    if (typeof searchHeavyArcDigraph(g) == "undefined"){
         return true;
     } else {
         return false;

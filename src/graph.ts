@@ -7,7 +7,7 @@ import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
-import { isTournamentLight, searchHeavyArc } from './algorithms/isTournamentLight';
+import { isTournamentLight, searchHeavyArc, searchHeavyArcDigraph } from './algorithms/isTournamentLight';
 import { acyclicColoring, dichromatic } from './algorithms/dichromatic';
 
 export enum ELEMENT_TYPE {
@@ -339,9 +339,9 @@ export class Graph<V,L> {
      * @returns undefined or a conflict [u,v,a,b,c]
      */
     lightnessConflict(): Option<Array<number>> {
-        const m = this.getDirectedMatrix();
+        // const m = this.getDirectedMatrix();
         const [_, r] = this.getStackedIndices();
-        const heavyArc =  searchHeavyArc(m);
+        const heavyArc =  searchHeavyArcDigraph(this);
 
         if (typeof heavyArc == "undefined"){
             return undefined
