@@ -1,6 +1,6 @@
 {
   "name": "gramoloss",
-  "version": "1.10.7",
+  "version": "1.10.8",
   "description": "Graph theory package for edition and computation",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lucas-test/gramoloss"
+    "url": "git+https://github.com/lucas-test/gramoloss"
   },
   "keywords": [
     "graph",

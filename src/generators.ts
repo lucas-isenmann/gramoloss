@@ -400,6 +400,24 @@ export function generatePaleyGraph(p: number): EmbeddedGraph {
 }
 
 
+export function generateCirculantTournament(n: number, gaps: Array<number>): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+    const r = 50;
+    for ( let i = 0 ; i < (2*n+1) ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord( r*Math.cos( (2*Math.PI*i) /(2*n+1) ), r*Math.sin( (2*Math.PI*i) /(2*n+1) ) )));
+    }
+
+    for ( let i = 0 ; i < (2*n+1)  ; i ++){
+        for (const k of gaps ){
+            const j = ((2*n+1)+i+k)%(2*n+1) ;
+            graph.addLink(i, j, ORIENTATION.DIRECTED, undefined);
+        }
+    }
+    
+    return graph;
+}
+
+
 /**
  * Return a random Unit Disk graph where vertices are set uniformely randomly in [-50,50]^2.
  * @param n integer >= 0, the number of vertices

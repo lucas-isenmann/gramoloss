@@ -7,7 +7,7 @@ import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
-import { isTournamentLight } from './algorithms/isTournamentLight';
+import { isTournamentLight, tournamentLightConflict2 } from './algorithms/isTournamentLight';
 import { acyclicColoring, dichromatic } from './algorithms/dichromatic';
 
 export enum ELEMENT_TYPE {
@@ -288,11 +288,23 @@ export class Graph<V,L> {
 
     /**
      * A tournament is light if and only there does not exist different vertices u,v,a,b,c such that
-     * u -> v
-     * and a -> b -> c -> a is an oriented triangle
-     * and v -> a,b,c
-     * and a,b,c -> u
-     * @returns 
+     * - u -> v
+     * - a -> b -> c -> a is an oriented triangle
+     * - v -> a,b,c
+     * - a,b,c -> u
+     * @returns undefined or a conflict [u,v,a,b,c]
+     */
+    lightnessConflict(): Option<Array<number>> {
+        return tournamentLightConflict2(this.getDirectedMatrix())
+    }
+
+    /**
+     * A tournament is light if and only there does not exist different vertices u,v,a,b,c such that
+     * - u -> v
+     * - a -> b -> c -> a is an oriented triangle
+     * - v -> a,b,c
+     * - a,b,c -> u
+     * @remark If the graph is not light and you want to get 5 such vertices use the method `lightnessConflict()` 
      */
     isTournamentLight(): boolean {
         return isTournamentLight(this);
@@ -701,11 +713,14 @@ export class Graph<V,L> {
             return { min_value: 0, min_vertices: null, max_value: 0, max_vertices: null, avg: 0 };
         }
 
-        const index_first = this.vertices.keys().next().value;
-        let min_indices = new Set([index_first]);
-        let min_degree = this.getNeighborsList(index_first).length;
-        let max_indices = new Set([index_first]);
-        let maxDegree = this.getNeighborsList(index_first).length;
+        const idFirst = this.vertices.keys().next().value;
+        if (typeof idFirst == "undefined"){
+            return { min_value: 0, min_vertices: null, max_value: 0, max_vertices: null, avg: 0 };
+        }
+        let min_indices = new Set([idFirst]);
+        let min_degree = this.getNeighborsList(idFirst).length;
+        let max_indices = new Set([idFirst]);
+        let maxDegree = this.getNeighborsList(idFirst).length;
         let average = 0.0;
 
         for (const v_index of this.vertices.keys()) {
