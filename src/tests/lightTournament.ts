@@ -78,8 +78,14 @@ import { ORIENTATION } from "../link";
 
 {
     const g = generateCirculantTournament(4,[1,2,3,5])
-
     console.log(g.isTournamentLight() == false)
+}
+
+
+{ 
+    const g = new AbstractGraph();
+    g.addVertex();
+    console.log(typeof g.lightnessConflict() == "undefined")
 }
 
 

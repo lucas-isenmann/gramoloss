@@ -342,8 +342,7 @@ export class Graph<V,L> {
         // const m = this.getDirectedMatrix();
         const [_, r] = this.getStackedIndices();
         const heavyArc =  searchHeavyArcDigraph(this);
-
-        if (typeof heavyArc == "undefined"){
+        if (heavyArc.length == 0){
             return undefined
         } else {
             const [u,v,a,b,c] = heavyArc;
