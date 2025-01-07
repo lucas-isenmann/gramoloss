@@ -12,11 +12,13 @@ export enum GeneratorId {
     RandomGNP = "RandomGNP",
     Star = "Star",
     CompleteBipartite = "CompleteBipartite",
+    CompleteMultipartite = "CompleteMultipartite",
     Grid = "Grid",
     AztecDiamond = "AztecDiamond",
     Paley = "Paley",
     UnitDisk = "UnitDisk",
-    UTournament = "UTournament"
+    UGTournament = "UGTournament",
+    AcyclicTournament = "AcyclicTournament"
 }
 
 
@@ -123,14 +125,25 @@ export function generateGraph(generatorId: string, params: Array<any> ): Option<
         const d = params[1];
         if (typeof n != "number") return undefined;
         return generateUnitDisk(n, d); 
-    }  else if (generatorId == GeneratorId.UTournament){
+    }  else if (generatorId == GeneratorId.UGTournament){
+        if (params.length != 2){
+            logErrorNbParams(params.length, 2);
+            return undefined;
+        }
+        const n = params[0];
+        const m = params[1];
+        if (typeof n != "number" || typeof m != "number") return undefined;
+        return generateUGTournament(n, m); 
+    } else if (generatorId == GeneratorId.AcyclicTournament){
         if (params.length != 1){
             logErrorNbParams(params.length, 1);
             return undefined;
         }
         const n = params[0];
-        if (typeof n != "number") return undefined;
-        return generateUTournament(n); 
+        if (typeof n != "number"){
+            return undefined;
+        }
+        return generateAcyclicTournament(n);
     }
 
     return undefined;
@@ -215,7 +228,7 @@ export function generateTestTournament(n: number): EmbeddedGraph {
 
 
 
-function generateAztecDiamond(n: number): EmbeddedGraph {
+export function generateAztecDiamond(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
 
     function check(i: number,j: number,n: number): boolean {
@@ -251,7 +264,7 @@ function generateAztecDiamond(n: number): EmbeddedGraph {
     return graph;
 }
 
-function generateGrid(n: number, m: number): EmbeddedGraph {
+export function generateGrid(n: number, m: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     
     for ( let i = 0 ; i < n ; i++){
@@ -274,7 +287,33 @@ function generateGrid(n: number, m: number): EmbeddedGraph {
     return graph;
 }
 
-function generateCompleteBipartite(n: number, m: number): EmbeddedGraph {
+export function generateCompleteMultipartite(sizes: Array<number>): EmbeddedGraph {
+    const graph = new EmbeddedGraph();
+    const k = sizes.length;
+    const r = 50;
+    for ( let i = 0 ; i < k ; i ++){
+        for (let ki = 0; ki < sizes[i]; ki ++){
+            graph.addVertex( 
+                new EmbeddedVertexData(
+                    new Coord( 
+                        r*Math.cos( (2*Math.PI*i) /k )+ (-Math.sin( (2*Math.PI*i) /k))*(ki-sizes[i]/2),  
+                        r*Math.sin( (2*Math.PI*i) /k) + (Math.cos( (2*Math.PI*i) /k))*(ki-sizes[i]/2) )));
+        }
+    }
+
+    for (let i = 0; i < k ; i ++){
+        for (let j = 0; j < i; j ++){
+            for (let ki = 0; ki < sizes[i]; ki ++){
+                for (let kj = 0; kj < sizes[j]; kj ++){
+                    graph.addLink(i+ki, j+kj, ORIENTATION.UNDIRECTED, undefined)
+                }
+            }
+        }
+    }
+    return graph;
+}
+
+export function generateCompleteBipartite(n: number, m: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
 
     for ( let i = 0 ; i < n ; i ++){
@@ -292,7 +331,7 @@ function generateCompleteBipartite(n: number, m: number): EmbeddedGraph {
     return graph;
 }
 
-function generateStar(n: number): EmbeddedGraph {
+export function generateStar(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
     if ( n > 0 ){
@@ -306,7 +345,7 @@ function generateStar(n: number): EmbeddedGraph {
 }
 
 
-function generateRandomGNP(n: number, p: number): EmbeddedGraph {
+export function generateRandomGNP(n: number, p: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
     for ( let i = 0 ; i < n ; i ++){
@@ -319,6 +358,7 @@ function generateRandomGNP(n: number, p: number): EmbeddedGraph {
     }
     return graph;
 }
+
 
 
 export function generateRandomTournament(n: number): EmbeddedGraph {
@@ -337,7 +377,7 @@ export function generateRandomTournament(n: number): EmbeddedGraph {
     return graph;
 }
 
-function generateCliqueCircle(n: number): EmbeddedGraph {
+export function generateCliqueCircle(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
     for ( let i = 0 ; i < n ; i ++){
@@ -349,7 +389,7 @@ function generateCliqueCircle(n: number): EmbeddedGraph {
     return graph;
  }
 
-function generateIndependentCircle(n: number): EmbeddedGraph {
+export function generateIndependentCircle(n: number): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const r = 50;
     for ( let i = 0 ; i < n ; i ++){

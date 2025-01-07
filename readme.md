@@ -34,7 +34,7 @@ console.log(g.chromaticNumber()); // prints 3
 
 ## Notions
 
-*Links* are either edges or arcs. Loops are for the moment unimplemented.
+*Links* are either edges or arcs. Loops and multiedges and multiarcs are for the moment unimplemented.
 
 *Parameters* are function which do not modify the graph and which computes in most cases an integer (for example the chromatic number).
 
