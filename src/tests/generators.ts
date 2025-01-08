@@ -1,4 +1,20 @@
-import { generatePaleyGraph, generateUTournament} from "../generators";
+import { generateCompleteMultipartite, generatePaleyGraph, generateUTournament} from "../generators";
+
+
+// Complete Multipartite Graph
+
+{
+    const g = generateCompleteMultipartite([4,3,2]);
+    console.log(g.vertices.size == (4+3+2));
+    console.log(g.links.size == (4*(3+2) + 3*(4+2) + 2*(4+3))/2)
+
+
+
+}
+
+
+
+
 
 // undirected: 5 13 17
 // directed: 3 7 11

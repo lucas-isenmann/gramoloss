@@ -287,6 +287,15 @@ export function generateGrid(n: number, m: number): EmbeddedGraph {
     return graph;
 }
 
+/**
+ * Returns a graph with vertex set indices [0, sum(sizes)-1]
+ * Vi = sum( sizes[k], k < i) + [0, sizes[i]-1]
+ * For every i and j, every vertex of Vi is adjacent to every vertex of Vj
+ * @param sizes list of the sizes of the parts
+ * @example
+ * For sizes = [5,4,3], the graph has 5+4+3 vertices
+ * The sum of the degrees is 5*(4+3) + 4*(5+3) + 3*(5+4). 
+ */
 export function generateCompleteMultipartite(sizes: Array<number>): EmbeddedGraph {
     const graph = new EmbeddedGraph();
     const k = sizes.length;
@@ -301,14 +310,19 @@ export function generateCompleteMultipartite(sizes: Array<number>): EmbeddedGrap
         }
     }
 
+    let sumi = 0;
     for (let i = 0; i < k ; i ++){
+
+        let sumj = 0;
         for (let j = 0; j < i; j ++){
             for (let ki = 0; ki < sizes[i]; ki ++){
                 for (let kj = 0; kj < sizes[j]; kj ++){
-                    graph.addLink(i+ki, j+kj, ORIENTATION.UNDIRECTED, undefined)
+                    graph.addLink(sumi+ki, sumj+kj, ORIENTATION.UNDIRECTED, undefined)
                 }
             }
+            sumj += sizes[j];
         }
+        sumi += sizes[i];
     }
     return graph;
 }
