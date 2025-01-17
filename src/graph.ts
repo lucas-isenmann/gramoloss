@@ -7,7 +7,7 @@ import { Option } from "./option";
 import { BasicLinkData, BasicVertexData, Geometric, Weighted } from './traits';
 import { minDFVS } from './algorithms/dfvs';
 import { getDirectedCycle } from './algorithms/cycle';
-import { isTournamentLight, searchHeavyArc, searchHeavyArcDigraph } from './algorithms/isTournamentLight';
+import { hasLightTournamentExtension2, isTournamentLight, searchHeavyArc, searchHeavyArcDigraph } from './algorithms/isTournamentLight';
 import { acyclicColoring, dichromatic } from './algorithms/dichromatic';
 
 export enum ELEMENT_TYPE {
@@ -328,6 +328,17 @@ export class Graph<V,L> {
                 }
             }
         }
+    }
+
+
+    /**
+     * WIP
+     * @returns 
+     */
+    hasLightExtension(): boolean {
+        const [b,done] = hasLightTournamentExtension2(this);
+        console.log(done)
+        return b;
     }
 
     /**
