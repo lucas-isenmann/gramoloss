@@ -412,6 +412,69 @@ export function generateIndependentCircle(n: number): EmbeddedGraph {
     return graph;
 }
 
+// --------------------------------
+// Generate Random Tree with markov chain
+
+
+
+export function generateRandomTree(n: number): EmbeddedGraph {
+    
+    const root = Math.floor(n/2);
+    const leaves = [0,n-1];
+    const kids = new Array<Set<number>>();
+    const parents = new Array();
+    for (let i = 0; i < n ; i ++){
+        parents.push(root);
+        kids.push(new Set());
+    } 
+    for (let i = root; i-1 >= 0; i --){
+        parents[i-1] = i;
+        kids[i].add(i-1);
+    }
+    for (let i = root; i+1 < n; i ++){
+        parents[i+1] = i;
+        kids[i].add(i+1);
+    }
+
+    for (let k = 0; k < 20; k ++){
+        const leafId = Math.floor(Math.random()*leaves.length);
+        const leaf = leaves[leafId];
+        // Delete edge
+        kids[parents[leaf]].delete(leaf);
+
+        
+        let newParent = Math.floor(Math.random()*n);
+        if (newParent >= leaf){
+            newParent += 1;
+        }
+        if (kids[newParent].size == 0){
+            leaves // remove newp
+        }
+        kids[newParent].add(leaf);
+        parents[leaf] = newParent;
+
+
+
+
+
+
+        
+    }
+
+    const graph = new EmbeddedGraph();
+    const r = 50;
+    for ( let i = 0 ; i < n ; i ++){
+        graph.addVertex( new EmbeddedVertexData(new Coord( i*50, 0 )));
+    }
+    for (let i = 0; i <n-1; i ++){
+        graph.addLink(i, i+1, ORIENTATION.UNDIRECTED, undefined);
+    }
+
+
+    return graph;
+}
+
+
 
 /**
  * PaleyGraph is unoriented if p = 1 mod 4.
