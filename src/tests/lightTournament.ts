@@ -1,90 +1,38 @@
-import { searchHeavyArc, tournamentLightConflict } from "../algorithms/isTournamentLight";
-import { generateAcyclicTournament, generateCirculantTournament, generateUTournament } from "../generators";
-import { AbstractGraph } from "../graph_abstract";
-import { ORIENTATION } from "../link";
+import { Graph } from "../graph";
 
 
 
 // const g = generateAcyclicTournament(3);
- console.log(generateUTournament(3).isTournamentLight())
- console.log(generateUTournament(4).isTournamentLight())
- console.log(generateUTournament(5).isTournamentLight())
+ console.log(Graph.UGtournament(3,1).isTournamentLight())
+ console.log(Graph.UGtournament(4,1).isTournamentLight())
+ console.log(Graph.UGtournament(5,1).isTournamentLight())
 
 
 {
-    const g = new AbstractGraph();
-
-    for (let i = 0; i < 6; i ++){
-        g.addVertex();
-    }
-
-    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
-    g.addLink(0,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(0,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,5, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,1, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(5,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(5,1, ORIENTATION.DIRECTED, undefined)
-
+    const g = Graph.fromArcs([[0,1], [0,3], [0,4], [1,2], [2,0], [2,4], [2,5], [4,1], [4,3], [5,0], [5,1]])
     console.log(g.isTournamentLight() == true)
 }
 
 {
     // Tri(C3,1,1)
-    const g = new AbstractGraph();
-    for (let i = 0; i < 5; i ++){
-        g.addVertex();
-    }
-
-    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(3,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(3,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,2, ORIENTATION.DIRECTED, undefined)
-
+    const g = Graph.fromArcs([[0,1], [1,2], [1,3], [1,4], [2,0], [3,0], [4,0], [2,3], [3,4], [4,2]])
     console.log(g.isTournamentLight() == false)
 }
 
 {
     // Tri(C3,1,1) with one more vertex (so it is not a tournament)
-    const g = new AbstractGraph();
-    for (let i = 0; i < 6; i ++){
-        g.addVertex();
-    }
-
-    g.addLink(0,1, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,2, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(1,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(3,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,0, ORIENTATION.DIRECTED, undefined)
-    g.addLink(2,3, ORIENTATION.DIRECTED, undefined)
-    g.addLink(3,4, ORIENTATION.DIRECTED, undefined)
-    g.addLink(4,2, ORIENTATION.DIRECTED, undefined)
-    g.addLink(0,5, ORIENTATION.DIRECTED, undefined);
-
+    const g = Graph.fromArcs([[0,1], [1,2], [1,3], [1,4], [2,0], [3,0], [4,0], [2,3], [3,4], [4,2], [0,5]])
     console.log(g.isTournamentLight() == false)
 }
 
 {
-    const g = generateCirculantTournament(4,[1,2,3,5])
+    const g = Graph.circulantTournament(4,[1,2,3,5])
     console.log(g.isTournamentLight() == false)
 }
 
 
 { 
-    const g = new AbstractGraph();
-    g.addVertex();
+    const g = new Graph(1);
     console.log(typeof g.lightnessConflict() == "undefined")
 }
 

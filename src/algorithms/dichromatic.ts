@@ -103,7 +103,7 @@ function searchProperColoring(todo: Array<number>, triangles: Array<[number, num
     return [];
 }
 
-export function acyclicColoring<V,L>(g: Graph<V,L>, colorMax: number): Array<number> {
+export function acyclicColoring(g: Graph, colorMax: number): Array<number> {
     let n = g.vertices.size;
     const triangles = new Array<[number, number, number]>();
     let c = 0;
@@ -129,7 +129,7 @@ export function acyclicColoring<V,L>(g: Graph<V,L>, colorMax: number): Array<num
 }
 
 
-export function minAcyclicColoring<V,L>(g: Graph<V,L>): Array<number> {
+export function minAcyclicColoring(g: Graph): Array<number> {
     for (let i = 1; i < g.vertices.size; i ++){
         const coloring = acyclicColoring(g, i)
         if (coloring.length > 0){
@@ -139,7 +139,7 @@ export function minAcyclicColoring<V,L>(g: Graph<V,L>): Array<number> {
     return [];
 }
 
-export function dichromatic<V,L>(g: Graph<V,L>): number {
+export function dichromatic(g: Graph): number {
     for (let i = 1; i < g.vertices.size; i ++){
         if (acyclicColoring(g, i).length > 0){
             return i;

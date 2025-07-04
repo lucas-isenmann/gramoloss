@@ -12,11 +12,11 @@ import { Graph } from "../graph";
  * @param verbose 
  * @returns 
  */
-function auxMin<V,L>(
+function auxMin(
     choosable: Array<number>,
     current: Set<number>, 
-    g: Graph<V,L>,
-    property: (h: Graph<V,L>, subset: Set<number>) => boolean,
+    g: Graph,
+    property: (h: Graph, subset: Set<number>) => boolean,
     verbose: boolean
     ): {
         minimum: number,
@@ -78,9 +78,9 @@ function auxMin<V,L>(
  * @param verbose if true, prints all the solutions
  * @returns minimum, nbMinSolutions, nbSolutions 
  */
-export function bruteforceMinSubsetVertices<V,L>(
-    g: Graph<V,L>, 
-    property: (g: Graph<V,L>, subset: Set<number>) => boolean,
+export function bruteforceMinSubsetVertices(
+    g: Graph, 
+    property: (g: Graph, subset: Set<number>) => boolean,
     verbose: boolean
     ): {
         minimum: number,

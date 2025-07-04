@@ -258,22 +258,21 @@ export function searchLocalHeavyArcMatrix(matrix: Array<Array<boolean>>, u: numb
 
 
 
-export function searchHeavyArcDigraphAUX(outNeighbors: Array<Array<number>>, inNeighbors: Array<Array<number>> ): Array<number>{
-    const n = outNeighbors.length;
-    for (let u = 0; u < n ; u ++){
-        for (const v of outNeighbors[u]){
-            const vertices = new Array<number>();
-            for (const x of inNeighbors[u]){
-                if (outNeighbors[v].includes(x)){
+export function searchHeavyArcDigraphAUX(g: Graph): Array<Vertex>{
+    for (const u of g.vertices.values()){
+        for (const v of u.outNeighbors.values()){
+            const vertices = new Array<Vertex>();
+            for (const x of u.inNeighbors.values()){
+                if (v.outNeighbors.has(x.index)){
                     vertices.push(x);
                 }
             }
 
             for (const a of vertices){
                 for (const b of vertices){
-                    if (outNeighbors[a].includes(b)){
+                    if (a.outNeighbors.has(b.index)){
                         for (const c of vertices){
-                            if (outNeighbors[b].includes(c) && inNeighbors[a].includes(c)){
+                            if (b.outNeighbors.has(c.index) && a.inNeighbors.has(c.index)){
                                 return [u,v,a,b,c]
                             }
                         }
@@ -290,82 +289,12 @@ export function searchHeavyArcDigraphAUX(outNeighbors: Array<Array<number>>, inN
 }
 
 
-function getDiAdjacencyLists<V,L>(g: Graph<V,L>): [Array<Array<number>>, Array<Array<number>>] {
-    let [indices, reverse] = g.getStackedIndices();
-    const n = g.vertices.size;
-    let outNeighbors = new Array<Array<number>>(n);
-    let inNeighbors = new Array<Array<number>>(n);
-    
-    for (let u = 0; u < n; u ++){
-        outNeighbors[u] = new Array<number>();
-        for (const vId of g.getOutNeighborsList(reverse[u])){
-            const v = indices.get(vId);
-            if (typeof v != "undefined"){
-                outNeighbors[u].push(v);
-            }
-        }
-        inNeighbors[u] = new Array<number>();
-        for (const vId of g.getInNeighborsList(reverse[u])){
-            const v = indices.get(vId);
-            if (typeof v != "undefined"){
-                inNeighbors[u].push(v);
-            }
-        }
-    }
 
-    return [outNeighbors, inNeighbors]
+export function searchHeavyArcDigraph(g: Graph): Array<Vertex>{
 
+    return searchHeavyArcDigraphAUX(g);
 }
 
-
-export function searchHeavyArcDigraph<V,L>(g: Graph<V,L>): Array<number>{
-
-    const [outNeighbors, inNeighbors] = getDiAdjacencyLists(g);
-
-
-    return searchHeavyArcDigraphAUX(outNeighbors, inNeighbors);
-}
-
-
-export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex<V>>> {
-    for (const [_, u] of g.vertices){
-        for (const v of g.getOutNeighbors(u)){
-            const order = new Array<Vertex<V>>();
-
-
-            for (const b of g.getOutNeighbors(v)){
-                if (g.hasArc(b.index,u.index) == false){
-                    continue;
-                }
-                let i = 0;
-                while (i < order.length){
-                    const a = order[i];
-                    if ( g.hasArc(b.index, a.index) ){
-                        break;
-                    }
-                    i ++;
-                }
-                let isCycle = false;
-                let j = i+1;
-                while (j < order.length){
-                    const c = order[j];
-                    if ( g.hasArc(b.index, c.index)){
-                    } else {
-                        isCycle = true;
-                        break;
-                    }
-                    j ++;
-                }
-                if (isCycle){
-                    return [u,v,order[j],b,order[i]];
-                } else {
-                    order.splice( i, 0, b);
-                }
-            }
-        }
-    }
-    return undefined;
-}
 
 
 
@@ -375,14 +304,9 @@ export function tournamentLightConflict<V,L>(g: Graph<V,L>): Option<Array<Vertex
  * @param g 
  * @returns 
  */
-export function isTournamentLight<V,L>(g: Graph<V,L>): boolean {
+export function isTournamentLight(g: Graph): boolean {
     // const m = g.getDirectedMatrix();
     return searchHeavyArcDigraph(g).length == 0;
-    if (typeof searchHeavyArcDigraph(g) == "undefined"){
-        return true;
-    } else {
-        return false;
-    }
 }
 
 
@@ -433,180 +357,6 @@ function findDeductions(outNeighbors: Array<Array<number>>, inNeighbors: Array<A
     return pairs;
 }
 
-
-
-
-
-export function hasLightTournamentExtension<V,L>(g: Graph<V,L>): [boolean, Array<[number, number, boolean, Array<[number, number]>, boolean]>] {
-
-    const n = g.vertices.size;
-    const [indices, reverse] = g.getStackedIndices();
-
-    const [outNeighbors, inNeighbors] = getDiAdjacencyLists(g);
-    // console.log(n)
-    // console.log(outNeighbors)
-    // console.log(inNeighbors);
-
-
-    const todo = new Array<[number, number, boolean]>();
-
-    for (let i = 0; i < n ; i ++){
-        for (let j = i+1; j < n ; j ++){
-            if (outNeighbors[i].includes(j) == false && inNeighbors[i].includes(j) == false){
-                todo.push([i,j,false]);
-            }
-        }
-    }
-
-    // console.log(todo);
-
-
-    const done = new Array<[number, number, boolean, Array<[number, number]>, boolean]>();
-
-    while (true){
-        // console.log("-------")
-        // console.log("todo", todo)
-        // console.log("done", done);
-        let edge = todo.pop();
-        if (typeof edge == "undefined"){
-            // console.log(done)
-            return [true, done];
-        } 
-        let [u,v, b] = edge;
-
-        if (b == false){
-            if (outNeighbors[u].includes(v)){
-                done.push([u,v,false, [], true])
-                console.log("yo")
-                continue;
-            }
-        } else {
-            if (outNeighbors[v].includes(u)){
-                done.push([u,v,true, [], true])
-                console.log("ya")
-                continue;
-            }
-        }
-
-
-        if (b == false){
-
-            if (outNeighbors[u].includes(v)){
-                console.log("BUG",u, v)
-            }
-
-            outNeighbors[u].push(v);
-            inNeighbors[v].push(u);
-
-            
-
-
-            if (searchHeavyArcDigraphAUXlocal(outNeighbors, inNeighbors, u, v).length > 0){
-                outNeighbors[u].pop();
-                inNeighbors[v].pop();
-    
-                todo.push([u,v,true])
-                    
-    
-            } else {
-                const pairs = findDeductions(outNeighbors, inNeighbors, u, v);
-                for (const [a,b] of pairs){
-                    outNeighbors[a].push(b);
-                    inNeighbors[b].push(a);
-                }
-
-                let isDeductionOK = true;
-                for (const [a,b] of pairs){
-                    if (searchHeavyArcDigraphAUXlocal(outNeighbors, inNeighbors, a, b).length > 0){
-                        isDeductionOK = false;
-                    }
-                }
-                if (isDeductionOK == false){
-                    outNeighbors[u].pop();
-                    inNeighbors[v].pop();
-                    for (const [a,b] of pairs){
-                        outNeighbors[a].pop();
-                        inNeighbors[b].pop();
-                    }
-        
-                    todo.push([u,v,true])
-                } else {
-                    done.push([u,v,false, pairs, false])
-                }
-            }
-        } else {
-            outNeighbors[v].push(u);
-            inNeighbors[u].push(v);
-            let isBad = searchHeavyArcDigraphAUXlocal(outNeighbors, inNeighbors,v, u).length > 0;
-
-            let deductions = new Array<[number,number]>;
-            let isDeductionOK = true;
-
-            if (isBad == false){
-                deductions = findDeductions(outNeighbors, inNeighbors, u, v);
-                for (const [a,b] of deductions){
-                    outNeighbors[a].push(b);
-                    inNeighbors[b].push(a);
-                }
-                for (const [a,b] of deductions){
-                    if (searchHeavyArcDigraphAUXlocal(outNeighbors, inNeighbors, a, b).length > 0){
-                        isDeductionOK = false;
-                    }
-                }
-            }
-            
-
-            if (isBad || isDeductionOK == false ){
-                outNeighbors[v].pop();
-                inNeighbors[u].pop();
-
-                for (const [a,b] of deductions){
-                    outNeighbors[a].pop();
-                    inNeighbors[b].pop();
-                }
-
-                todo.push([u,v,false])
-                let i = 0;
-                 // backtrack
-                 while(true){
-                    i ++;
-                    const pair = done.pop()
-                    if (typeof pair == "undefined"){
-                        return [false, []];
-                    } else {
-                        const [x,y,t, pairs, isDeduced] = pair;
-                        if (isDeduced){
-                            continue;
-                        }
-                        for (const [a,b] of pairs){
-                            outNeighbors[a].pop();
-                            inNeighbors[b].pop();
-                        }
-                        if (t == false){
-                            outNeighbors[x].pop();
-                            inNeighbors[y].pop();
-                            todo.push([x,y,true])
-                            break
-                        }
-                        else {
-                            outNeighbors[y].pop();
-                            inNeighbors[x].pop();
-                            todo.push([x,y,false])
-                        }
-                    }
-                }
-                
-            } else {
-                
-                done.push([u,v,true, deductions, false])
-            }
-        }
-
-    }
-
-    console.log("empty graph case")
-    return [true, []];
-}
 
 
 
@@ -669,12 +419,15 @@ function findDeductionsMatrix(matrix: Array<Array<boolean>>, u: number, v: numbe
 
 
 
-export function hasLightTournamentExtension2<V,L>(g: Graph<V,L>): [boolean, Array<[number, number, boolean, Array<[number, number]>, boolean]>] {
+export function hasLightTournamentExtension2(g: Graph): [boolean, Array<[number, number, boolean, Array<[number, number]>, boolean]>] {
 
     const n = g.vertices.size;
-    const [indices, reverse] = g.getStackedIndices();
 
-    const m = g.getDirectedMatrix()
+    const m = new Array<Array<boolean>>(n);
+    for (let i = 0; i < n ; i ++){
+        m[i] = new Array<boolean>(n)
+    }
+
 
 
     const todo = new Array<[number, number, boolean]>();
@@ -720,7 +473,7 @@ export function hasLightTournamentExtension2<V,L>(g: Graph<V,L>): [boolean, Arra
 
         if (b == false){
 
-            if (m[u][v]){
+            if (g.matrix[u][v] > 0){
                 console.log("BUG",u, v)
             }
 

@@ -1,23 +1,24 @@
 // DFVS: Directed Feedback Vertex Set
 
 import { Graph } from "../graph";
+import { Vertex, VertexIndex } from "../vertex";
 import { getDirectedCycle } from "./cycle";
 import { getInducedSubgraph } from "./inducedSubgraph";
 
 
-function visit (cur: number, 
-    visited: Set<number>,
-    outNeighbors: Map<number, Set<number>>, 
-    stack: Array<number>) {
-    if (visited.has(cur)) return;
-    visited.add(cur);
-    const curOutNeighbors = outNeighbors.get(cur);
-    if (typeof curOutNeighbors != "undefined"){
-        for (const neigh of curOutNeighbors) {
-            visit(neigh, visited, outNeighbors, stack);
+function visit (cur: VertexIndex, 
+    visited: Set<VertexIndex>,
+    outNeighbors: Map<VertexIndex, Set<VertexIndex>>, 
+    stack: Array<VertexIndex>) {
+        if (visited.has(cur)) return;
+        visited.add(cur);
+        const curOutNeighbors = outNeighbors.get(cur);
+        if (typeof curOutNeighbors != "undefined"){
+            for (const neigh of curOutNeighbors) {
+                visit(neigh, visited, outNeighbors, stack);
+            }
+            stack.push(cur);
         }
-        stack.push(cur);
-    }
 }
 
 /**
@@ -29,28 +30,28 @@ function visit (cur: number,
  * @return true if the component is a source
  * @return false otherwise (there is an arc from a vertex not in the component to this component)
  */
-function assign ( cur: number,
-    inNeighbors: Map<number, Set<number>>,
-    assigned: Set<number>,
-    component: Set<number>): boolean {
-    if (assigned.has(cur) == false) {
-        assigned.add(cur);
-        component.add(cur);
-        let isSource = true;
-        const curInNeighbors = inNeighbors.get(cur);
-        if (typeof curInNeighbors == "undefined") return isSource;
-        for (const neigh of curInNeighbors) {
-            if (assigned.has(neigh) && component.has(neigh) == false){
-                isSource = false;
-            } else {
-                if (assign(neigh, inNeighbors, assigned, component) == false){
+function assign ( cur: VertexIndex,
+    inNeighbors: Map<VertexIndex, Set<VertexIndex>>,
+    assigned: Set<VertexIndex>,
+    component: Set<VertexIndex>): boolean {
+        if (assigned.has(cur) == false) {
+            assigned.add(cur);
+            component.add(cur);
+            let isSource = true;
+            const curInNeighbors = inNeighbors.get(cur);
+            if (typeof curInNeighbors == "undefined") return isSource;
+            for (const neigh of curInNeighbors) {
+                if (assigned.has(neigh) && component.has(neigh) == false){
                     isSource = false;
+                } else {
+                    if (assign(neigh, inNeighbors, assigned, component) == false){
+                        isSource = false;
+                    }
                 }
             }
+            return isSource;
         }
-        return isSource;
-    }
-    return true;
+        return true;
 }
 
 
@@ -58,26 +59,26 @@ function assign ( cur: number,
 
 
 function scc(
-    vertices: Array<number>,
-    outNeighbors: Map<number, Set<number>>, 
-    inNeighbors: Map<number,Set<number>>
-): Array<Set<number>>{
-    const scc = new Array<Set<number>>(); // Strongly Connected Components
-    const stack = new Array<number>();
-    const visited = new Set<number>();
+    vertices: Array<VertexIndex>,
+    outNeighbors: Map<VertexIndex, Set<VertexIndex>>, 
+    inNeighbors: Map<VertexIndex,Set<VertexIndex>>
+): Array<Set<VertexIndex>>{
+    const scc = new Array<Set<VertexIndex>>(); // Strongly Connected Components
+    const stack = new Array<VertexIndex>();
+    const visited = new Set<VertexIndex>();
 
     for (const v of vertices) {
         visit(v, visited, outNeighbors, stack);
     }
 
-    const assigned = new Set<number>();
+    const assigned = new Set<VertexIndex>();
 
     while (stack.length > 0) {
         const stackHead = stack.pop();
         if (typeof stackHead == "undefined") break;
 
         if (assigned.has(stackHead) == false) {
-            const component = new Set<number>();
+            const component = new Set<VertexIndex>();
             const is_source = assign(stackHead, inNeighbors, assigned, component);
             scc.push(component);
         }
@@ -88,12 +89,12 @@ function scc(
 
 
 function aux(
-    vertices: Array<number>,
-    choosable: Array<number>,
-    current: Set<number>, 
-    best: Set<number>, 
-    outNeighbors: Map<number, Set<number>>, 
-    inNeighbors: Map<number, Set<number>>,
+    vertices: Array<VertexIndex>,
+    choosable: Array<VertexIndex>,
+    current: Set<VertexIndex>, 
+    best: Set<VertexIndex>, 
+    outNeighbors: Map<VertexIndex, Set<VertexIndex>>, 
+    inNeighbors: Map<VertexIndex, Set<VertexIndex>>,
     depth: number
     ){
         // const predebug = "_".repeat(depth)
@@ -117,16 +118,16 @@ function aux(
         if (components.length >= 2){
             // console.log(predebug, "decomposable into ", components.length, "components");
             
-            const agregateMinSol = new Set<number>();
+            const agregateMinSol = new Set<VertexIndex>();
             for (const compo of components){
                 // console.log(predebug, compo);
                 const compoVertices = Array.from(compo);
 
                 // Compute out-neighbors restricted to compo
-                const compoOutNeighbors = new Map<number, Set<number>>();
+                const compoOutNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
                 for (const [v,vOutNeighbors] of outNeighbors){
                     if (compo.has(v)){
-                        const vCompoOutNeighbors = new Set<number>();
+                        const vCompoOutNeighbors = new Set<VertexIndex>();
                         for (const neigh of vOutNeighbors){
                             if (compo.has(neigh)){
                                 vCompoOutNeighbors.add(neigh);
@@ -137,10 +138,10 @@ function aux(
                 }
 
                 // Compute in-neighbors restricted to compo
-                const compoInNeighbors = new Map<number, Set<number>>();
+                const compoInNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
                 for (const [vId, vInNeighbors] of inNeighbors){
                     if (compo.has(vId)){
-                        const vCompoInNeighbors = new Set<number>();
+                        const vCompoInNeighbors = new Set<VertexIndex>();
                         for (const neigh of vInNeighbors){
                             if (compo.has(neigh)){
                                 vCompoInNeighbors.add(neigh);
@@ -151,7 +152,7 @@ function aux(
                 }
 
                 // The restriction of best to compo is a DFVS of compo
-                const compoBest = new Set<number>();
+                const compoBest = new Set<VertexIndex>();
                 for (const vId of best){
                     if (compo.has(vId)){
                         compoBest.add(vId);
@@ -159,7 +160,7 @@ function aux(
                 }
 
                 // Restriction of choosable to compo
-                const compoChoosable = new Array();
+                const compoChoosable = new Array<VertexIndex>();
                 for (const vId of choosable){
                     if (compo.has(vId)){
                         compoChoosable.push(vId);
@@ -249,7 +250,7 @@ function aux(
 }
 
 
-export function minDFVS<V,L>(g: Graph<V,L>): Set<number>{
+export function minDFVS(g: Graph): Set<VertexIndex>{
 
     const vertices = new Array();
     for (const vId of g.vertices.keys()){
@@ -260,17 +261,14 @@ export function minDFVS<V,L>(g: Graph<V,L>): Set<number>{
         choosable.push(vId);
     }
 
-    const outNeighbors = new Map<number, Set<number>>();
-    for (const vId of g.vertices.keys()){
-        outNeighbors.set(vId, new Set(g.getOutNeighborsList(vId)));
-    }
-
-    const inNeighbors = new Map<number, Set<number>>();
-    for (const vId of g.vertices.keys()){
-        inNeighbors.set(vId, new Set(g.getInNeighborsList(vId)));
+    const outNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
+    const inNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
+    for (const v of g.vertices.values()){
+        outNeighbors.set(v.index, new Set(v.outNeighbors.keys()));
+        inNeighbors.set(v.index, new Set(v.inNeighbors.keys()));
     }
     
-    const best = new Set<number>(vertices);
+    const best = new Set<VertexIndex>(vertices);
 
 
     aux(vertices, 
@@ -289,13 +287,16 @@ export function minDFVS<V,L>(g: Graph<V,L>): Set<number>{
 
 
 
-export function DFVSproperty<V,L>(g: Graph<V,L>, subset: Set<number>): boolean{
-    const complementary = new Set<number>();
-    for (const vId of g.vertices.keys()){
-        if (subset.has(vId) == false){
-            complementary.add(vId);
+export function isDFVS(g: Graph, subset: Set<VertexIndex>): boolean{
+    const complementary = new Set<Vertex>();
+    const complementaryIndices = new Set<VertexIndex>();
+    for (const v of g.vertices.values()){
+        if (subset.has(v.index) == false){
+            complementary.add(v);
+            complementaryIndices.add(v.index);
         }
     }
     const sub = getInducedSubgraph(g, complementary);
-    return (typeof getDirectedCycle(complementary, sub.outNeighbors) == "undefined");
+
+    return (typeof getDirectedCycle(complementaryIndices, sub.outNeighbors) == "undefined");
 }

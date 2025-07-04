@@ -1,12 +1,11 @@
-import { generateRandomTournament } from "../generators";
-import { BasicGraph } from "../graph";
+import { Graph } from "../graph";
 
 
-const g1 = BasicGraph.from([[0,0,""], [0,0,""], [0,0,""], [0,0,""]],
-    [[0,1,""],
-    [1,2,""],
-    [2,3,""],
-    [3,1,""]]);
+const g1 = Graph.fromEdges(
+    [[0,1],
+    [1,2],
+    [2,3],
+    [3,1]]);
 
 const f1 = g1.FloydWarshall(undefined);
 // console.log([...distances])
@@ -16,14 +15,14 @@ console.log(f1.next.get(0)?.get(2) == 1)
 console.log(f1.distances.get(0)?.get(3) == 2)
 console.log(f1.next.get(0)?.get(3) == 1)
 
-const g2 = BasicGraph.from([[0,0,""], [0,0,""], [0,0,""], [0,0,""], [0,0,""], [0,0,""]],
-    [[0,3,""],
-    [3,1,""],
-    [1,2,""],
-    [2,5,""],
-    [5,1,""],
-    [1,4,""],
-    [4,0,""]]);
+const g2 = Graph.fromEdges(
+    [[0,3],
+    [3,1],
+    [1,2],
+    [2,5],
+    [5,1],
+    [1,4],
+    [4,0]]);
 
 const f2 = g2.FloydWarshall(undefined);
 console.log(f2.distances.get(3)?.get(2) == 2)
@@ -32,10 +31,10 @@ console.log(f2.distances.get(0)?.get(5) == 3)
 console.log(f2.next.get(5)?.get(0) == 1)
 
 
-const g3 = BasicGraph.fromArcs([[0,0,""], [0,0,""], [0,0,""]],
-    [[0,1,""],
-    [1,0,""],
-    [1,2,""]]);
+const g3 = Graph.fromArcs(
+    [[0,1],
+    [1,0],
+    [1,2]]);
 
 const f3 = g3.FloydWarshall(undefined);
 console.log(f3.distances.get(0));
@@ -59,7 +58,7 @@ console.log(f3.distances.get(2));
 //         arcs.push( [arc.startVertex.index, arc.endVertex.index, ""])
 //     }
 
-//     const bg = BasicGraph.fromArcs(vertices, arcs);
+//     const bg = Graph.fromArcs(vertices, arcs);
 //     console.log(bg.diameter(undefined));
 // }
 
@@ -68,22 +67,22 @@ console.log(f3.distances.get(2));
 // LongestGeodesic
 
 // The graph C4
-console.log(BasicGraph.cycle(4).longestGeodesic(undefined)[0].length == 3);
-console.log(BasicGraph.cycle(4).longestGeodesic(undefined)[1] == 2);
-console.log(BasicGraph.cycle(5).longestGeodesic(undefined)[1] == 2);
-console.log(BasicGraph.cycle(6).longestGeodesic(undefined)[1] == 3);
+console.log(Graph.cycle(4).longestGeodesic(undefined)[0].length == 3);
+console.log(Graph.cycle(4).longestGeodesic(undefined)[1] == 2);
+console.log(Graph.cycle(5).longestGeodesic(undefined)[1] == 2);
+console.log(Graph.cycle(6).longestGeodesic(undefined)[1] == 3);
 
 // I2 (independent graph with 2 vertices)
-console.log(BasicGraph.from([[0,0,""],[0,0,""]],[]).longestGeodesic(undefined)[1] == Infinity)
-console.log(BasicGraph.from([[0,0,""],[0,0,""]],[]).longestGeodesic(undefined)[0].length == 2)
+console.log(new Graph(2).longestGeodesic(undefined)[1] == Infinity)
+console.log(new Graph(2).longestGeodesic(undefined)[0].length == 2)
 
 
 
 // --------
 // Diameter
 
-console.log(BasicGraph.cycle(4).diameter(undefined) == 2);
-console.log(BasicGraph.cycle(5).diameter(undefined) == 2);
-console.log(BasicGraph.cycle(6).diameter(undefined) == 3);
-console.log(BasicGraph.clique(3).diameter(undefined) == 1);
-console.log(BasicGraph.clique(4).diameter(undefined) == 1);
+console.log(Graph.cycle(4).diameter(undefined) == 2);
+console.log(Graph.cycle(5).diameter(undefined) == 2);
+console.log(Graph.cycle(6).diameter(undefined) == 3);
+console.log(Graph.clique(3).diameter(undefined) == 1);
+console.log(Graph.clique(4).diameter(undefined) == 1);

@@ -1,10 +1,11 @@
-import { generateCompleteMultipartite, generatePaleyGraph, generateUTournament} from "../generators";
 
 
 // Complete Multipartite Graph
 
+import { Graph } from "../graph";
+
 {
-    const g = generateCompleteMultipartite([4,3,2]);
+    const g = Graph.completeMultipartite([4,3,2]);
     console.log(g.vertices.size == (4+3+2));
     console.log(g.links.size == (4*(3+2) + 3*(4+2) + 2*(4+3))/2)
 
@@ -23,7 +24,7 @@ import { generateCompleteMultipartite, generatePaleyGraph, generateUTournament} 
 // in directed, d+ = d- = (q-1)/2
 
 let q = 7;
-const paley = generatePaleyGraph(q);
+const paley = Graph.Paley(q);
 
 console.log(paley.vertices.size, q);
 console.log(paley.links.size, q*(q-1)/4); // if undirected
@@ -35,10 +36,9 @@ console.log(paley.links.size, q*(q-1)/2); // if directed
 // the in-degree or out-degree sequence of a UTournament(n)
 // is 1 1 2 3 4 ... (n-2) (n-1) (n-1)
 const n = 6;
-const utourn = generateUTournament(n);
+const utourn = Graph.UGtournament(n,1);
 console.log(utourn.vertices.size)
 console.log(utourn.links.size)
 for (const v of utourn.vertices.values()){
-    const outn = utourn.getOutNeighbors(v);
-    console.log(outn.length)
+    console.log(v.outdegree())
 }

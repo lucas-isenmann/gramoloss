@@ -1,37 +1,55 @@
 import { Coord, Vect } from './coord';
-import { Geometric, Weighted } from "./traits";
+import { Graph } from './graph';
+import { Link } from './link';
+
+export type VertexIndex = number | string;
 
 
-export class Vertex<V> {
-    index: number;
-    data: V;
+export class Vertex {
+    index: VertexIndex;
+    stackedIndex: number;
+    neighbors: Map<VertexIndex, Vertex>;
+    inNeighbors: Map<VertexIndex, Vertex>;
+    outNeighbors: Map<VertexIndex, Vertex>;
+    incidentLinks: Map<number, Link>;
+    graph: Graph;
 
-    constructor(index: number, data: V) {
+    pos: Coord;
+    color: string;
+    innerLabel: string;
+    outerLabel: string;
+
+
+
+    constructor(graph: Graph, index: VertexIndex, stackedIndex: number, x: number, y: number) {
         this.index = index;
-        this.data = data;
+        this.stackedIndex = stackedIndex;
+        this.graph = graph;
+        this.neighbors = new Map();
+        this.inNeighbors = new Map();
+        this.outNeighbors = new Map();
+        this.incidentLinks = new Map();
+
+        this.pos = new Coord(x, y);
+        this.color = "Neutral";
+        this.innerLabel = "";
+        this.outerLabel = "";
     }
-}
 
 
-// export class BasicVertex extends Vertex<BasicVertex> {
+    degree(): number {
+        return this.neighbors.size;
+    }
 
-//     clone(): BasicVertex {
-//         const newVertex = new BasicVertex(this.pos.x, this.pos.y, this.weight, this.color);
-//         return newVertex;
-//     }
+    indegree(): number {
+        return this.inNeighbors.size;
+    }
 
-//     static default(): BasicVertex{
-//         return new BasicVertex(0,0,"", "black");
-//     }
-// }
+    outdegree(): number {
+        return this.outNeighbors.size;
+    }
 
-
-
-
-
-export class BasicVertex<V extends Geometric & Weighted> extends Vertex<V> {
-    
-    distTo(other: BasicVertex<V>): number {
+    distTo(other: Vertex): number {
         return Math.sqrt(this.getPos().dist2(other.getPos()));
     }
 
@@ -40,16 +58,17 @@ export class BasicVertex<V extends Geometric & Weighted> extends Vertex<V> {
     }
 
     getPos(): Coord {
-        return this.data.getPos();
+        return this.pos;
     }
 
-    /**
-     * 
-     * @param c1 one corner of the rectangle
-     * @param c2 the opposite one
-     * @returns true if this.pos is in the rectangle
-     */
     isInRectangle(c1: Coord, c2: Coord){
-        return this.data.getPos().is_in_rect(c1, c2);
+        return this.getPos().isInRect(c1, c2);
     }
 }
+
+
+
+
+
+    
+   

@@ -7,7 +7,7 @@ export class Coord {
         this.y = y;
     }
 
-    copy_from(c: Coord) {
+    copyFrom(c: Coord) {
         this.x = c.x;
         this.y = c.y;
     }
@@ -45,7 +45,7 @@ export class Coord {
         return new Coord(this.x/norm, this.y/norm);
     }
 
-    rotate_quarter(){
+    rotateQuarter(){
         return new Coord(this.y, - this.x);
     }
 
@@ -71,7 +71,7 @@ export class Coord {
         return (this.x - pos.x) ** 2 + (this.y - pos.y) ** 2;
     }
 
-    is_in_rect(c1: Coord, c2: Coord) : boolean {
+    isInRect(c1: Coord, c2: Coord) : boolean {
         return Math.min(c1.x, c2.x) <= this.x && this.x <= Math.max(c1.x, c2.x) &&  Math.min(c1.y, c2.y) <= this.y && this.y <= Math.max(c1.y, c2.y);
     }
 
@@ -79,18 +79,21 @@ export class Coord {
         return new Coord((this.x + c.x) / 2, (this.y + c.y) / 2);
     }
 
-    // Compute the orthogonal projection of this on the line defined
-    // by a point 'point' and a non zero direction.
-    orthogonal_projection(point: Coord, direction: Vect): Coord{
+    /**
+     * Compute the orthogonal projection of this on the line defined
+     * by a point 'point' and a non zero direction.
+     */
+    
+    orthogonalProjection(point: Coord, direction: Vect): Coord{
         const norm = direction.norm();
         const u = new Vect(direction.x/norm, direction.y/norm);
-        const v = Vect.from_coords(point, this);
+        const v = Vect.fromCoords(point, this);
         const ps = u.x*v.x + u.y*v.y;
         return new Coord( point.x + u.x*ps , point.y + u.y*ps);
     }
 
     vectorTo(other: Coord){
-        return Vect.from_coords(this, other);
+        return Vect.fromCoords(this, other);
     }
 }
 
@@ -166,7 +169,7 @@ export class Vect {
         return new Vect(-this.x, -this.y);
     }
 
-    static from_coords(src: Coord, dest: Coord): Vect{
+    static fromCoords(src: Coord, dest: Coord): Vect{
         return new Vect(dest.x - src.x, dest.y - src.y);
     }
 }

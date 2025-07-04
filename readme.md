@@ -2,9 +2,7 @@
 
 Graph (or network) theory tools.
 
-This package contains a graph structure based on a map of edges and arcs (called links). Matrix graph structure is on the road map but not implemented for the moment. Several graph parameters are implemented (degree statistics, chromatic number, vertex cover number, clique number, domination number, ...).
-
-It is still in developpement.
+This package contains a graph structure mixing list adjacencies and matrices. Several graph parameters are implemented (degree statistics, chromatic number, vertex cover number, clique number, domination number, ...).
 
 This package is mainly devoted to the online collaborative graph editor [gracoon.com](https://www.gracoon.com) :rocket:
 
@@ -14,35 +12,38 @@ This package is mainly devoted to the online collaborative graph editor [gracoon
 
 ## Examples
 
+### Graph edition
+
 ```typescript
-import {AbstractGraph} from "gramoloss";
-const g = AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[1,2]]); // create an undirected graph from list of edges
-const d = g.maxDegree(); // d = 2
-const b = g.hasCycle(); // b = true
-for (const v of g.getNeighborsList(0)){
-    console.log(v) // print 1 and 2
-}
+import {Graph} from "gramoloss";
+const g = new Graph();
+g.addVertex(0);
+g.addVertex('a');
+g.addLink(0, 'a');
+g.nbVertices(); // = 2
+g.nbEdges(); // = 1
 ```
 
-Chromatic number:
+```typescript
+const g = Graph.fromEdges([[0,1],[0,2],[1,2]]); // Create an undirected graph from list of edges
+g.maxDegree(); // = 2
+g.hasCycle(); // = true
+```
+
+### Chromatic number
 
 ```typescript
-import {AbstractGraph} from "gramoloss";
-const g = AbstractGraph.fromEdgesListDefault([[0,1],[0,2],[1,2]]); // create the graph K3
-console.log(g.chromaticNumber()); // prints 3
+const g = Graph.clique(3); // Create the graph K3
+g.chromaticNumber(); // = 3
 ```
 
 ## Notions
 
-*Links* are either edges or arcs. Loops and multiedges and multiarcs are for the moment unimplemented.
+- Graph structure allow having edges and arcs simultaneously
+- Multiple edges and multiple arcs are allowed
+- Loops are allowed
 
-*Parameters* are function which do not modify the graph and which computes in most cases an integer (for example the chromatic number).
 
-*Generators* are function which return a graph (like generating a random graph with the GNP method).
-
-*Mutators* are function which modify the underlying graph and which do not return anything (like removing all the leaves of a graph).
-
-*Representations* are structures which represent the graph with a particular geometrical point of view. For example planar graphs can be represented by contact of circles (unimplemented). An other example is to represent tournaments on a line with only the backwards which are drawn.
 
 ## Contribute
 

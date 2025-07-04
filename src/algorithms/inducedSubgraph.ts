@@ -1,4 +1,5 @@
 import { Graph } from "../graph";
+import { Vertex, VertexIndex } from "../vertex";
 
 
 /**
@@ -8,29 +9,29 @@ import { Graph } from "../graph";
  * @returns outNeighbors: Map<number, Set<number>> which tells for every vertex id the out-neighbors id of this vertex
  * 
  */
-export function getInducedSubgraph<V,L>(g: Graph<V,L>, subset: Set<number>) {
+export function getInducedSubgraph(g: Graph, subset: Set<Vertex>) {
     
-    const subOutNeighbors = new Map<number, Set<number>>();
-    for (const vId of subset){
-        const vSubOutNeighbors = new Set<number>();
-        for (const neigh of g.getOutNeighborsList(vId)){
+    const subOutNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
+    for (const v of subset){
+        const vSubOutNeighbors = new Set<VertexIndex>();
+        for (const neigh of v.outNeighbors.values()){
             if (subset.has(neigh)){
-                vSubOutNeighbors.add(neigh);
+                vSubOutNeighbors.add(neigh.index);
             }
         }
-        subOutNeighbors.set(vId, vSubOutNeighbors); 
+        subOutNeighbors.set(v.index, vSubOutNeighbors); 
     }
     
 
-    const subInNeighbors = new Map<number, Set<number>>();
-    for (const vId of subset){
-        const vSubInNeighbors = new Set<number>();
-        for (const neigh of g.getInNeighborsList(vId)){
+    const subInNeighbors = new Map<VertexIndex, Set<VertexIndex>>();
+    for (const v of subset){
+        const vSubInNeighbors = new Set<VertexIndex>();
+        for (const neigh of v.inNeighbors.values()){
             if (subset.has(neigh)){
-                vSubInNeighbors.add(neigh);
+                vSubInNeighbors.add(neigh.index);
             }
         }
-        subInNeighbors.set(vId, vSubInNeighbors); 
+        subInNeighbors.set(v.index, vSubInNeighbors); 
     }
 
     return {

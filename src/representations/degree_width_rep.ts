@@ -1,18 +1,15 @@
-import { Area } from "../area";
 import { Coord } from "../coord";
 import { Graph } from "../graph";
-import { Link } from "../link";
-import { Geometric, Weighted } from "../traits";
-import { Vertex } from "../vertex";
+import { VertexIndex } from "../vertex";
 import { Representation } from "./representation";
 
 
-export class DegreeWidthRep<V extends Geometric & Weighted, L extends Geometric> implements Representation {
+export class DegreeWidthRep implements Representation {
     c1: Coord;
     c2: Coord;
-    x: Map<number, number>;
+    x: Map<VertexIndex, number>;
 
-    constructor(g: Graph<V, L>, c1: Coord, c2: Coord){
+    constructor(g: Graph, c1: Coord, c2: Coord){
         this.c1 = c1.copy(); 
         this.c2 = c2.copy();
         this.x = new Map();

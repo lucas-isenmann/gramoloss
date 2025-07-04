@@ -1,8 +1,7 @@
 import { Coord } from "./coord";
-import { BasicLinkData, Geometric, Weighted } from "./traits";
-import { eqSet, is_quadratic_bezier_curves_intersection, is_segments_intersection, segmentsInteriorIntersection } from "./utils";
-import { BasicVertex, Vertex } from "./vertex";
-import { Option } from "./option";
+import { Graph } from "./graph";
+import { bezierCurvePoint, eqSet, isQuadraticBezierCurvesIntersection, segmentsInteriorIntersection } from "./utils";
+import { Vertex, VertexIndex } from "./vertex";
 
 export enum ORIENTATION {
     UNDIRECTED = "UNDIRECTED",
@@ -10,28 +9,89 @@ export enum ORIENTATION {
 }
 
 
-export class Link<V,L> {
+export class Link {
+    
+
     index: number;
-    startVertex: Vertex<V>;
-    endVertex: Vertex<V>;
+    graph: Graph;
+    startVertex: Vertex;
+    endVertex: Vertex;
     orientation: ORIENTATION;
-    data: L;
+    color: string;
+    cp: undefined | Coord;
+    weight: string;
 
 
-    constructor(index: number, startVertex: Vertex<V>, endVertex: Vertex<V>, orientation: ORIENTATION, data: L) {
+    constructor(index: number, graph: Graph, startVertex: Vertex, endVertex: Vertex, orientation: ORIENTATION) {
         this.index = index;
+        this.graph = graph;
         this.startVertex = startVertex;
         this.endVertex = endVertex;
         this.orientation = orientation;
-        this.data = data;
+        this.color = "Neutral";
+        this.weight = "";
+
     }
 
-    flip() {
-        if (this.orientation == ORIENTATION.DIRECTED){
-            const v = this.startVertex;
-            this.startVertex = this.endVertex;
-            this.endVertex = v;
+
+    delete(){
+        // TODO : pour les aretes multiples il faut enlever neighbor que s'il n'y a plus d'aretes
+            // TODO : attention aux loops 
+
+        if (this.orientation == ORIENTATION.UNDIRECTED){
+            this.graph.matrix[this.startVertex.stackedIndex][this.endVertex.stackedIndex] -= 1;
+            this.graph.matrix[this.endVertex.stackedIndex][this.startVertex.stackedIndex] -= 1;
+            
+            this.startVertex.neighbors.delete(this.endVertex.index);
+            this.endVertex.neighbors.delete(this.startVertex.index);
+
+        } else {
+
+            this.graph.matrix[this.startVertex.stackedIndex][this.endVertex.stackedIndex] -= 1;
+            
+            this.startVertex.outNeighbors.delete(this.endVertex.index);
+            this.endVertex.inNeighbors.delete(this.startVertex.index);
         }
+
+        this.startVertex.incidentLinks.delete(this.index);
+        this.endVertex.incidentLinks.delete(this.index);
+
+
+
+        this.graph.links.delete(this.index);
+    }
+
+    
+    /**
+     * Create k-1 vertices
+     * Create k links with the same color
+     * Delete this link
+     * @param k 
+     */
+    subdivide(k: number) {
+        let previousVertex = this.startVertex;
+        for (let i = 0 ; i < k ; i ++){
+            const bezierPoints = typeof this.cp == "undefined" ? 
+            [this.startVertex.getPos(), this.endVertex.getPos()] :
+            [this.startVertex.getPos(), this.cp, this.endVertex.getPos()];
+            const vertexPos = bezierCurvePoint(i/k, bezierPoints);
+
+            const v = this.graph.addVertex(this.graph.getAvailableVertexIndex(), vertexPos.x, vertexPos.y);
+            
+            if (this.orientation == ORIENTATION.UNDIRECTED){
+                this.graph.addEdge(previousVertex, v);
+            } else {
+                this.graph.addArc(previousVertex, v);
+            }
+            previousVertex = v;
+        }
+
+        if (this.orientation == ORIENTATION.UNDIRECTED){
+            this.graph.addEdge(previousVertex, this.endVertex);
+        } else {
+            this.graph.addArc(previousVertex, this.endVertex);
+        }
+        this.delete()
     }
 
    
@@ -39,21 +99,21 @@ export class Link<V,L> {
      * Return true iff at least one extremity of the link is in the set `s`.
      * @return `s.has(startIndex) || s.has(endIndex)`
      */
-    hasAnExtrimityIn(s: Set<number>){
+    hasAnExtrimityIn(s: Set<VertexIndex>): boolean{
         return s.has(this.startVertex.index) || s.has(this.endVertex.index);
     }
 
-    signatureEquals(start_index: number, end_index: number, orientation: ORIENTATION): boolean{
+    signatureEquals(startIndex: VertexIndex, endIndex: VertexIndex, orientation: ORIENTATION): boolean{
         if ( this.orientation == orientation ){
             switch (this.orientation){
                 case ORIENTATION.UNDIRECTED: {
-                    if ( eqSet(new Set([this.startVertex.index, this.endVertex.index]), new Set([start_index, end_index]) ) ){
+                    if ( eqSet(new Set([this.startVertex.index, this.endVertex.index]), new Set([startIndex, endIndex]) ) ){
                         return true;
                     }
                     break;
                 }
                 case ORIENTATION.DIRECTED: {
-                    if ( this.startVertex.index == start_index && this.endVertex.index == end_index){
+                    if ( this.startVertex.index == startIndex && this.endVertex.index == endIndex){
                         return true;
                     }
                     break;
@@ -63,87 +123,44 @@ export class Link<V,L> {
         return false;
     }
 
-}
 
-
-
-
-// export class BasicLink extends Link<BasicLink> {
-
-//     clone(): BasicLink{
-//         if (typeof this.cp === "string"){
-//             return new BasicLink(this.start_vertex, this.end_vertex, this.cp, this.orientation, this.color, this.weight);
-//         } else {
-//             return new BasicLink(this.start_vertex, this.end_vertex, this.cp.copy(), this.orientation, this.color, this.weight);
-//         }
-//     }
-
-
-//     static default_edge(x: number,y: number, weight: string): BasicLink{
-//         return new BasicLink(x,y,new Coord(0,0), ORIENTATION.UNDIRECTED, "black", weight);
-//     } 
-
-//     static default_arc(x: number,y: number, weight: string): BasicLink{
-//         return new BasicLink(x,y,new Coord(0,0), ORIENTATION.DIRECTED, "black", weight);
-//     } 
-
-// }
-
-
-
-
-
-
-export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> extends Link<V,L> {
-    startVertex: BasicVertex<V>;
-    endVertex: BasicVertex<V>;
-
-    constructor(index: number, startVertex: BasicVertex<V>, endVertex: BasicVertex<V>, orientation: ORIENTATION, data: L ){
-        super(index, startVertex, endVertex, orientation, data);
-        this.startVertex = startVertex;
-        this.endVertex = endVertex;
-    }
-
-    /**
+     /**
      * Test if this link intersect another link 
     // TODO: faster algorithm for intersection between segment and bezier
      * TODO use in the planar test of a graph
      */
-    intersectsLink(link: BasicLink<V,L>): boolean{
+    intersectsLink(link: Link): boolean{
         const v1 = this.startVertex.getPos();
         const w1 = this.endVertex.getPos();
         const v2 = link.startVertex.getPos();
         const w2 = link.endVertex.getPos();
-        if (typeof this.data.cp == "undefined" && typeof link.data.cp == "undefined"){
+        if (typeof this.cp == "undefined" && typeof link.cp == "undefined"){
             return typeof segmentsInteriorIntersection(v1, w1, v2, w2) == "undefined";
             // return is_segments_intersection(v1, w1, v2, w2);
         }
         let cp1 = v1.middle(w1);
         let cp2 = v2.middle(w2);
-        if (typeof this.data.cp != "undefined"){
-            cp1 = this.data.cp;
+        if (typeof this.cp != "undefined"){
+            cp1 = this.cp;
         }
-        if (typeof link.data.cp != "undefined"){
-            cp2 = link.data.cp;
+        if (typeof link.cp != "undefined"){
+            cp2 = link.cp;
         }
-        return is_quadratic_bezier_curves_intersection(v1, cp1, w1, v2, cp2, w2);
+        return isQuadraticBezierCurvesIntersection(v1, cp1, w1, v2, cp2, w2);
     }
 
 
     getWeight(): string {
-        return this.data.getWeight();
+        return this.weight;
     }
 
-    setWeight(weight: string){
-        this.data.setWeight(weight);
-    }
 
      /**
      * @param fixedEnd is the coord of the extremity which has not moved
      * @param newPos and @param previousPos are the positions of the extremity which has moved
      */
     transformCP(newPos: Coord, previousPos: Coord, fixedEnd: Coord){
-        if (typeof this.data.cp == "undefined"){
+        if (typeof this.cp == "undefined"){
             return;
         }
         const w = fixedEnd;
@@ -151,9 +168,9 @@ export class BasicLink<V extends Geometric & Weighted, L extends BasicLinkData> 
         const nv = newPos.sub(w);
         const theta = nv.getTheta(u);
         const rho = u.getRho(nv);
-        const cp = this.data.cp.copy();
-        this.data.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
-        this.data.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
+        const cp = this.cp.copy();
+        this.cp.x = w.x + rho * (Math.cos(theta) * (cp.x - w.x) - Math.sin(theta) * (cp.y - w.y))
+        this.cp.y = w.y + rho * (Math.sin(theta) * (cp.x - w.x) + Math.cos(theta) * (cp.y - w.y))
     }
 
 

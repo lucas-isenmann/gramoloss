@@ -1,4 +1,5 @@
 import { Graph } from "../graph";
+import { VertexIndex } from "../vertex";
 
 
 function swapAroundRand(i: number,j: number, sums: Array<number>, adj: Array<Array<number>>, labels: Array<number>, edgeAdj: Array<[number, number]>){
@@ -28,11 +29,11 @@ function swapAroundRand(i: number,j: number, sums: Array<number>, adj: Array<Arr
 
 
 
-export function antimagicGreedyLabelling<V,L>(g: Graph<V,L>): Map<number, number> {
+export function antimagicGreedyLabelling(g: Graph): Map<number, number> {
     const n = g.vertices.size;
     const m = g.links.size;
     const edgeIds = new Map<number, number>();
-    const vertexIds = new Map<number,number>();
+    const vertexIds = new Map<VertexIndex,number>();
     const labels = new Array<number>(m); // init: labels[i] = i
     const sums = new Array<number>(n); // init: 0
     const edgeAdj = new Array<[number, number]>(m);
@@ -110,10 +111,9 @@ export function antimagicGreedyLabelling<V,L>(g: Graph<V,L>): Map<number, number
 
 
 
-export function isAntimagic<V,L>(g: Graph<V,L>): boolean {
+export function isAntimagic(g: Graph): boolean {
     const m = g.links.size;
 
-    const matrix = g.getMatrix();
 
     
     
